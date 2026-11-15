@@ -410,7 +410,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   // ---------- build dataset ----------
   function parseWorkbook(wb, fileName, opt) {
     opt = opt || {};
-    const minShiftT = opt.minShiftT || 300;
+    const minShiftT = opt.minShiftT != null ? opt.minShiftT : 0;
     const warn = [], info = [];
     const prod = {};
     const cache = {};
@@ -446,7 +446,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       const miss = MB_P.filter(k => t[k] > 0 && !p[k]);
       let rom = null;
       if (miss.length) excluded.push({ key, reason: 'no analysis: ' + miss.map(k => PRODUCTS[k].name).join(', ') });
-      else if (tot < minShiftT) excluded.push({ key, reason: `low throughput (${Math.round(tot)} t)` });
+      else if (minShiftT > 0 && tot < minShiftT) excluded.push({ key, reason: `low throughput (${Math.round(tot)} t)` });
       else {
         rom = { t: tot };
         for (const e of EL) rom[e] = MB_P.reduce((a, k) => a + (t[k] > 0 ? t[k] * p[k][e] : 0), 0) / tot;
@@ -505,7 +505,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     const BAND = f.bw || 0.2;
     const k = Math.floor(x / BAND + 1e-9);
     const hit = B.find(b => Math.round(b.lo / BAND) === k);
-    if (hit) return { s: hit.s, lo: hit.lo, n: hit.n, how: 'band' };
+    if (hit) return { s: hit.s, lo: hit.lo, n: hit.n, t: hit.t, how: 'band' };
     if (x < B[0].lo) return { s: B[0].s, lo: B[0].lo, n: B[0].n, how: 'edge' };
     const L = B[B.length - 1]; if (x >= L.lo + BAND) return { s: L.s, lo: L.lo, n: L.n, how: 'edge' };
     let i = 0; while (i < B.length - 1 && B[i + 1].lo + BAND / 2 < x) i++;
@@ -519,23 +519,27 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     return { s: f.dbar + f.beta * (xc - f.xbar), how: 'linear' };
   }
   function cellRmse(model, f) { return (model.method || 'band') === 'band' && f.bins ? f.rmseB : f.rmseLin; }
-  function fitCell(xs, ds, bwIn) {
+  // All statistics are TONNAGE-WEIGHTED: ws[i] = tonnes behind row i (product tonnage of that shift/day).
+  function fitCell(xs, ds, bwIn, wsIn) {
     const BAND = bwIn || 0.2;
+    const ws = wsIn || xs.map(() => 1);
     let idx = xs.map((_, i) => i);
     const run = (I) => {
-      const n = I.length, x = I.map(i => xs[i]), d = I.map(i => ds[i]);
-      const db = mean(d), xb = mean(x);
-      const rF = d.map(v => v - (db * n - v) / (n - 1));
+      const n = I.length, x = I.map(i => xs[i]), d = I.map(i => ds[i]), w = I.map(i => ws[i]);
+      const W = w.reduce((a, v) => a + v, 0);
+      const db = d.reduce((a, v, i) => a + w[i] * v, 0) / W, xb = x.reduce((a, v, i) => a + w[i] * v, 0) / W;
+      const rF = d.map((v, i) => W - w[i] > 0 ? v - (W * db - w[i] * v) / (W - w[i]) : 0);
       let Sxx = 0, Sxd = 0;
-      for (let i = 0; i < n; i++) { Sxx += (x[i] - xb) ** 2; Sxd += (x[i] - xb) * (d[i] - db); }
-      const beta = Sxx > 1e-9 ? Sxd / Sxx : 0;
+      for (let i = 0; i < n; i++) { Sxx += w[i] * (x[i] - xb) ** 2; Sxd += w[i] * (x[i] - xb) * (d[i] - db); }
+      const beta = Sxx > 1e-12 ? Sxd / Sxx : 0;
       const res = d.map((v, i) => v - (db + beta * (x[i] - xb)));
-      const rA = res.map((e, i) => e / (1 - (1 / n + (Sxx > 1e-9 ? (x[i] - xb) ** 2 / Sxx : 0))));
-      const SSt = d.reduce((a, v) => a + (v - db) ** 2, 0), SSr = res.reduce((a, v) => a + v * v, 0);
-      return { n, db, xb, beta, Sxx, res, rmseF: Math.sqrt(mean(rF.map(v => v * v))), rmseA: Math.sqrt(mean(rA.map(v => v * v))), r2: SSt > 0 ? 1 - SSr / SSt : 0 };
+      const rA = res.map((e, i) => { const h = w[i] / W + (Sxx > 1e-12 ? w[i] * (x[i] - xb) ** 2 / Sxx : 0); return h < 0.999 ? e / (1 - h) : e; });
+      const wrms = r => Math.sqrt(r.reduce((a, v, i) => a + w[i] * v * v, 0) / W);
+      const SSt = d.reduce((a, v, i) => a + w[i] * (v - db) ** 2, 0), SSr = res.reduce((a, v, i) => a + w[i] * v * v, 0);
+      return { n, W, db, xb, beta, Sxx, res, rmseF: wrms(rF), rmseA: wrms(rA), r2: SSt > 0 ? 1 - SSr / SSt : 0 };
     };
     let f = run(idx), nOut = 0;
-    if (f.n >= 8) { // single robust trim pass (3.5 × MAD)
+    if (f.n >= 8) { // single robust trim pass (3.5 × MAD) on residuals
       const med = a => { const s = [...a].sort((p, q) => p - q); return s[Math.floor(s.length / 2)]; };
       const m = med(f.res), mad = med(f.res.map(v => Math.abs(v - m))) * 1.4826;
       if (mad > 0) {
@@ -543,32 +547,41 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
         if (keep.length >= 6 && keep.length < idx.length) { nOut = idx.length - keep.length; idx = keep; f = run(idx); }
       }
     }
-    const adaptive = f.n >= 8 && f.Sxx > 1e-9 && Math.abs(f.beta) <= 3 && f.rmseA < 0.9 * f.rmseF;
+    const adaptive = f.n >= 8 && f.Sxx > 1e-12 && Math.abs(f.beta) <= 3 && f.rmseA < 0.9 * f.rmseF;
     const xi = idx.map(i => xs[i]);
-    // ---- ROM Al2O3 band model (0.2 % bands), each band shrunk toward the overall trend by K pseudo-rows
+    // ---- band model: tonnage-weighted band mean, shrunk toward the trend by SHRINK typical-shift tonnages
     const tb = Math.abs(f.beta) <= 3 ? f.beta : 0;
     const trend = x => f.db + tb * (x - f.xb);
+    const wsort = idx.map(i => ws[i]).sort((a, b) => a - b), wMed = wsort[Math.floor(wsort.length / 2)] || 1;
+    const KW = SHRINK * wMed;
     const map = {};
-    for (const i of idx) { const k = Math.floor(xs[i] / BAND + 1e-9); (map[k] = map[k] || []).push(ds[i]); }
+    for (const i of idx) { const k = Math.floor(xs[i] / BAND + 1e-9); (map[k] = map[k] || []).push(i); }
     const bins = Object.keys(map).map(Number).sort((a, b) => a - b).map(k => {
-      const d = map[k], n = d.length, m = mean(d), c = (k + 0.5) * BAND;
-      const sd = n > 1 ? Math.sqrt(d.reduce((a, v) => a + (v - m) ** 2, 0) / (n - 1)) : null;
-      return { lo: +(k * BAND).toFixed(5), n, mean: m, sd, s: (n * m + SHRINK * trend(c)) / (n + SHRINK) };
+      const I = map[k], n = I.length, c = (k + 0.5) * BAND;
+      const Wb = I.reduce((a, i) => a + ws[i], 0), Sd = I.reduce((a, i) => a + ws[i] * ds[i], 0), m = Sd / Wb;
+      const sd = n > 1 ? Math.sqrt(I.reduce((a, i) => a + ws[i] * (ds[i] - m) ** 2, 0) / Wb * n / (n - 1)) : null;
+      return { lo: +(k * BAND).toFixed(5), n, t: Wb, mean: m, sd, s: (Sd + KW * trend(c)) / (Wb + KW) };
     });
-    let se = 0;
-    for (const b of bins) { const d = map[Math.round(b.lo / BAND)]; const sum = d.reduce((a, v) => a + v, 0);
-      for (const v of d) { const sl = (sum - v + SHRINK * trend(b.lo + BAND / 2)) / (b.n - 1 + SHRINK); se += (v - sl) ** 2; } }
-    const rmseB = Math.sqrt(se / Math.max(1, f.n));
-    return { xmin: Math.min(...xi), xmax: Math.max(...xi), n: f.n, nOut, dbar: f.db, xbar: f.xb, beta: adaptive ? f.beta : 0, betaRaw: f.beta, mode: adaptive ? 'adaptive' : 'fixed',
-      rmseLin: adaptive ? f.rmseA : f.rmseF, rmse: adaptive ? f.rmseA : f.rmseF, rmseF: f.rmseF, rmseA: f.rmseA, r2: f.r2, bins, rmseB, trendB: tb, bw: BAND };
+    let se = 0, sw = 0;
+    for (const b of bins) { const I = map[Math.round(b.lo / BAND)]; const Sd = I.reduce((a, i) => a + ws[i] * ds[i], 0), c = b.lo + BAND / 2;
+      for (const i of I) { const sl = (Sd - ws[i] * ds[i] + KW * trend(c)) / (b.t - ws[i] + KW); se += ws[i] * (ds[i] - sl) ** 2; sw += ws[i]; } }
+    const rmseB = Math.sqrt(se / Math.max(1e-9, sw));
+    return { xmin: Math.min(...xi), xmax: Math.max(...xi), n: f.n, nOut, W: f.W, dbar: f.db, xbar: f.xb, beta: adaptive ? f.beta : 0, betaRaw: f.beta, mode: adaptive ? 'adaptive' : 'fixed',
+      rmseLin: adaptive ? f.rmseA : f.rmseF, rmse: adaptive ? f.rmseA : f.rmseF, rmseF: f.rmseF, rmseA: f.rmseA, r2: f.r2, bins, rmseB, trendB: tb, bw: BAND, kw: KW };
   }
-  function ols(xs, ys) {
-    const xb = mean(xs), yb = mean(ys);
-    let Sxx = 0, Sxy = 0; for (let i = 0; i < xs.length; i++) { Sxx += (xs[i] - xb) ** 2; Sxy += (xs[i] - xb) * (ys[i] - yb); }
-    const b = Sxx > 1e-9 ? Sxy / Sxx : 0;
-    const rm = Math.sqrt(mean(ys.map((y, i) => (y - (yb + b * (xs[i] - xb))) ** 2)));
+  function ols(xs, ys, wsIn) {
+    const ws = wsIn || xs.map(() => 1), W = ws.reduce((a, v) => a + v, 0);
+    const xb = xs.reduce((a, v, i) => a + ws[i] * v, 0) / W, yb = ys.reduce((a, v, i) => a + ws[i] * v, 0) / W;
+    let Sxx = 0, Sxy = 0; for (let i = 0; i < xs.length; i++) { Sxx += ws[i] * (xs[i] - xb) ** 2; Sxy += ws[i] * (xs[i] - xb) * (ys[i] - yb); }
+    const b = Sxx > 1e-12 ? Sxy / Sxx : 0;
+    const rm = Math.sqrt(ys.reduce((a, y, i) => a + ws[i] * (y - (yb + b * (xs[i] - xb))) ** 2, 0) / W);
     return { a: yb - b * xb, b, xb, yb, rmse: rm, n: xs.length };
   }
+  // tonnes behind a row for a given stream (product tonnage; streams with no own tonnage use Wet ROM tonnes)
+  const TKEY = { SO: 'SO', CF: 'CF', HCC: 'HCC', SL: 'SL', WF: 'WF', JF: 'JF', JC: 'JC', JR: 'JR' };
+  function romTons(r) { return (r.rom && r.rom.t) || MB_P.reduce((a, k) => a + ((r.t && r.t[k]) || 0), 0); }
+  function rowW(r, p) { const k = TKEY[p]; if (p && k && r.t && r.t[k] != null) return Math.max(0, r.t[k]); return Math.max(0, romTons(r)); }
+  function wMean(vals, ws) { const W = ws.reduce((a, v) => a + v, 0); return W > 0 ? vals.reduce((a, v, i) => a + ws[i] * v, 0) / W : mean(vals); }
 
   function basisRows(ds, basis) {
     if (basis === 'shift') return ds.shifts.filter(r => r.rom).map(r => ({ ...r, X: r.rom }));
@@ -598,20 +611,20 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       else groups.push({ id: k, p: k, cond: () => true });
     }
     for (const g of groups) {
-      const has = r => r.p[g.p] && g.cond(r);
+      const has = r => r.p[g.p] && g.cond(r) && rowW(r, g.p) > 0;
       let rows = win.filter(has), scope = 'window';
       if (rows.length < minN) {
         const ext = all.filter(has);
         if (ext.length >= Math.max(3, rows.length + 1)) { rows = ext; scope = 'month'; }
       }
       if (rows.length < 3) { cells[g.id] = null; continue; }
-      const c = { p: g.p, scope, n: rows.length, el: {}, act: {} };
+      const c = { p: g.p, scope, n: rows.length, t: rows.reduce((a, r) => a + rowW(r, g.p), 0), el: {}, act: {} };
       for (const e of EL) {
         // each element's delta is banded on Wet ROM grade of the SAME element
-        const xs = rows.map(r => r.X[e]), dd = rows.map(r => r.p[g.p][e] - r.X[e]);
-        c.el[e] = fitCell(xs, dd, BW[e]);
+        const xs = rows.map(r => r.X[e]), dd = rows.map(r => r.p[g.p][e] - r.X[e]), ws = rows.map(r => rowW(r, g.p));
+        c.el[e] = fitCell(xs, dd, BW[e], ws);
         const av = rows.map(r => r.p[g.p][e]);
-        c.act[e] = { min: Math.min(...av), max: Math.max(...av), mean: mean(av) };
+        c.act[e] = { min: Math.min(...av), max: Math.max(...av), mean: wMean(av, ws) };
       }
       const last = rows[rows.length - 1];
       c.last = { label: last.label, v: last.p[g.p] };
@@ -621,7 +634,8 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
 
     // ROM element estimators from ROM Al2O3
     const romEst = {};
-    for (const e of EL) romEst[e] = e === 'Al2O3' ? { a: 0, b: 1, rmse: 0 } : ols(win.map(r => r.X.Al2O3), win.map(r => r.X[e]));
+    const wR = win.map(r => Math.max(1e-6, romTons(r)));
+    for (const e of EL) romEst[e] = e === 'Al2O3' ? { a: 0, b: 1, rmse: 0 } : ols(win.map(r => r.X.Al2O3), win.map(r => r.X[e]), wR);
     const romAl = win.map(r => r.X.Al2O3);
 
     // yields (mass %) over window, tonnage based
@@ -649,7 +663,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     yields.wfAnchorF = wfAnchor === 'WF_on' ? yields.JF_of_CF : 0;
 
     return { opt, basis: opt.basis, method: opt.method, band: BW.Al2O3, bands: BW, winDays, endDay, nRows: win.length, cells, romEst, notes,
-      romStats: { mean: mean(romAl), min: Math.min(...romAl), max: Math.max(...romAl), last: win[win.length - 1] },
+      romStats: { mean: wMean(romAl, wR), min: Math.min(...romAl), max: Math.max(...romAl), last: win[win.length - 1] },
       yields, trainedAt: new Date().toISOString(), month: ds.month, fileName: ds.fileName };
   }
 
@@ -765,10 +779,11 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       const pr = predict(model, { Al2O3: r.X.Al2O3, Fe: r.X.Fe, SiO2: r.X.SiO2, P: r.X.P, jf: r.jig ? (jfr > 0 ? jfr : model.yields.JF_of_CF) : 0 });
       if (win.has(r.day) && (model.method || 'band') === 'band') {
         for (const p of PKEYS) { const x = pr.p[p]; if (!x || !x.cell || !r.p[p]) continue;
-          for (const e of EL) { const b = x.band[e]; if (!b || b.how !== 'band' || b.n < 2) continue;
-            const d = r.p[p][e] - r.X[e]; const sl = (b.s * (b.n + SHRINK) - d) / (b.n - 1 + SHRINK); x.v[e] += sl - b.s; } }
+          const w = rowW(r, p); if (!(w > 0)) continue;
+          for (const e of EL) { const b = x.band[e]; if (!b || b.how !== 'band' || b.n < 2 || !(b.t > w)) continue;
+            const kw = x.cell.el[e].kw || 0, d = r.p[p][e] - r.X[e]; const sl = (b.s * (b.t + kw) - w * d) / (b.t - w + kw); x.v[e] += sl - b.s; } }
       }
-      return { label: r.label, day: r.day, shift: r.shift, inWin: win.has(r.day), jig: r.jig, romAl: r.X.Al2O3, act: r.p, pred: pr.p };
+      return { t: r.t, rom: { t: romTons(r) }, label: r.label, day: r.day, shift: r.shift, inWin: win.has(r.day), jig: r.jig, romAl: r.X.Al2O3, act: r.p, pred: pr.p };
     });
   }
 
@@ -787,9 +802,13 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     for (const it of items) {
       const [y, m] = it.ym.split('-').map(Number), mon = MON[m - 1], base = y * 10000 + m * 100;
       const ds = it.ds;
-      for (const r of ds.shifts) out.shifts.push(Object.assign({}, r, { dom: r.day, ym: it.ym, day: base + r.day, key: it.ym + '|' + r.key, label: `${r.day} ${mon}-${r.shift}` }));
+      const recovered = new Set();
+      for (const r0 of ds.shifts) { let r = r0;
+        if (!r.rom && r.t) { const tot = MB_P.reduce((a, k) => a + (r.t[k] || 0), 0);
+          if (tot > 0 && MB_P.every(k => !(r.t[k] > 0) || r.p[k])) { const rom = { t: tot }; for (const e of EL) rom[e] = MB_P.reduce((a, k) => a + (r.t[k] > 0 ? r.t[k] * r.p[k][e] : 0), 0) / tot; r = Object.assign({}, r, { rom }); recovered.add(r0.key); } }
+        out.shifts.push(Object.assign({}, r, { dom: r.day, ym: it.ym, day: base + r.day, key: it.ym + '|' + r.key, label: `${r.day} ${mon}-${r.shift}` })); }
       for (const r of ds.days) out.days.push(Object.assign({}, r, { dom: r.day, ym: it.ym, day: base + r.day, key: it.ym + '|' + r.key, label: `${r.day} ${mon}` }));
-      for (const x of ds.excluded) out.excluded.push({ key: `${x.key.split('|')[0]} ${mon}-${x.key.split('|')[1]}`, reason: x.reason });
+      for (const x of ds.excluded.filter(x => !recovered.has(x.key))) out.excluded.push({ key: `${x.key.split('|')[0]} ${mon}-${x.key.split('|')[1]}`, reason: x.reason });
       for (const w of ds.warn) out.warn.push(`${mon} ${y}: ${w}`);
       out.info.push(`${mon} ${y} · ${it.name}: ${ds.shifts.filter(s => s.rom).length} valid shifts. ${ds.info.filter(t => /reproduces|Jig operated/.test(t)).join(' ')}`);
       out.files.push({ ym: it.ym, name: it.name });
@@ -801,7 +820,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     return out;
   }
 
-  const api = { SHRINK, DEF_BANDS, BLIM, MON, ymFromName, fmtOrd, mergeDatasets, solveLimitNum, cellDelta, bandOf, EL, PRODUCTS, PKEYS, MB_P, parseWorkbook, train, predict, solveLimit, backtest, cellFor };
+  const api = { rowW, romTons, wMean, SHRINK, DEF_BANDS, BLIM, MON, ymFromName, fmtOrd, mergeDatasets, solveLimitNum, cellDelta, bandOf, EL, PRODUCTS, PKEYS, MB_P, parseWorkbook, train, predict, solveLimit, backtest, cellFor };
   if (typeof module !== 'undefined' && module.exports) module.exports = api; else global.VCEngine = api;
 })(typeof window !== 'undefined' ? window : globalThis);
 </script>
@@ -1224,7 +1243,7 @@ function insights(){
   for(const p of ['SO','CF','WF','SL','HCC']){
     const r=bt.filter(b=>last3.includes(b.day)&&b.act[p]&&b.pred[p]);
     if(r.length<2) continue;
-    const bias=r.reduce((a,b)=>a+b.act[p].Al2O3-b.pred[p].v.Al2O3,0)/r.length;
+    const bias=E.wMean(r.map(b=>b.act[p].Al2O3-b.pred[p].v.Al2O3), r.map(b=>E.rowW(b,p)));
     const sd=r[0].pred[p].sd.Al2O3;
     if(Math.abs(bias)>0.5*sd && Math.abs(bias)>0.25) drift.push(`${P[p].name} ${bias>0?'+':''}${bias.toFixed(2)}`);
   }
@@ -1233,8 +1252,9 @@ function insights(){
   // predicted ROM bias
   const W=new Set(m.winDays), dd=S.ds.days.filter(d=>W.has(d.day)&&d.rom&&d.romPred);
   if(dd.length>=3){
-    const b=dd.reduce((a,d)=>a+d.rom.Al2O3-d.romPred.Al2O3,0)/dd.length;
-    const bf=dd.reduce((a,d)=>a+d.rom.Fe-d.romPred.Fe,0)/dd.length;
+    const wd=dd.map(d=>E.romTons(d));
+    const b=E.wMean(dd.map(d=>d.rom.Al2O3-d.romPred.Al2O3),wd);
+    const bf=E.wMean(dd.map(d=>d.rom.Fe-d.romPred.Fe),wd);
     card('Feed · mine-predicted vs plant ROM', Math.abs(b)>0.2?'warn':'good', `Over the window, plant mass-balance ROM Al₂O₃ was <b>${fs(b,'Al2O3')}%</b> vs the mine-predicted ROM (Fe ${fs(bf,'Fe')}%).`,
       S.set.basis==='dayPred'?'Day · Pred ROM basis active — this bias is absorbed in the deltas':(Math.abs(b)>0.2?'If you feed ROM-app predictions, consider the "Day · Pred ROM" basis or add this offset':''));
   }
@@ -1255,7 +1275,7 @@ function bandSel(){ if(!S.bandSel) S.bandSel=['WF','SO','SL']; return S.bandSel.
 function bandChart(el){
   const m=S.model, prods=bandSel(), w=bw(el);
   const W=560,H=274,pl=50,pr=74,pt=16,ph=200,sy=pt+ph+10,sh=26;
-  const ser=prods.map(p=>({p,pts:E.cellFor(m,p,true).el[el].bins.map(b=>({x:b.lo+w/2,lo:b.lo,y:b.s,n:b.n,mean:b.mean,sd:b.sd}))})).filter(z=>z.pts.length);
+  const ser=prods.map(p=>({p,pts:E.cellFor(m,p,true).el[el].bins.map(b=>({x:b.lo+w/2,lo:b.lo,y:b.s,n:b.n,t:b.t||0,mean:b.mean,sd:b.sd}))})).filter(z=>z.pts.length);
   if(!ser.length) return `<div class="muted small">No band data for ${ELN[el]}.</div>`;
   const anc=E.cellFor(m,'WF',true)||E.cellFor(m,prods[0],true); const dens=anc?anc.el[el].bins:[];
   const allx=ser.flatMap(z=>z.pts.map(q=>q.lo)).concat(dens.map(b=>b.lo));
@@ -1283,7 +1303,7 @@ function bandChart(el){
     g+=`<polyline fill="none" stroke="${c}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" points="${z.pts.map(q=>`${X(q.x)},${Y(q.y)}`).join(' ')}"/>`;
     for(const q of z.pts){ const r=Math.max(4,Math.min(8,2.5+Math.sqrt(q.n)));
       g+=`<circle cx="${X(q.x)}" cy="${Y(q.y)}" r="${r}" fill="${c}" style="stroke:var(--panel)" stroke-width="2"/>`;
-      g+=`<circle class="bhit" cx="${X(q.x)}" cy="${Y(q.y)}" r="12" fill="transparent" data-t="${esc(`<b>${SHORT[z.p]}</b> · Wet ROM ${ELN[el]} ${fb(q.lo,el)}–${fb(q.lo+w,el)}%<br>Δ used by model <b>${fs(q.y,el)}</b><br>raw band mean ${fs(q.mean,el)}${q.sd!=null?` ± ${f(q.sd,el)} (1 sd)`:''}<br>${q.n} shift${q.n===1?'':'s'}${q.n<4?' · thin band, pulled to trend':''}`)}"/>`; }
+      g+=`<circle class="bhit" cx="${X(q.x)}" cy="${Y(q.y)}" r="12" fill="transparent" data-t="${esc(`<b>${SHORT[z.p]}</b> · Wet ROM ${ELN[el]} ${fb(q.lo,el)}–${fb(q.lo+w,el)}%<br>Δ used by model <b>${fs(q.y,el)}</b><br>tonnage-weighted band mean ${fs(q.mean,el)}${q.sd!=null?` ± ${f(q.sd,el)} (1 sd)`:''}<br>${q.n} shift${q.n===1?'':'s'} · ${Math.round(q.t).toLocaleString('en-IN')} t${q.n<4?' · thin band, pulled to trend':''}`)}"/>`; }
     const lp=z.pts[z.pts.length-1]; ends.push({y:Y(lp.y),x:X(lp.x),p:z.p,c});
   }
   // direct end labels, de-collided
@@ -1296,7 +1316,7 @@ function bandTab(){
   let h=`<h4><span>Δ by Wet ROM grade band · all four elements</span><span>${(m.method||'band')==='band'?'active model':'Linear active — showing band fit for reference'}</span></h4>
   <div class="bfilter"><span class="muted small">Products (up to 4):</span>${BSER.filter(p=>E.cellFor(m,p,true)).map(p=>`<button class="bchip ${sel.includes(p)?'on':''}" data-p="${p}"><i style="background:${serCol(p)}"></i>${SHORT[p]}</button>`).join('')}</div>
   <div class="bgrid">${['Al2O3','SiO2','Fe','P'].map(el=>`<div class="bcard"><div class="bct"><b>Δ${ELN[el]}</b><span>product − Wet ROM ${ELN[el]} · bands of Wet ROM ${ELN[el]}, ${fb(bw(el),el)}% wide</span></div>${bandChart(el)}<div class="bax">Wet ROM ${ELN[el]} %</div></div>`).join('')}</div>
-  <p class="small muted">Each point = the delta the model uses in that band (raw band mean pulled toward the overall trend when a band has few shifts). Bigger dot = more shifts. Bars underneath = Wet Fines shifts per band. Dashed vertical line = current shift feed. Dashed horizontal line = no change: above it the product is richer than Wet ROM in that element, below it poorer. The same numbers are in the Model &amp; limits tab as a table. Band widths are set per element in the left panel.</p>
+  <p class="small muted">Each point = the delta the model uses in that band: the tonnage-weighted mean of the band's shifts (each shift weighted by that product's tonnes), pulled toward the overall trend when a band holds little tonnage. Bigger dot = more shifts. Bars underneath = Wet Fines shifts per band. Dashed vertical line = current shift feed. Dashed horizontal line = no change: above it the product is richer than Wet ROM in that element, below it poorer. The same numbers are in the Model &amp; limits tab as a table. Band widths are set per element in the left panel.</p>
   <div id="bandTip" class="btip" hidden></div>`;
   return h;
 }
@@ -1320,7 +1340,7 @@ function modelTab(){
   const los=[...new Set(cols.flatMap(p=>cb(p).map(b=>b.lo)))].sort((a,b)=>a-b);
   const curLo=Math.floor(pr.rom[e]/bw(e)+1e-9)*bw(e);
   let h=`<h4><span>Δ${ELN[e]} by Wet ROM ${ELN[e]} band (${fb(bw(e),e)}% wide)</span><span>${(m.method||'band')==='band'?'active model':'not active — Linear selected'}</span></h4>
-  <p class="small muted" style="margin-top:-4px">Each cell = product ${ELN[e]} − Wet ROM ${ELN[e]} for shifts whose Wet ROM ${ELN[e]} fell in that band (small n = shift count). Bands with few shifts are pulled toward the overall trend (${E.SHRINK} pseudo-shifts), so thin bands don't swing wildly. Change the element with FOCUS. Highlighted row = current feed.</p>
+  <p class="small muted" style="margin-top:-4px">Each cell = product ${ELN[e]} − Wet ROM ${ELN[e]} for shifts whose Wet ROM ${ELN[e]} fell in that band — <b>tonnage-weighted</b> by each shift's product tonnes (small n = shift count). Bands holding little tonnage are pulled toward the overall trend (by ${E.SHRINK} typical shifts' worth of tonnes), so thin bands don't swing wildly. Change the element with FOCUS. Highlighted row = current feed.</p>
   <div style="overflow:auto;max-height:460px"><table class="t"><tr><th>ROM ${ELN[e]} %</th>${cols.map(p=>`<th>${p==='SO'?'Sized Ore':p==='WF'?'Wet Fines':p==='SL'?'Slime':p}</th>`).join('')}</tr>
   ${los.map(lo=>`<tr class="${Math.abs(lo-curLo)<bw(e)*1e-3?'sel':''}"><td>${fb(lo,e)} – ${fb(lo+bw(e),e)}</td>${cols.map(p=>{ const b=cb(p).find(x=>Math.abs(x.lo-lo)<bw(e)*1e-3); return b?`<td class="num" style="color:${(e==='Fe'?b.s>0:b.s<0)?'var(--mint)':'var(--rust)'}">${fs(b.s,e)}<span class="sd">n${b.n}</span></td>`:'<td class="muted">·</td>'; }).join('')}</tr>`).join('')}
   <tr><td class="muted">LOO error ±</td>${cols.map(p=>`<td class="muted">${f(E.cellFor(m,p,true).el[e].rmseB,e)}</td>`).join('')}</tr></table></div>
@@ -1356,7 +1376,7 @@ function btTab(){
   let h=`<div class="selrow"><select id="btP">${E.PKEYS.map(k=>`<option value="${k}" ${k===p?'selected':''}>${P[k].name}</option>`).join('')}</select>
     <select id="btE">${EL.map(k=>`<option value="${k}" ${k===e?'selected':''}>${ELN[k]}</option>`).join('')}</select></div>`;
   if(R.length<2) return h+'<p class="muted">Not enough rows with both actual and prediction for this stream.</p>';
-  const err=sub=>{ if(!sub.length) return null; const d=sub.map(r=>r.act[p][e]-r.pred[p].v[e]); return {mae:d.reduce((a,x)=>a+Math.abs(x),0)/d.length, bias:d.reduce((a,x)=>a+x,0)/d.length, n:d.length}; };
+  const err=sub=>{ sub=sub.filter(r=>E.rowW(r,p)>0); if(!sub.length) return null; const d=sub.map(r=>r.act[p][e]-r.pred[p].v[e]), w=sub.map(r=>E.rowW(r,p)); return {mae:E.wMean(d.map(Math.abs),w), bias:E.wMean(d,w), n:d.length, t:w.reduce((a,v)=>a+v,0)}; };
   const a=err(R.filter(r=>r.inWin)), b=err(R.filter(r=>!r.inWin));
   // chart
   const W=900,H=250,pl=40,pr_=8,pt=10,pb=24;
@@ -1375,9 +1395,9 @@ function btTab(){
   let lastDay=null; R.forEach((r,i)=>{ const dom=r.day%100, mo=Math.floor(r.day/100)%100; if(r.day!==lastDay && (span? dom===1||i===0 : dom%5===0)){ svg+=`<text x="${X(i)}" y="${H-8}" font-size="9" text-anchor="middle" style="fill:var(--muted)">${span?E.MON[mo-1]:dom+' '+E.MON[mo-1]}</text>`; } lastDay=r.day; });
   svg+='</svg>';
   h+=svg+`<div class="small" style="margin:6px 0 10px"><span>━ actual</span> &nbsp; <span style="color:var(--amber)">╌ predicted (from the shift's Wet ROM assay)</span> &nbsp; <span class="muted">shade ±1σ</span></div>
-  <table class="t"><tr><th>Set</th><th>n</th><th>MAE</th><th>Bias (act−pred)</th></tr>
-  ${a?`<tr><td>In window ${(m.method||'band')==='band'?'(leave-one-out)':'(fit)'}</td><td>${a.n}</td><td>${f(a.mae,e)}</td><td>${fs(a.bias,e)}</td></tr>`:''}
-  ${b?`<tr><td><b>Outside window (true test)</b></td><td>${b.n}</td><td><b>${f(b.mae,e)}</b></td><td>${fs(b.bias,e)}</td></tr>`:''}</table>
+  <table class="t"><tr><th>Set</th><th>n</th><th>Tonnes</th><th>MAE (t-wtd)</th><th>Bias (act−pred, t-wtd)</th></tr>
+  ${a?`<tr><td>In window ${(m.method||'band')==='band'?'(leave-one-out)':'(fit)'}</td><td>${a.n}</td><td>${Math.round(a.t).toLocaleString('en-IN')}</td><td>${f(a.mae,e)}</td><td>${fs(a.bias,e)}</td></tr>`:''}
+  ${b?`<tr><td><b>Outside window (true test)</b></td><td>${b.n}</td><td>${Math.round(b.t).toLocaleString('en-IN')}</td><td><b>${f(b.mae,e)}</b></td><td>${fs(b.bias,e)}</td></tr>`:''}</table>
   <p class="small muted">Out-of-window rows were not used for training, so their error is an honest estimate of shift-ahead accuracy. Hover points for details.</p>`;
   return h;
 }
