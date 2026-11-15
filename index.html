@@ -180,6 +180,10 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
 input[type=range]:disabled{opacity:.35}
 .bwrow{margin-top:9px}.bwrow.off{opacity:.45}
 .bwrow label{display:block;font:600 10px var(--mono);color:var(--muted);margin-bottom:4px}
+.plantseg{display:inline-flex;border:1px solid var(--line2);border-radius:6px;overflow:hidden;margin-left:8px}
+.plantseg button{background:transparent;border:0;padding:7px 14px;font:600 14px var(--cond);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);cursor:pointer}
+.plantseg button.on{background:var(--amber);color:var(--onacc)}
+.plantseg button:disabled{opacity:.35;cursor:not-allowed}
 .bfilter{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:12px}
 .bchip{display:inline-flex;align-items:center;gap:6px;background:var(--panel2);border:1px solid var(--line2);border-radius:20px;padding:5px 11px;font:600 13px var(--cond);color:var(--muted);cursor:pointer}
 .bchip i{width:10px;height:10px;border-radius:50%;opacity:.35}
@@ -240,7 +244,8 @@ input[type=range]:disabled{opacity:.35}
 <body>
 <div class="top">
   <img class="brandimg" src="icon.svg" alt="">
-  <div class="ttl"><small>NOAMUNDI · NRD · WET PLANT</small><b>Quality Value Chain</b></div>
+  <div class="ttl"><small id="plantEyebrow">NOAMUNDI · NRD · WET PLANT</small><b>Quality Value Chain</b></div>
+  <div class="plantseg" id="plantSeg"><button data-v="wet" class="on">Wet Plant</button><button data-v="iopp">IOPP</button><button data-v="ndcmp" disabled title="Coming next">NDCMP</button><button data-v="cs" disabled title="Coming next">C&amp;S</button></div>
   <div class="sp"></div>
   <span class="netdot" id="netDot"><i></i><span>online</span></span>
   <span class="filechip" id="fileChip">no OPR loaded</span>
@@ -282,22 +287,50 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   'use strict';
   const EL = ['Fe', 'SiO2', 'Al2O3', 'P'];
 
-  const PRODUCTS = {
-    SO:  { name: 'Sized Ore',          sub: 'CLO · W-7 belt · −40+10 mm', sheet: /^clo\b/i,                 block: 0 },
-    CF:  { name: 'Classifier Fines',   sub: 'W-3 belt · −10 mm +150#',    sheet: /^classifier\s*fines/i,    block: 0 },
-    JF:  { name: 'Jig Feed',           sub: 'FC-11 · from classifier',    sheet: /^jig\s*fines/i,           block: 0 },
-    JC:  { name: 'Jig Concentrate',    sub: 'FC-12 · upgraded fines',     sheet: /^jig\s*fines/i,           block: 1 },
-    JR:  { name: 'Jig Reject',         sub: 'Reject · to loss',           sheet: /^jig\s*fines/i,           block: 2 },
-    HCF: { name: 'Hydrocyclone Feed',  sub: 'Classifier overflow slurry', sheet: /^hydro\s*-?\s*cyclone$/i, block: 1 },
-    HCU: { name: 'HC Underflow',       sub: 'Cyclone U/F',                sheet: /^hydro\s*-?\s*cyclone$/i, block: 3 },
-    HCO: { name: 'HC Overflow',        sub: 'Cyclone O/F → thickener',    sheet: /^hydro\s*-?\s*cyclone$/i, block: 2 },
-    HCC: { name: 'HC Concentrate',     sub: 'FC-14 · HF dewatering scr.', sheet: /^hydro\s*-?\s*cyclone$/i, block: 0 },
-    WF:  { name: 'Wet Fines',          sub: 'W-6 belt · CFO + JC + HC',   sheet: /^wet\s*fines/i,           block: 0 },
-    SL:  { name: 'Slime',              sub: 'LRP slime · reject',         sheet: /^lrp\s*slime/i,           block: 0 }
+  // ---------- plant configurations (one engine per plant) ----------
+  const PLANT_CFG = {
+    wet: {
+      id: 'wet', name: 'Wet Plant', romName: 'Wet ROM',
+      PRODUCTS: {
+        SO:  { name: 'Sized Ore',          sub: 'CLO · W-7 belt · −40+10 mm', sheet: /^clo\b/i,                 block: 0 },
+        CF:  { name: 'Classifier Fines',   sub: 'W-3 belt · −10 mm +150#',    sheet: /^classifier\s*fines/i,    block: 0 },
+        JF:  { name: 'Jig Feed',           sub: 'FC-11 · from classifier',    sheet: /^jig\s*fines/i,           block: 0 },
+        JC:  { name: 'Jig Concentrate',    sub: 'FC-12 · upgraded fines',     sheet: /^jig\s*fines/i,           block: 1 },
+        JR:  { name: 'Jig Reject',         sub: 'Reject · to loss',           sheet: /^jig\s*fines/i,           block: 2 },
+        HCF: { name: 'Hydrocyclone Feed',  sub: 'Classifier overflow slurry', sheet: /^hydro\s*-?\s*cyclone$/i, block: 1 },
+        HCU: { name: 'HC Underflow',       sub: 'Cyclone U/F',                sheet: /^hydro\s*-?\s*cyclone$/i, block: 3 },
+        HCO: { name: 'HC Overflow',        sub: 'Cyclone O/F → thickener',    sheet: /^hydro\s*-?\s*cyclone$/i, block: 2 },
+        HCC: { name: 'HC Concentrate',     sub: 'FC-14 · HF dewatering scr.', sheet: /^hydro\s*-?\s*cyclone$/i, block: 0 },
+        WF:  { name: 'Wet Fines',          sub: 'W-6 belt · CFO + JC + HC',   sheet: /^wet\s*fines/i,           block: 0 },
+        SL:  { name: 'Slime',              sub: 'LRP slime · reject',         sheet: /^lrp\s*slime/i,           block: 0 }
+      },
+      MB_P: ['SO', 'CF', 'HCC', 'SL'],         // Wet ROM = Σ these (OPR mass balance)
+      JIG_P: ['JF', 'JC', 'JR'],
+      tKeys: ['SO', 'CF', 'HCC', 'SL', 'JF', 'JC', 'JR', 'WF', 'ROM'],
+      ppPats: { ROM: /total rom processed/i, SO: /^sized ore/i, CF: /^classifier fines/i, WF: /^wet fines/i,
+        SL: /slime loss\s*\(\s*wet/i, JF: /^jig feed/i, JC: /^jig concentrate/i, JR: /^jig reject/i,
+        HCC: /h\.?\s*c\.?\s*rec/i, LRPH: /lrp run hour/i, JIGH: /jig run hour/i },
+      qbRe: /lrp rom/i, jig: true, wf: true
+    },
+    iopp: {
+      id: 'iopp', name: 'IOPP', romName: 'IOPP ROM',
+      PRODUCTS: {
+        IF: { name: 'IOPP Fines', sub: '18TC001 / 18CV001 belt · product', sheet: /^iopp\s*fines\s*\(\s*18\s*(tc|cv)\s*0*1/i, block: 0 },
+        IS: { name: 'IOPP Slime', sub: 'Slime loss · reject',              sheet: /^iopp\s*slime/i,               block: 0 }
+      },
+      MB_P: ['IF', 'IS'],                      // IOPP ROM = Fines (18TC001) + Slime (OPR Quality Balance)
+      JIG_P: [],
+      tKeys: ['IF', 'IS'],
+      ppPats: { IF: /^iopp\s*fines\s*\(\s*18\s*(tc|cv)\s*0*1/i, IS: /slime\s*loss\s*\(\s*iopp/i },
+      qbRe: /iopp rom/i, jig: false, wf: false
+    }
   };
+
+  function makeEngine(CFG) {
+  const PRODUCTS = CFG.PRODUCTS;
   const PKEYS = Object.keys(PRODUCTS);
-  const JIG_P = ['JF', 'JC', 'JR'];
-  const MB_P = ['SO', 'CF', 'HCC', 'SL']; // Wet ROM = Σ these (OPR mass balance)
+  const JIG_P = CFG.JIG_P;
+  const MB_P = CFG.MB_P;
 
   // ---------- helpers ----------
   function num(v) {
@@ -356,11 +389,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     for (let i = 0; i < Math.min(15, aoa.length); i++) if ((aoa[i] || []).some(c => /total rom processed/i.test(txt(c)))) { r = i; break; }
     if (r < 0) return null;
     const hdr = aoa[r];
-    const pats = {
-      ROM: /total rom processed/i, SO: /^sized ore/i, CF: /^classifier fines/i, WF: /^wet fines/i,
-      SL: /slime loss\s*\(\s*wet/i, JF: /^jig feed/i, JC: /^jig concentrate/i, JR: /^jig reject/i,
-      HCC: /h\.?\s*c\.?\s*rec/i, LRPH: /lrp run hour/i, JIGH: /jig run hour/i
-    };
+    const pats = CFG.ppPats;
     const cols = {};
     for (const [k, re] of Object.entries(pats)) { const i = hdr.findIndex(c => re.test(txt(c))); if (i >= 0) cols[k] = i; }
     const out = {};
@@ -381,7 +410,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   // ---------- quality balance (daily ROM predicted + actual) ----------
   function parseQualityBalance(aoa) {
     for (let r = 0; r < Math.min(10, aoa.length); r++) {
-      const c = (aoa[r] || []).findIndex(x => /lrp rom/i.test(txt(x)));
+      const c = (aoa[r] || []).findIndex(x => CFG.qbRe.test(txt(x)));
       if (c < 0) continue;
       const r2 = aoa[r + 1] || [];
       let ca = -1;
@@ -426,7 +455,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     const ppS = findSheet(wb, /^plant\s*production/i);
     const pp = ppS ? parsePlantProduction(ppS.aoa) : null;
     if (!pp) throw new Error('"Plant Production" sheet not found or not recognised — needed for tonnages.');
-    for (const k of ['ROM', 'SO', 'CF', 'SL', 'HCC']) if (pp.cols[k] == null) warn.push(`Plant Production: column group for ${k} not found`);
+    for (const k of CFG.MB_P) if (pp.cols[k] == null) warn.push(`Plant Production: column group for ${k} not found`);
     const qbS = findSheet(wb, /^quality\s*balance/i);
     const qb = qbS ? parseQualityBalance(qbS.aoa) : null;
     if (!qb) warn.push('Quality Balance (LRP ROM predicted/actual) not found — daily predicted-ROM basis unavailable');
@@ -440,18 +469,24 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       if (!T) continue;
       const p = {};
       for (const k of PKEYS) if (prod[k] && prod[k].shifts[key]) p[k] = prod[k].shifts[key];
-      const t = { SO: T.SO, CF: T.CF, HCC: T.HCC, SL: T.SL, JF: T.JF, JC: T.JC, JR: T.JR, WF: T.WF, ROM: T.ROM };
+      const t = {}; for (const k of CFG.tKeys) t[k] = T[k] || 0;
       const tot = MB_P.reduce((a, k) => a + (t[k] || 0), 0);
       if (tot <= 0) continue;
-      const miss = MB_P.filter(k => t[k] > 0 && !p[k]);
+      // A stream with tonnage but no shift assay borrows the day's OPR average (tonnage-weighted over the
+      // analysed shifts) — exactly what the OPR's own daily mass balance does. Used for the ROM only;
+      // the borrowed value is never treated as a measured product result.
+      const q = {}, imputed = [];
+      for (const k of MB_P) { if (p[k]) q[k] = p[k]; else if (t[k] > 0 && prod[k] && prod[k].daily[d]) { q[k] = prod[k].daily[d]; imputed.push(k); } }
+      const miss = MB_P.filter(k => t[k] > 0 && !q[k]);
       let rom = null;
       if (miss.length) excluded.push({ key, reason: 'no analysis: ' + miss.map(k => PRODUCTS[k].name).join(', ') });
       else if (minShiftT > 0 && tot < minShiftT) excluded.push({ key, reason: `low throughput (${Math.round(tot)} t)` });
       else {
         rom = { t: tot };
-        for (const e of EL) rom[e] = MB_P.reduce((a, k) => a + (t[k] > 0 ? t[k] * p[k][e] : 0), 0) / tot;
+        for (const e of EL) rom[e] = MB_P.reduce((a, k) => a + (t[k] > 0 ? t[k] * q[k][e] : 0), 0) / tot;
+        if (imputed.length) rom.imputed = imputed;
       }
-      shifts.push({ key, day: d, shift: s, label: `D${d}-${s}`, rom, p, t, jig: (T.JF || 0) > 0 || (T.JC || 0) > 0 });
+      shifts.push({ key, day: d, shift: s, label: `D${d}-${s}`, rom, p, t, jig: CFG.jig ? ((T.JF || 0) > 0 || (T.JC || 0) > 0) : false });
     }
 
     // days
@@ -460,7 +495,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       const sh = shifts.filter(x => x.day === d);
       if (!sh.length) continue;
       const t = {};
-      for (const k of ['SO', 'CF', 'HCC', 'SL', 'JF', 'JC', 'JR', 'WF', 'ROM']) t[k] = sh.reduce((a, x) => a + (x.t[k] || 0), 0);
+      for (const k of CFG.tKeys) t[k] = sh.reduce((a, x) => a + (x.t[k] || 0), 0);
       const p = {};
       for (const k of PKEYS) if (prod[k] && prod[k].daily[d]) p[k] = prod[k].daily[d];
       let rom = null, romPred = null;
@@ -474,7 +509,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
         }
       }
       if (q && q.pred.t > 0 && q.pred.Fe > 1) romPred = q.pred;
-      days.push({ key: String(d), day: d, shift: '', label: `Day ${d}`, rom, romPred, p, t, jig: t.JF > 0 || t.JC > 0 });
+      days.push({ key: String(d), day: d, shift: '', label: `Day ${d}`, rom, romPred, p, t, jig: CFG.jig ? (t.JF > 0 || t.JC > 0) : false });
     }
 
     // self-check: shift MB vs OPR daily actual
@@ -487,10 +522,12 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
         const T = sh.reduce((a, x) => a + x.rom.t, 0);
         diffs.push(Math.abs(sh.reduce((a, x) => a + x.rom.t * x.rom.Al2O3, 0) / T - q.act.Al2O3));
       }
-      if (diffs.length) info.push(`Shift mass-balance ROM reproduces OPR daily Wet ROM Al₂O₃ within ${mean(diffs).toFixed(3)}% on average (${diffs.length} full days).`);
+      if (diffs.length) info.push(`Shift mass-balance ROM reproduces OPR daily ${CFG.romName} Al₂O₃ within ${mean(diffs).toFixed(3)}% on average (${diffs.length} full days).`);
     }
+    const nImp = shifts.filter(s => s.rom && s.rom.imputed).length;
+    if (nImp) info.push(`${nImp} shift(s) had a stream with tonnage but no shift assay (e.g. ${[...new Set(shifts.filter(s => s.rom && s.rom.imputed).flatMap(s => s.rom.imputed))].map(k => PRODUCTS[k].name).join(', ')}); the day's OPR average was used for that stream in the ROM mass balance only.`);
     const nOK = shifts.filter(s => s.rom).length;
-    info.push(`${nOK} shifts with valid Wet ROM mass balance; ${excluded.length} excluded.`);
+    info.push(`${nOK} shifts with valid ${CFG.romName} mass balance; ${excluded.length} excluded.`);
     const jigDays = days.filter(d => d.jig).map(d => d.day);
     if (jigDays.length) info.push(`Jig operated on ${jigDays.length} day(s): ${jigDays[0]}–${jigDays[jigDays.length - 1]}.`);
     return { fileName, month: monthLabel(fileName), shifts, days, excluded, warn, info, parsedAt: new Date().toISOString() };
@@ -578,7 +615,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     return { a: yb - b * xb, b, xb, yb, rmse: rm, n: xs.length };
   }
   // tonnes behind a row for a given stream (product tonnage; streams with no own tonnage use Wet ROM tonnes)
-  const TKEY = { SO: 'SO', CF: 'CF', HCC: 'HCC', SL: 'SL', WF: 'WF', JF: 'JF', JC: 'JC', JR: 'JR' };
+  const TKEY = {}; for (const k of CFG.tKeys) if (k !== 'ROM') TKEY[k] = k;
   function romTons(r) { return (r.rom && r.rom.t) || MB_P.reduce((a, k) => a + ((r.t && r.t[k]) || 0), 0); }
   function rowW(r, p) { const k = TKEY[p]; if (p && k && r.t && r.t[k] != null) return Math.max(0, r.t[k]); return Math.max(0, romTons(r)); }
   function wMean(vals, ws) { const W = ws.reduce((a, v) => a + v, 0); return W > 0 ? vals.reduce((a, v, i) => a + ws[i] * v, 0) / W : mean(vals); }
@@ -606,7 +643,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     const cells = {};
     const groups = [];
     for (const k of PKEYS) {
-      if (k === 'WF') { groups.push({ id: 'WF_on', p: 'WF', cond: r => r.jig }); groups.push({ id: 'WF_off', p: 'WF', cond: r => !r.jig }); }
+      if (CFG.wf && k === 'WF') { groups.push({ id: 'WF_on', p: 'WF', cond: r => r.jig }); groups.push({ id: 'WF_off', p: 'WF', cond: r => !r.jig }); }
       else if (JIG_P.includes(k)) groups.push({ id: k, p: k, cond: r => r.jig });
       else groups.push({ id: k, p: k, cond: () => true });
     }
@@ -702,7 +739,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       out.p[p] = { v, sd, dl, cell: c, band };
     }
     // Wet Fines fallback = blend of components when no direct model
-    if (!out.p.WF) {
+    if (CFG.wf && !out.p.WF) {
       const parts = jig ? [['CF', model.yields.CF * (1 - jf)], ['JC', model.yields.CF * jf * model.yields.JC_of_JF], ['HCC', model.yields.HCC]]
                         : [['CF', model.yields.CF], ['HCC', model.yields.HCC]];
       const ok = parts.filter(([k, w]) => out.p[k] && w > 0);
@@ -743,9 +780,11 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     if (input.t > 0) {
       const t = {};
       for (const k of MB_P) t[k] = input.t * Y[k];
-      t.JF = t.CF * jf; t.JC = t.JF * Y.JC_of_JF; t.JR = t.JF - t.JC;
-      if (!jig) { delete t.JF; delete t.JC; delete t.JR; }
-      t.WF = t.CF - (t.JR || 0) + t.HCC;
+      if (CFG.wf) {
+        t.JF = t.CF * jf; t.JC = t.JF * Y.JC_of_JF; t.JR = t.JF - t.JC;
+        if (!jig) { delete t.JF; delete t.JC; delete t.JR; }
+        t.WF = t.CF - (t.JR || 0) + t.HCC;
+      }
       out.t = t;
     }
     return out;
@@ -820,13 +859,19 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     return out;
   }
 
-  const api = { rowW, romTons, wMean, SHRINK, DEF_BANDS, BLIM, MON, ymFromName, fmtOrd, mergeDatasets, solveLimitNum, cellDelta, bandOf, EL, PRODUCTS, PKEYS, MB_P, parseWorkbook, train, predict, solveLimit, backtest, cellFor };
+  return { CFG, plant: CFG.id, rowW, romTons, wMean, SHRINK, DEF_BANDS, BLIM, MON, ymFromName, fmtOrd, mergeDatasets, solveLimitNum, cellDelta, bandOf, EL, PRODUCTS, PKEYS, MB_P, parseWorkbook, train, predict, solveLimit, backtest, cellFor };
+  } // end makeEngine
+
+  const api = makeEngine(PLANT_CFG.wet);           // default export = Wet Plant (back-compatible)
+  api.plants = { wet: api, iopp: makeEngine(PLANT_CFG.iopp) };
+  api.PLANT_CFG = PLANT_CFG;
   if (typeof module !== 'undefined' && module.exports) module.exports = api; else global.VCEngine = api;
 })(typeof window !== 'undefined' ? window : globalThis);
 </script>
 <script>(function(){
 'use strict';
-const E = window.VCEngine, EL = E.EL, P = E.PRODUCTS;
+const V = window.VCEngine;
+let E = V.plants.wet; const EL = E.EL; let P = E.PRODUCTS;
 const LS = 'wpvc.v1';
 const ELN = {Fe:'Fe',SiO2:'SiO₂',Al2O3:'Al₂O₃',P:'P'};
 const DP = {Fe:2,SiO2:2,Al2O3:2,P:3};
@@ -835,39 +880,81 @@ const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':
 const f = (v,e) => v==null||!isFinite(v) ? '—' : (+v).toFixed(DP[e]??2);
 const fs = (v,e) => (v>0?'+':'')+f(v,e);
 
-const S = { ds:null, model:null, pred:null, sel:'WF', tab:'ledger',
+const S = { plant:'wet', inputs:{}, selBy:{}, bandSelBy:{}, ds:null, model:null, pred:null, sel:'WF', tab:'ledger',
   set:{ basis:'shift', nDays:9999, endDay:null, focus:'Al2O3', method:'band', bands:{Fe:0.5,SiO2:0.2,Al2O3:0.2,P:0.002} },
   input:{ Al2O3:null, Fe:'', SiO2:'', P:'', t:'', jf:33 }, theme:'amber',
   limits:{ 'WF|Al2O3':{max:4.5} }, bt:{p:'WF',e:'Al2O3'}, batch:'' };
 
 function bandsSet(){ const b=Object.assign({},E.DEF_BANDS,S.set.bands||{}); if(S.set.band&&!S.set.bands) b.Al2O3=+S.set.band; return b; }
-const ORDER = ['ROM','SO','CF','JF','JC','HCF','HCU','HCO','HCC','WF','SL','JR'];
-const SHORTN = {ROM:'Wet ROM feed',SO:'Sized Ore (CLO)',CF:'Classifier Fines',JF:'Jig Feed',JC:'Jig Concentrate',JR:'Jig Reject',HCF:'Cyclone Feed',HCU:'Cyclone Underflow',HCO:'Cyclone Overflow',HCC:'HC Concentrate',WF:'Wet Fines (W-6)',SL:'LRP Slime'};
+const PUI = {
+  wet: { id:'wet', label:'Wet Plant', eyebrow:'WET PLANT', rom:'Wet ROM', jig:true,
+    ORDER:['ROM','SO','CF','JF','JC','HCF','HCU','HCO','HCC','WF','SL','JR'],
+    SHORTN:{ROM:'${PU.rom} feed',SO:'Sized Ore (CLO)',CF:'Classifier Fines',JF:'Jig Feed',JC:'Jig Concentrate',JR:'Jig Reject',HCF:'Cyclone Feed',HCU:'Cyclone Underflow',HCO:'Cyclone Overflow',HCC:'HC Concentrate',WF:'Wet Fines (W-6)',SL:'LRP Slime'},
+    heads:[['SO','SIZED ORE'],['WF','WET FINES'],['SL','SLIME']], sensAl:['SO','WF','SL'], sensFe:['SO','WF'], bandIns:['WF','SO','CF','SL'],
+    drift:['SO','CF','WF','SL','HCC'], BSER:['SO','WF','SL','CF','HCC','JC','JR'], bandDefault:['WF','SO','SL'], densP:'WF',
+    modelCols:['SO','CF','JC','HCC','WF','SL','JR'], limitP:['SO','WF','CF','JC','HCC'], batchCols:['SO','CF','JC','HCC','WF','SL'], dataCols:['SO','CF','JC','HCC','WF','SL'],
+    defSel:'WF', reject:'SL', noTons:['HCF','HCU','HCO'], short:{SO:'Sized Ore',WF:'Wet Fines',SL:'Slime',CF:'Class. Fines',HCC:'HC Conc',JC:'Jig Conc',JR:'Jig Reject'},
+    colHeads:['FEED','CLASSIFY','SEPARATE','CONCENTRATE','PRODUCTS & WASTE'],
+    ledgerNote:'Mass split from trained Plant Production yields. Wet ROM = SO + CF + HC Conc + Slime (OPR mass balance). Wet Fines = CF (not jigged) + Jig Conc + HC Conc. Jig Reject and LRP Slime are separate waste streams.' },
+  iopp: { id:'iopp', label:'IOPP', eyebrow:'IOPP', rom:'IOPP ROM', jig:false,
+    ORDER:['ROM','IF','IS'],
+    SHORTN:{ROM:'IOPP ROM feed',IF:'IOPP Fines (18TC001)',IS:'IOPP Slime'},
+    heads:[['IF','IOPP FINES'],['IS','IOPP SLIME']], sensAl:['IF','IS'], sensFe:['IF','IS'], bandIns:['IF','IS'],
+    drift:['IF','IS'], BSER:['IF','IS'], bandDefault:['IF','IS'], densP:'IF',
+    modelCols:['IF','IS'], limitP:['IF'], batchCols:['IF','IS'], dataCols:['IF','IS'],
+    defSel:'IF', reject:'IS', noTons:[], short:{IF:'IOPP Fines',IS:'IOPP Slime'}, slot:{IF:0,IS:2},
+    colHeads:['FEED','PRODUCTS'],
+    ledgerNote:'Mass split from trained Plant Production yields. IOPP ROM = IOPP Fines (18TC001) + IOPP Slime — the OPR Quality Balance mass balance. Where a shift has slime tonnage but no slime assay (usually shift C), the day\'s OPR slime average is used for that shift\'s ROM only.' }
+};
+let PU = PUI.wet;
+let ORDER = PU.ORDER, SHORTN = PU.SHORTN;
 
 // ---------- persistence ----------
-function save(){ try{ localStorage.setItem(LS, JSON.stringify({set:S.set,input:S.input,limits:S.limits,sel:S.sel})); }catch(e){} }
+function save(){ S.inputs[S.plant]=S.input; S.selBy[S.plant]=S.sel; try{ localStorage.setItem(LS, JSON.stringify({set:S.set,plant:S.plant,inputs:S.inputs,selBy:S.selBy,bandSelBy:S.bandSelBy,limits:S.limits})); }catch(e){} }
 // ---------- OPR library (each month stored separately, merged for training) ----------
 const LIBK='wpvc.lib', OPRK='wpvc.opr.';
 function libGet(){ try{ return JSON.parse(localStorage.getItem(LIBK)||'[]'); }catch(e){ return []; } }
 function libPut(lib){ localStorage.setItem(LIBK, JSON.stringify(lib)); }
-function libAdd(ym,name,ds){
-  try{ localStorage.setItem(OPRK+ym, JSON.stringify(ds)); }
+const okey=(pl,ym)=>pl==='wet'?OPRK+ym:OPRK+pl+'.'+ym;      // wet keeps the original key (back-compatible)
+function libAdd(ym,name,byPlant){
+  try{ for(const pl in byPlant) if(byPlant[pl]) localStorage.setItem(okey(pl,ym), JSON.stringify(byPlant[pl])); }
   catch(e){ toast('Browser storage is full — remove some older OPRs from the library first.',6000); return false; }
-  const lib=libGet().filter(x=>x.ym!==ym); lib.push({ym,name,n:ds.shifts.filter(r=>r.rom).length,addedAt:new Date().toISOString()}); lib.sort((a,b)=>a.ym.localeCompare(b.ym)); libPut(lib); return true;
+  const n={}; for(const pl in byPlant) if(byPlant[pl]) n[pl]=byPlant[pl].shifts.filter(r=>r.rom).length;
+  const old=libGet().find(x=>x.ym===ym)||{};
+  const lib=libGet().filter(x=>x.ym!==ym); lib.push({ym,name,n:n.wet!=null?n.wet:old.n,np:Object.assign({},old.np||{},n),addedAt:new Date().toISOString()}); lib.sort((a,b)=>a.ym.localeCompare(b.ym)); libPut(lib); return true;
 }
-function libRemove(ym){ localStorage.removeItem(OPRK+ym); libPut(libGet().filter(x=>x.ym!==ym)); }
-function libMerged(){
-  const items=[]; for(const it of libGet()){ try{ const ds=JSON.parse(localStorage.getItem(OPRK+it.ym)||'null'); if(ds) items.push({ym:it.ym,name:it.name,ds}); }catch(e){} }
-  return items.length?E.mergeDatasets(items):null;
+function libCount(x,pl){ if(x.np&&x.np[pl]!=null) return x.np[pl]; if(pl==='wet') return x.n; return localStorage.getItem(okey(pl,x.ym))?'?':null; }
+function libRemove(ym){ Object.keys(PUI).forEach(pl=>localStorage.removeItem(okey(pl,ym))); libPut(libGet().filter(x=>x.ym!==ym)); }
+function libMerged(pl){
+  pl=pl||S.plant; const items=[]; for(const it of libGet()){ try{ const ds=JSON.parse(localStorage.getItem(okey(pl,it.ym))||'null'); if(ds) items.push({ym:it.ym,name:it.name,ds}); }catch(e){} }
+  return items.length?V.plants[pl].mergeDatasets(items):null;
 }
 function load(){
   let o=null; try{ o=JSON.parse(localStorage.getItem(LS)||'null'); }catch(e){}
   if(o){ // migrate v1 single-OPR storage into the library
-    if(o.ds&&!libGet().length){ const ym=E.ymFromName(o.ds.fileName)||'2026-09'; libAdd(ym,o.ds.fileName||'OPR',o.ds); }
-    Object.assign(S.set,o.set||{}); Object.assign(S.input,o.input||{}); if(o.limits) S.limits=o.limits; if(o.sel) S.sel=o.sel;
+    if(o.ds&&!libGet().length){ const ym=E.ymFromName(o.ds.fileName)||'2026-09'; libAdd(ym,o.ds.fileName||'OPR',{wet:o.ds}); }
+    Object.assign(S.set,o.set||{}); if(o.limits) S.limits=o.limits;
+    if(o.inputs) S.inputs=o.inputs; else if(o.input) S.inputs.wet=o.input;
+    if(o.selBy) S.selBy=o.selBy; else if(o.sel) S.selBy.wet=o.sel;
+    if(o.bandSelBy) S.bandSelBy=o.bandSelBy;
+    if(o.plant&&PUI[o.plant]) S.plant=o.plant;
     if(o.ds){ delete o.ds; try{ localStorage.setItem(LS,JSON.stringify(o)); }catch(e){} }
   }
-  S.ds=libMerged(); return !!S.ds;
+  usePlant(S.plant); S.ds=libMerged(); return !!S.ds;
+}
+function usePlant(pl){
+  S.plant=pl; PU=PUI[pl]; E=V.plants[pl]; P=E.PRODUCTS; ORDER=PU.ORDER; SHORTN=PU.SHORTN;
+  S.input=Object.assign({ Al2O3:null, Fe:'', SiO2:'', P:'', t:'', jf:pl==='wet'?33:0 }, S.inputs[pl]||{}); S.inputs[pl]=S.input;
+  S.sel=S.selBy[pl]||PU.defSel; if(!PU.ORDER.includes(S.sel)) S.sel=PU.defSel;
+  if(!PU.BSER.includes(S.bt.p)) S.bt.p=PU.defSel;
+  const eb=document.getElementById('plantEyebrow'); if(eb) eb.textContent='NOAMUNDI · NRD · '+PU.eyebrow;
+  document.querySelectorAll('#plantSeg button').forEach(b=>b.classList.toggle('on',b.dataset.v===pl));
+}
+function switchPlant(pl){
+  if(pl===S.plant) return; save(); usePlant(pl); S.ds=libMerged(pl); S.set.endDay=null; S.model=null; S.pred=null;
+  if(S.ds) retrain(S.input.Al2O3==null); else { save(); renderAll(); }
+  const miss=libGet().filter(x=>libCount(x,pl)==null).map(x=>E.MON[+x.ym.slice(5)-1]+' '+x.ym.slice(0,4));
+  if(miss.length) toast(`${PU.label}: ${miss.join(', ')} ${miss.length>1?'were':'was'} uploaded before ${PU.label} support — re-upload ${miss.length>1?'them':'it'} to include ${PU.label}.`,7000);
 }
 function toast(msg,ms){ const d=document.createElement('div'); d.className='toast'; d.innerHTML=msg; document.body.appendChild(d); setTimeout(()=>d.remove(),ms||3200); }
 
@@ -879,13 +966,14 @@ async function handleFiles(files){
     try{
       toast(`Reading <b>${esc(file.name)}</b>…`,1500);
       const wb = XLSX.read(await file.arrayBuffer(),{type:'array',cellDates:true});
-      const ds = E.parseWorkbook(wb, file.name);
+      const byPlant={}; for(const pl of Object.keys(PUI)){ try{ byPlant[pl]=V.plants[pl].parseWorkbook(wb, file.name); }catch(err){ console.warn(pl,err); byPlant[pl]=null; } }
+      if(!byPlant.wet&&!byPlant.iopp) throw new Error('no plant data recognised');
       let ym = E.ymFromName(file.name);
       if(!ym){ const ans=prompt(`Which month is "${file.name}"? Enter as YYYY-MM (e.g. 2026-04)`,''); if(!ans||!/^\d{4}-\d{2}$/.test(ans.trim())){ bad.push(file.name+' (month unknown)'); continue; } ym=ans.trim(); }
-      if(libAdd(ym,file.name,ds)) ok.push(`${E.MON[+ym.slice(5)-1]} ${ym.slice(0,4)}`);
+      if(libAdd(ym,file.name,byPlant)) ok.push(`${E.MON[+ym.slice(5)-1]} ${ym.slice(0,4)}`);
     }catch(err){ console.error(err); bad.push(file.name+': '+(err.message||err)); }
   }
-  S.ds=libMerged(); S.set.endDay=null; S.input.Al2O3=null;
+  S.ds=libMerged(S.plant); S.set.endDay=null; S.input.Al2O3=null;
   if(libGet().length>1 && before<=1) S.set.nDays=9999;
   retrain(true);
   if(ok.length) toast(`Added <b>${ok.join(', ')}</b> · library now ${libGet().length} OPR(s)`,4500);
@@ -893,6 +981,7 @@ async function handleFiles(files){
 }
 const handleFile=fl=>handleFiles([fl]);
 $('uploadBtn').onclick = () => $('file').click();
+document.querySelectorAll('#plantSeg button').forEach(b=>b.onclick=()=>{ if(!b.disabled) switchPlant(b.dataset.v); });
 // ---------- colour themes ----------
 const THEMES=[['amber','Amber','#f2b33d','#0f1317'],['blue','Blue','#4c8dff','#0b111c'],['violet','Violet','#a582ff','#100d1a'],['sky','Light blue','#54c6f2','#0b1519'],
   ['emerald','Emerald','#34c38f','#0b1411'],['copper','Copper','#e5814f','#131010'],['grey','Grey','#c3ccd5','#121315'],['white','White','#2563eb','#f3f5f8'],['lavender','Lavender','#7c4dff','#f5f3fb']];
@@ -977,13 +1066,13 @@ function gradeCol(e,v){
 function libraryHTML(){
   const lib=libGet();
   return `<div class="sec"><h5><span>OPR library</span><span>${lib.length} file${lib.length===1?'':'s'}</span></h5>
-    <div class="lib">${lib.map(x=>`<div class="libit"><b>${E.MON[+x.ym.slice(5)-1]} ${x.ym.slice(0,4)}</b><span title="${esc(x.name)}">${x.n} shifts</span><button data-ym="${x.ym}" title="Remove ${esc(x.name)}">✕</button></div>`).join('')||'<div class="modelstate">Empty — upload one or more monthly OPRs.</div>'}</div>
+    <div class="lib">${lib.map(x=>`<div class="libit"><b>${E.MON[+x.ym.slice(5)-1]} ${x.ym.slice(0,4)}</b><span title="${esc(x.name)}">${libCount(x,S.plant)==null?`<em style="color:var(--amber);font-style:normal">re-upload for ${PU.label}</em>`:libCount(x,S.plant)+' shifts'}</span><button data-ym="${x.ym}" title="Remove ${esc(x.name)}">✕</button></div>`).join('')||'<div class="modelstate">Empty — upload one or more monthly OPRs.</div>'}</div>
     <div class="duo"><button class="btn" id="libAdd" style="padding:7px 8px">+ Add OPRs</button><button class="btn sec" id="libClear" style="padding:7px 8px" ${lib.length?'':'disabled'}>Clear all</button></div>
-    <div class="hint">Stored in this browser — reopen the app and the model is ready. Re-uploading a month replaces it.</div></div>`;
+    <div class="hint">Each upload is read for every plant (Wet Plant, IOPP) and stored in this browser. Re-uploading a month replaces it.</div></div>`;
 }
 function bindLibrary(){
   $('libAdd').onclick=()=>$('file').click();
-  $('libClear').onclick=()=>{ if(!confirm('Remove all stored OPRs and the trained model from this browser?')) return; libGet().forEach(x=>localStorage.removeItem(OPRK+x.ym)); libPut([]); S.ds=null; retrain(true); };
+  $('libClear').onclick=()=>{ if(!confirm('Remove all stored OPRs and the trained model from this browser?')) return; libGet().forEach(x=>libRemove(x.ym)); libPut([]); S.ds=null; retrain(true); };
   document.querySelectorAll('.libit button').forEach(b=>b.onclick=()=>{ const ym=b.dataset.ym; if(!confirm(`Remove ${E.MON[+ym.slice(5)-1]} ${ym.slice(0,4)} from the library?`)) return; libRemove(ym); S.ds=libMerged(); S.set.endDay=null; retrain(true); });
 }
 function renderRail(){
@@ -995,7 +1084,7 @@ function renderRail(){
   const head=(p,lbl)=>{ const x=S.pred.p[p], pr_=S.pred; if(!x) return `<div class="hd"><div><small>${lbl}</small><br><b>—</b></div><div class="s">idle</div></div>`;
     const st=statusCls(p,e,x.v[e],x.sd[e]); const L=limitFor(p,e);
     return `<div class="hd ${st}"><div><small>${lbl} ${ELN[e]}</small><br><b>${f(x.v[e],e)}<i>%</i></b></div><div class="s">±${f(x.sd[e],e)}${L!=null?`<br>limit ${f(L,e)}`:''}</div></div>`; };
-  const heads=()=>head('SO','SIZED ORE')+head('WF','WET FINES')+head('SL','SLIME');
+  const heads=()=>PU.heads.map(([k,l])=>head(k,l)).join('');
   r.innerHTML=`
   <div class="sec"><h5><span>Shift feed · ROM Al₂O₃</span><span>%</span></h5>
     <div class="stepper"><button id="stMinus">−</button><input id="inAl" type="number" step="0.01" value="${i.Al2O3??''}"><button id="stPlus">+</button></div>
@@ -1005,7 +1094,7 @@ function renderRail(){
       <div class="f"><label>SiO₂</label><input id="inSiO2" type="number" step="0.01" placeholder="${ph('SiO2')}" value="${i.SiO2??''}"></div>
       <div class="f"><label>P</label><input id="inP" type="number" step="0.001" placeholder="${ph('P')}" value="${i.P??''}"></div>
     </div>
-    <div class="duo">
+${PU.jig?`    <div class="duo">
       <div class="f"><label>ROM tonnes</label><input id="inT" type="number" step="50" placeholder="optional" value="${i.t??''}"></div>
       <div class="f"><label>Jig status</label><div class="switch ${(+i.jf)>0?'on':''}" id="jigSw" title="Click to switch the jig on/off"><span id="jigState">${(+i.jf)>0?'JIG ON':'JIG OFF'}</span><div class="knob"></div></div></div>
     </div>
@@ -1015,6 +1104,7 @@ function renderRail(){
       <div class="jigticks"><span>0 · off</span><span>10</span><span>20</span><span>30</span><span>40</span></div>
       <div class="hint" style="margin-top:4px">${m.yields.jigData?`Trained at ${(m.yields.JF_of_CF*100).toFixed(0)}% · ${(+i.jf)>0?`≈ ${(m.yields.CF*(+i.jf)/100*100).toFixed(1)}% of ROM to jig`:'all classifier fines bypass the jig'}`:'No jig data in this OPR — slider disabled.'}</div>
     </div>
+`:`<div class="duo"><div class="f"><label>ROM tonnes</label><input id="inT" type="number" step="50" placeholder="optional" value="${i.t??''}"></div></div>`}
     <div class="hint">Grey Fe/SiO₂/P are estimated from Al₂O₃. Fill: <button id="qLast">last ${S.set.basis==='shift'?'shift':'day'} ${f(m.romStats.last.X.Al2O3,'Al2O3')}</button> · <button id="qMean">window mean ${f(m.romStats.mean,'Al2O3')}</button>
     ${pr.outOfRange?`<br><span style="color:var(--red)">Outside trained range ${f(m.romStats.min,'Al2O3')}–${f(m.romStats.max,'Al2O3')}% — extrapolating.</span>`:''}</div>
   </div>
@@ -1023,22 +1113,22 @@ function renderRail(){
   <div class="sec"><h5>Predicted products</h5><div class="heads" id="railHeads">${heads()}</div></div>
   <div class="sec"><h5>Training</h5>
     <div class="pills" id="basisP">
-      <button data-v="shift" class="${S.set.basis==='shift'?'on':''}" title="Shift-wise Wet ROM by mass balance">Shift</button>
-      <button data-v="day" class="${S.set.basis==='day'?'on':''}" title="Daily OPR Wet ROM">Daily</button>
+      <button data-v="shift" class="${S.set.basis==='shift'?'on':''}" title="Shift-wise ${PU.rom} by mass balance">Shift</button>
+      <button data-v="day" class="${S.set.basis==='day'?'on':''}" title="Daily OPR ${PU.rom}">Daily</button>
       <button data-v="dayPred" class="${S.set.basis==='dayPred'?'on':''}" ${hasPred?'':'disabled'} title="Mine-predicted ROM → actual products">Pred ROM</button></div>
     <div class="duo">
       <div class="f"><label>Window</label><select id="nDays">${[[10,'last 10 days'],[30,'last 30 days'],[60,'last 60 days'],[90,'last 90 days'],[180,'last 180 days'],[9999,'all uploaded']].map(([n,l])=>`<option value="${n}" ${+S.set.nDays===n?'selected':''}>${l}</option>`).join('')}</select></div>
       <div class="f"><label>Ending</label><select id="endDay">${days.slice().reverse().map(d=>`<option value="${d}" ${d===m.endDay?'selected':''}>${E.fmtOrd(d,true)}</option>`).join('')}</select></div>
     </div>
     <div class="f" style="margin-top:8px"><label>Δ model</label></div>
-    <div class="pills" id="methP"><button data-v="band" class="${(S.set.method||'band')==='band'?'on':''}" title="Each element's delta looked up in bands of Wet ROM grade of that element">ROM grade bands</button><button data-v="linear" class="${S.set.method==='linear'?'on':''}" title="Single delta, optionally sloped with ROM grade">Linear</button></div>
-    <div class="bwrow ${(S.set.method||'band')==='band'?'':'off'}"><label>Band width · Wet ROM grade %</label>
-      ${EL.map(el=>{ const c=E.cellFor(m,'WF',true); const B=c?c.el[el].bins:[]; const med=B.length?B.map(b=>b.n).sort((a,b)=>a-b)[Math.floor(B.length/2)]:0;
+    <div class="pills" id="methP"><button data-v="band" class="${(S.set.method||'band')==='band'?'on':''}" title="Each element's delta looked up in bands of ${PU.rom} grade of that element">ROM grade bands</button><button data-v="linear" class="${S.set.method==='linear'?'on':''}" title="Single delta, optionally sloped with ROM grade">Linear</button></div>
+    <div class="bwrow ${(S.set.method||'band')==='band'?'':'off'}"><label>Band width · ${PU.rom} grade %</label>
+      ${EL.map(el=>{ const c=E.cellFor(m,PU.densP,true); const B=c?c.el[el].bins:[]; const med=B.length?B.map(b=>b.n).sort((a,b)=>a-b)[Math.floor(B.length/2)]:0;
         return `<div class="bwel"><span class="bwn">${ELN[el]}</span><div class="pills">${BPRE[el].map(v=>`<button data-e="${el}" data-v="${v}" class="${Math.abs(bw(el)-v)<1e-9?'on':''}">${v}</button>`).join('')}</div>
         <input class="bwIn" data-e="${el}" type="number" min="${E.BLIM[el][0]}" max="${E.BLIM[el][1]}" step="${el==='P'?0.0005:0.05}" value="${fb(bw(el),el)}" title="Any width ${E.BLIM[el][0]}–${E.BLIM[el][1]}">
         <span class="bwh">${B.length}b·${med}</span></div>`; }).join('')}
-      <div class="hint" style="margin-top:2px">b · n = Wet Fines bands · median shifts per band. Each element's Δ is looked up in bands of Wet ROM grade of that same element.</div></div>
-    <div class="modelstate" style="margin-top:10px"><b>● trained</b> on ${E.fmtOrd(m.winDays[0],true)} – ${E.fmtOrd(m.winDays[m.winDays.length-1],true)} · ${m.winDays.length} operating days<br>${m.nRows} ${S.set.basis==='shift'?'shifts':'days'} · jig ran in ${(m.yields.jigShare*100).toFixed(0)}% of them</div>
+      <div class="hint" style="margin-top:2px">b · n = ${P[PU.densP].name} bands · median shifts per band. Each element's Δ is looked up in bands of ${PU.rom} grade of that same element.</div></div>
+    <div class="modelstate" style="margin-top:10px"><b>● trained</b> on ${E.fmtOrd(m.winDays[0],true)} – ${E.fmtOrd(m.winDays[m.winDays.length-1],true)} · ${m.winDays.length} operating days<br>${m.nRows} ${S.set.basis==='shift'?'shifts':'days'} · ${PU.jig?`jig ran in ${(m.yields.jigShare*100).toFixed(0)}% of them`:PU.label}</div>
   </div>${libraryHTML()}`;
   const apply=(full)=>{ const g=id=>$(id).value.trim(); const al=parseFloat(g('inAl')); if(!isFinite(al)||al<=0) return;
     Object.assign(S.input,{Al2O3:al,Fe:g('inFe'),SiO2:g('inSiO2'),P:g('inP'),t:g('inT')}); runPredict(); save();
@@ -1046,12 +1136,12 @@ function renderRail(){
   let tmr; r.querySelectorAll('input').forEach(inp=>{ inp.oninput=()=>{ clearTimeout(tmr); tmr=setTimeout(()=>apply(false),450); }; inp.onchange=()=>{ clearTimeout(tmr); apply(true); }; });
   const step=d=>{ $('inAl').value=(Math.max(0.1,(parseFloat($('inAl').value)||0)+d)).toFixed(2); apply(true); };
   $('stMinus').onclick=()=>step(-0.05); $('stPlus').onclick=()=>step(0.05);
-  let jt; $('jfSl').oninput=ev=>{ const v=+ev.target.value; S.input.jf=v; $('jfVal').textContent=v+'%'; $('jigState').textContent=v>0?'JIG ON':'JIG OFF'; ev.target.style.setProperty('--p',(v/40*100)+'%'); clearTimeout(jt); jt=setTimeout(()=>apply(false),120); };
+  if(PU.jig){ let jt; $('jfSl').oninput=ev=>{ const v=+ev.target.value; S.input.jf=v; $('jfVal').textContent=v+'%'; $('jigState').textContent=v>0?'JIG ON':'JIG OFF'; ev.target.style.setProperty('--p',(v/40*100)+'%'); clearTimeout(jt); jt=setTimeout(()=>apply(false),120); };
   $('jfSl').onchange=()=>{ if(+S.input.jf>0) S.input.jfLast=+S.input.jf; apply(true); };
   $('jigSw').onclick=()=>{ if(!m.yields.jigData){ toast('No jig data in the loaded OPRs — jig cannot be switched on.'); return; }
     if(+S.input.jf>0){ S.input.jfLast=+S.input.jf; S.input.jf=0; }
     else S.input.jf = +S.input.jfLast>0 ? +S.input.jfLast : Math.max(1,Math.round(Math.min(40,m.yields.JF_of_CF*100)));
-    apply(true); };
+    apply(true); }; }
   $('qLast').onclick=()=>{ const l=m.romStats.last; $('inAl').value=l.X.Al2O3.toFixed(2); S.input.jf=defaultJf(l); ['inFe','inSiO2','inP'].forEach(k=>$(k).value=''); apply(true); };
   $('qMean').onclick=()=>{ $('inAl').value=m.romStats.mean.toFixed(2); ['inFe','inSiO2','inP'].forEach(k=>$(k).value=''); apply(true); };
   $('focusP').querySelectorAll('button').forEach(b=>b.onclick=()=>{ S.set.focus=b.dataset.v; save(); renderAll(); });
@@ -1070,6 +1160,8 @@ function renderRail(){
 
 // ---------- mass-proportional grade flow (sankey) ----------
 function flowGraph(){
+  if(S.plant==='iopp'){ const Y=S.model.yields;
+    return {mass:{ROM:1,IF:Y.IF,IS:Y.IS}, links:[['ROM','IF',Y.IF],['ROM','IS',Y.IS]], cols:[['ROM'],['IF','IS']]}; }
   const Y=S.model.yields, jig=S.pred.jig;
   const jf = jig ? Y.CF*S.pred.jf : 0, jc=jf*Y.JC_of_JF, jr=jf-jc;
   const mass={ROM:1, SO:Y.SO, CF:Y.CF, HCF:Y.HCC+Y.SL, JF:jf, JC:jc, JR:jr, HCU:Y.HCC, HCO:Y.SL, HCC:Y.HCC, WF:Y.CF-jr+Y.HCC, SL:Y.SL};
@@ -1083,7 +1175,7 @@ function flowGraph(){
 function renderFlow(){
   const e=S.set.focus, g=flowGraph();
   const W=1100, NW=14, K=330, MINH=8, SLOT=62, GAP=16, top=34;
-  const X=[20,250,480,710,880];
+  const NC=g.cols.length, X=NC<=2?[150,720]:g.cols.map((_,i)=>20+i*(860/(NC-1)));
   const pos={};
   let maxY=0;
   g.cols.forEach((col,ci)=>{
@@ -1121,18 +1213,18 @@ function renderFlow(){
     nodes+=`<g class="nd" data-p="${p}"><rect x="${n.x}" y="${n.y}" width="${NW}" height="${n.h}" rx="2" style="fill:${idle?'var(--idle)':col}" ${idle?'stroke="var(--idles)" stroke-dasharray="3 3"':''} ${sel?'stroke="#fff" stroke-width="2"':''}/>`;
     const lx=n.x+NW+8, cy=n.y+n.h/2;
     const ms = p==='ROM'?'100% mass': (g.mass[p]>0?(g.mass[p]*100).toFixed(1)+'% mass':'idle');
-    const tn = S.pred.t&&S.pred.t[p]!=null&&!['HCF','HCU','HCO'].includes(p) ? ' · '+Math.round(S.pred.t[p]).toLocaleString('en-IN')+' t' : (p==='ROM'&&S.input.t?' · '+Math.round(+S.input.t).toLocaleString('en-IN')+' t':'');
+    const tn = S.pred.t&&S.pred.t[p]!=null&&!PU.noTons.includes(p) ? ' · '+Math.round(S.pred.t[p]).toLocaleString('en-IN')+' t' : (p==='ROM'&&S.input.t?' · '+Math.round(+S.input.t).toLocaleString('en-IN')+' t':'');
     const dl = p!=='ROM'&&v!=null ? v-S.pred.rom[e] : null;
     const bad = e==='Fe' ? dl<0 : dl>0;
     nodes+=`<text class="nl" x="${lx}" y="${cy-12}" font-family="Barlow Semi Condensed,Bahnschrift,Arial Narrow,sans-serif" font-size="12.5" font-weight="600" style="fill:${sel?'var(--amber)':'var(--svgtxt)'}" letter-spacing=".6">${SHORTN[p].toUpperCase()}</text>`;
     nodes+=`<text class="nl" x="${lx}" y="${cy+9}" font-family="Barlow Semi Condensed,Bahnschrift,Arial Narrow,sans-serif" font-size="21" font-weight="600" style="fill:${idle?'var(--svgdim)':'var(--svgval)'}">${idle?'—':f(v,e)}<tspan font-size="11" style="fill:var(--muted)">%</tspan>${dl!=null?`<tspan dx="7" font-size="12" font-family="JetBrains Mono,Consolas,monospace" style="fill:${Math.abs(dl)<0.005?'var(--muted)':(bad?'var(--rust)':'var(--mint)')}">${dl>0?'+':''}${f(dl,e)}</tspan>`:''}</text>`;
     nodes+=`<text class="nl" x="${lx}" y="${cy+24}" font-family="JetBrains Mono,Consolas,monospace" font-size="10" style="fill:var(--svgmut)">${ms}${tn}</text></g>`;
   }
-  const heads=['FEED','CLASSIFY','SEPARATE','CONCENTRATE','PRODUCTS & WASTE'].map((h,i)=>`<text x="${X[i]}" y="16" font-family="JetBrains Mono,Consolas,monospace" font-size="10" letter-spacing="2.5" style="fill:var(--svgdim)">${h}</text>`).join('');
+  const heads=PU.colHeads.map((h,i)=>`<text x="${X[i]}" y="16" font-family="JetBrains Mono,Consolas,monospace" font-size="10" letter-spacing="2.5" style="fill:var(--svgdim)">${h}</text>`).join('');
   return `<svg viewBox="0 0 ${W} ${H}" id="flowSvg">${heads}${paths}${nodes}</svg>`;
 }
 function inspector(){
-  const p=S.sel||'WF', e=S.set.focus, pr=S.pred, m=S.model;
+  const p=S.sel||PU.defSel, e=S.set.focus, pr=S.pred, m=S.model;
   const x = p==='ROM'?null:pr.p[p];
   const cell = x&&x.cell;
   const desc = p==='ROM' ? 'Shift input. Fe/SiO₂/P '+(['Fe','SiO2','P'].every(k=>pr.romSrc[k]==='input')?'entered':'estimated from Al₂O₃ where blank')+'.' :
@@ -1177,7 +1269,7 @@ function ledger(){
       <td class="num" style="color:${dl==null||Math.abs(dl)<0.005?'var(--muted)':(bad?'var(--rust)':'var(--mint)')}">${dl==null?'':fs(dl,e)}</td>
       <td>${mini}</td><td class="small muted">${p==='ROM'?'input':(cell?bandTxt(x,e,cell):(x&&x.blend?'blend':'idle'))}</td></tr>`;
   }
-  h+=`</table></div><p class="small muted" style="margin-top:10px">Mass split from trained Plant Production yields. Wet ROM = SO + CF + HC Conc + Slime (OPR mass balance). Wet Fines = CF (not jigged) + Jig Conc + HC Conc. Jig Reject and LRP Slime are separate waste streams.</p>`;
+  h+=`</table></div><p class="small muted" style="margin-top:10px">${PU.ledgerNote}</p>`;
   return h;
 }
 
@@ -1203,33 +1295,34 @@ function insights(){
     const romTxt = !sol ? '' : sol.already ? `already exceeds it across the whole trained range` : sol.never ? `stays below it up to ROM Al₂O₃ ${f(sol.hi,'Al2O3')}%` : `reaches <b>${f(sol.rom,'Al2O3')}%</b>`;
     card(`Threshold · ${P[p].name} ${ELN[e]} vs ${f(L,e)}%`, gap>0?'bad':(gap>-pr.p[p].sd[e]?'warn':'good'),
       `At the current feed, ${P[p].name} ${ELN[e]} is predicted at <b>${f(v,e)}%</b> — ${f(Math.abs(gap),e)} ${gap>0?'above':'below'} the ${f(L,e)}% limit (±${f(pr.p[p].sd[e],e)} 1σ).`,
-      sol?(sol.rom!=null&&!sol.already?`Limit is first breached when ROM Al₂O₃ ${romTxt} (jig feed ${Math.round(pr.jf*100)}% of CF)`:`${P[p].name} ${romTxt} (jig feed ${Math.round(pr.jf*100)}% of CF)`):'');
+      sol?(sol.rom!=null&&!sol.already?`Limit is first breached when ROM Al₂O₃ ${romTxt}${PU.jig?` (jig feed ${Math.round(pr.jf*100)}% of CF)`:''}`:`${P[p].name} ${romTxt}${PU.jig?` (jig feed ${Math.round(pr.jf*100)}% of CF)`:''}`):'');
   }
   // alumina distribution
   const ad=pr.alDist, Y=m.yields;
-  if(ad&&ad.SL!=null){
+  const RJ=PU.reject;
+  if(ad&&ad[RJ]!=null){
     const parts=Object.entries(ad).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`${P[k].name} <b>${(v*100).toFixed(0)}%</b>`).join(', ');
-    const rr=ad.SL/Y.SL;
-    card('Distribution · where the alumina goes','', `Of the Al₂O₃ units in Wet ROM: ${parts}. Slime takes ${(Y.SL*100).toFixed(1)}% of the mass but ${(ad.SL*100).toFixed(0)}% of the alumina (rejection ratio ${rr.toFixed(1)}×).`,
-      ad.CF>ad.SO?'Classifier Fines is the largest alumina carrier — fines circuit (jig/HC) is the lever':'');
+    const rr=ad[RJ]/Y[RJ];
+    card('Distribution · where the alumina goes','', `Of the Al₂O₃ units in ${PU.rom}: ${parts}. ${P[RJ].name} takes ${(Y[RJ]*100).toFixed(1)}% of the mass but ${(ad[RJ]*100).toFixed(0)}% of the alumina (rejection ratio ${rr.toFixed(1)}×).`,
+      S.plant==='wet'&&ad.CF>ad.SO?'Classifier Fines is the largest alumina carrier — fines circuit (jig/HC) is the lever':(S.plant==='iopp'?'Higher slime rejection ratio = more alumina removed per tonne of slime lost':''));
   }
   // sensitivity
   const at=x=>E.predict(m,{Al2O3:x,jf:pr.jf});
   const lo_=at(pr.rom.Al2O3-0.25), hi_=at(pr.rom.Al2O3+0.25);
   const slope=(p,e)=>{ if(!lo_.p[p]||!hi_.p[p]) return null; return (hi_.p[p].v[e]-lo_.p[p].v[e])/0.5; };
-  const sens=['SO','WF','SL'].map(p=>{const s=slope(p,'Al2O3'); return s==null?null:`${P[p].name} ${fs(s*0.5,'Al2O3')}`}).filter(Boolean).join(' · ');
-  const feS=['SO','WF'].map(p=>{const s=slope(p,'Fe'); return s==null?null:`${P[p].name} Fe ${fs(s*0.5,'Fe')}`}).filter(Boolean).join(' · ');
+  const sens=PU.sensAl.map(p=>{const s=slope(p,'Al2O3'); return s==null?null:`${P[p].name} ${fs(s*0.5,'Al2O3')}`}).filter(Boolean).join(' · ');
+  const feS=PU.sensFe.map(p=>{const s=slope(p,'Fe'); return s==null?null:`${P[p].name} Fe ${fs(s*0.5,'Fe')}`}).filter(Boolean).join(' · ');
   card('Sensitivity · per +0.5% ROM Al₂O₃ around this feed','', `${sens}.<br>${feS}.`, 'Use with the ROM Monitoring App shift forecast to pre-empt product slippage');
   // band behaviour: how the delta changes with feed grade
   if((m.method||'band')==='band'){
     const lines=[];
     const fe=S.set.focus;
-    for(const p of ['WF','SO','CF','SL']){
+    for(const p of PU.bandIns){
       const c=E.cellFor(m,p,true); if(!c) continue; const B=c.el[fe].bins.filter(b=>b.n>=5); if(B.length<2) continue;
       const lo=B[0], hi=B[B.length-1], cur=pr.p[p]&&pr.p[p].band[fe];
       lines.push(`${P[p].name}: <b>${fs(lo.s,fe)}</b> at ${fb(lo.lo,fe)}–${fb(lo.lo+bw(fe),fe)}% → <b>${fs(hi.s,fe)}</b> at ${fb(hi.lo,fe)}–${fb(hi.lo+bw(fe),fe)}%${cur&&cur.lo!=null?` (now ${fs(cur.s,fe)})`:''}`);
     }
-    if(lines.length) card(`Bands · Δ${ELN[fe]} vs Wet ROM ${ELN[fe]}`,'', lines.join('<br>'), 'See the Band analysis tab for the charts (switch element with FOCUS)');
+    if(lines.length) card(`Bands · Δ${ELN[fe]} vs ${PU.rom} ${ELN[fe]}`,'', lines.join('<br>'), 'See the Band analysis tab for the charts (switch element with FOCUS)');
   }
   // jig
   if(m.yields.jigData){
@@ -1240,7 +1333,7 @@ function insights(){
   // drift — last 3 operating days of window
   const bt=E.backtest(m,S.ds), last3=m.winDays.slice(-3);
   const drift=[];
-  for(const p of ['SO','CF','WF','SL','HCC']){
+  for(const p of PU.drift){
     const r=bt.filter(b=>last3.includes(b.day)&&b.act[p]&&b.pred[p]);
     if(r.length<2) continue;
     const bias=E.wMean(r.map(b=>b.act[p].Al2O3-b.pred[p].v.Al2O3), r.map(b=>E.rowW(b,p)));
@@ -1248,7 +1341,7 @@ function insights(){
     if(Math.abs(bias)>0.5*sd && Math.abs(bias)>0.25) drift.push(`${P[p].name} ${bias>0?'+':''}${bias.toFixed(2)}`);
   }
   card('Pattern · last 3 days vs model', drift.length?'warn':'good', drift.length?`Actual Al₂O₃ has drifted from the model over ${last3.map(d=>E.fmtOrd(d)).join(', ')}: <b>${drift.join(' · ')}</b> (actual − predicted).`:`No material drift: actual Al₂O₃ over ${last3.map(d=>E.fmtOrd(d)).join(', ')} sits within half a standard error of the model for all main streams.`,
-    drift.length?'Shorten the training window or check plant changes (classifier, cyclone, jig settings)':'');
+    drift.length?`Shorten the training window or check plant changes (${S.plant==='iopp'?'scrubbing, screens, cyclone/thickener':'classifier, cyclone, jig settings'})`:'');
   // predicted ROM bias
   const W=new Set(m.winDays), dd=S.ds.days.filter(d=>W.has(d.day)&&d.rom&&d.romPred);
   if(dd.length>=3){
@@ -1260,24 +1353,24 @@ function insights(){
   }
   if(pr.outOfRange) card('Caution · extrapolation','bad',`ROM Al₂O₃ ${f(pr.rom.Al2O3,'Al2O3')}% is outside the trained range (${f(m.romStats.min,'Al2O3')}–${f(m.romStats.max,'Al2O3')}%). Edge-band deltas are used; treat predictions as indicative.`);
   const cl=pr.closure;
-  card('Check · mass balance closure', Math.abs(cl.Al2O3)<0.15?'good':'warn', `Recombining predicted SO + CF + HC Conc + Slime at trained yields gives ROM Al₂O₃ ${fs(cl.Al2O3,'Al2O3')}, Fe ${fs(cl.Fe,'Fe')} vs input — ${Math.abs(cl.Al2O3)<0.15?'predictions are mutually consistent':'streams disagree; read individual product predictions with care'}.`);
+  card('Check · mass balance closure', Math.abs(cl.Al2O3)<0.15?'good':'warn', `Recombining predicted ${E.MB_P.map(k=>SHORT[k]).join(' + ')} at trained yields gives ROM Al₂O₃ ${fs(cl.Al2O3,'Al2O3')}, Fe ${fs(cl.Fe,'Fe')} vs input — ${Math.abs(cl.Al2O3)<0.15?'predictions are mutually consistent':'streams disagree; read individual product predictions with care'}.`);
   for(const n of m.notes) card('Model note','warn',esc(n));
   return out.join('');
 }
 
 // ---------- band analysis (charts) ----------
-const BSER=['SO','WF','SL','CF','HCC','JC','JR'];          // fixed slot per product (never re-coloured)
+const BSER_WET=['SO','WF','SL','CF','HCC','JC','JR'];      // fixed colour slot per product (never re-coloured)
 const PAL_D=['#3987e5','#d95926','#199e70','#c98500','#d55181','#0ca30c','#9085e9'];
 const PAL_L=['#2a78d6','#eb6834','#1baf7a','#eda100','#e87ba4','#008300','#6250d6'];
-const SHORT={SO:'Sized Ore',WF:'Wet Fines',SL:'Slime',CF:'Class. Fines',HCC:'HC Conc',JC:'Jig Conc',JR:'Jig Reject'};
-function serCol(p){ const lt=['white','lavender'].includes(document.documentElement.getAttribute('data-theme')); return (lt?PAL_L:PAL_D)[BSER.indexOf(p)]; }
-function bandSel(){ if(!S.bandSel) S.bandSel=['WF','SO','SL']; return S.bandSel.filter(p=>E.cellFor(S.model,p,true)); }
+const SHORT=new Proxy({},{get:(_,k)=>PU.short[k]||k});
+function serCol(p){ const lt=['white','lavender'].includes(document.documentElement.getAttribute('data-theme')); const slot=PU.slot&&PU.slot[p]!=null?PU.slot[p]:BSER_WET.indexOf(p); return (lt?PAL_L:PAL_D)[Math.max(0,slot)]; }
+function bandSel(){ let sel=S.bandSelBy[S.plant]; if(!sel||!sel.length) sel=S.bandSelBy[S.plant]=PU.bandDefault.slice(); return sel.filter(p=>E.cellFor(S.model,p,true)); }
 function bandChart(el){
   const m=S.model, prods=bandSel(), w=bw(el);
   const W=560,H=274,pl=50,pr=74,pt=16,ph=200,sy=pt+ph+10,sh=26;
   const ser=prods.map(p=>({p,pts:E.cellFor(m,p,true).el[el].bins.map(b=>({x:b.lo+w/2,lo:b.lo,y:b.s,n:b.n,t:b.t||0,mean:b.mean,sd:b.sd}))})).filter(z=>z.pts.length);
   if(!ser.length) return `<div class="muted small">No band data for ${ELN[el]}.</div>`;
-  const anc=E.cellFor(m,'WF',true)||E.cellFor(m,prods[0],true); const dens=anc?anc.el[el].bins:[];
+  const anc=E.cellFor(m,PU.densP,true)||E.cellFor(m,prods[0],true); const dens=anc?anc.el[el].bins:[];
   const allx=ser.flatMap(z=>z.pts.map(q=>q.lo)).concat(dens.map(b=>b.lo));
   let x0=Math.min(...allx), x1=Math.max(...allx)+w; const now=S.pred.rom[el]; if(now!=null&&isFinite(now)){ x0=Math.min(x0,now); x1=Math.max(x1,now); }
   const ys=ser.flatMap(z=>z.pts.map(q=>q.y)).concat([0]); let y0=Math.min(...ys), y1=Math.max(...ys); const pd=(y1-y0)*0.1||0.1; y0-=pd; y1+=pd;
@@ -1303,7 +1396,7 @@ function bandChart(el){
     g+=`<polyline fill="none" stroke="${c}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" points="${z.pts.map(q=>`${X(q.x)},${Y(q.y)}`).join(' ')}"/>`;
     for(const q of z.pts){ const r=Math.max(4,Math.min(8,2.5+Math.sqrt(q.n)));
       g+=`<circle cx="${X(q.x)}" cy="${Y(q.y)}" r="${r}" fill="${c}" style="stroke:var(--panel)" stroke-width="2"/>`;
-      g+=`<circle class="bhit" cx="${X(q.x)}" cy="${Y(q.y)}" r="12" fill="transparent" data-t="${esc(`<b>${SHORT[z.p]}</b> · Wet ROM ${ELN[el]} ${fb(q.lo,el)}–${fb(q.lo+w,el)}%<br>Δ used by model <b>${fs(q.y,el)}</b><br>tonnage-weighted band mean ${fs(q.mean,el)}${q.sd!=null?` ± ${f(q.sd,el)} (1 sd)`:''}<br>${q.n} shift${q.n===1?'':'s'} · ${Math.round(q.t).toLocaleString('en-IN')} t${q.n<4?' · thin band, pulled to trend':''}`)}"/>`; }
+      g+=`<circle class="bhit" cx="${X(q.x)}" cy="${Y(q.y)}" r="12" fill="transparent" data-t="${esc(`<b>${SHORT[z.p]}</b> · ${PU.rom} ${ELN[el]} ${fb(q.lo,el)}–${fb(q.lo+w,el)}%<br>Δ used by model <b>${fs(q.y,el)}</b><br>tonnage-weighted band mean ${fs(q.mean,el)}${q.sd!=null?` ± ${f(q.sd,el)} (1 sd)`:''}<br>${q.n} shift${q.n===1?'':'s'} · ${Math.round(q.t).toLocaleString('en-IN')} t${q.n<4?' · thin band, pulled to trend':''}`)}"/>`; }
     const lp=z.pts[z.pts.length-1]; ends.push({y:Y(lp.y),x:X(lp.x),p:z.p,c});
   }
   // direct end labels, de-collided
@@ -1313,17 +1406,17 @@ function bandChart(el){
 }
 function bandTab(){
   const m=S.model, sel=bandSel();
-  let h=`<h4><span>Δ by Wet ROM grade band · all four elements</span><span>${(m.method||'band')==='band'?'active model':'Linear active — showing band fit for reference'}</span></h4>
-  <div class="bfilter"><span class="muted small">Products (up to 4):</span>${BSER.filter(p=>E.cellFor(m,p,true)).map(p=>`<button class="bchip ${sel.includes(p)?'on':''}" data-p="${p}"><i style="background:${serCol(p)}"></i>${SHORT[p]}</button>`).join('')}</div>
-  <div class="bgrid">${['Al2O3','SiO2','Fe','P'].map(el=>`<div class="bcard"><div class="bct"><b>Δ${ELN[el]}</b><span>product − Wet ROM ${ELN[el]} · bands of Wet ROM ${ELN[el]}, ${fb(bw(el),el)}% wide</span></div>${bandChart(el)}<div class="bax">Wet ROM ${ELN[el]} %</div></div>`).join('')}</div>
-  <p class="small muted">Each point = the delta the model uses in that band: the tonnage-weighted mean of the band's shifts (each shift weighted by that product's tonnes), pulled toward the overall trend when a band holds little tonnage. Bigger dot = more shifts. Bars underneath = Wet Fines shifts per band. Dashed vertical line = current shift feed. Dashed horizontal line = no change: above it the product is richer than Wet ROM in that element, below it poorer. The same numbers are in the Model &amp; limits tab as a table. Band widths are set per element in the left panel.</p>
+  let h=`<h4><span>Δ by ${PU.rom} grade band · all four elements</span><span>${(m.method||'band')==='band'?'active model':'Linear active — showing band fit for reference'}</span></h4>
+  <div class="bfilter"><span class="muted small">Products (up to 4):</span>${PU.BSER.filter(p=>E.cellFor(m,p,true)).map(p=>`<button class="bchip ${sel.includes(p)?'on':''}" data-p="${p}"><i style="background:${serCol(p)}"></i>${SHORT[p]}</button>`).join('')}</div>
+  <div class="bgrid">${['Al2O3','SiO2','Fe','P'].map(el=>`<div class="bcard"><div class="bct"><b>Δ${ELN[el]}</b><span>product − ${PU.rom} ${ELN[el]} · bands of ${PU.rom} ${ELN[el]}, ${fb(bw(el),el)}% wide</span></div>${bandChart(el)}<div class="bax">${PU.rom} ${ELN[el]} %</div></div>`).join('')}</div>
+  <p class="small muted">Each point = the delta the model uses in that band: the tonnage-weighted mean of the band's shifts (each shift weighted by that product's tonnes), pulled toward the overall trend when a band holds little tonnage. Bigger dot = more shifts. Bars underneath = ${P[PU.densP].name} shifts per band. Dashed vertical line = current shift feed. Dashed horizontal line = no change: above it the product is richer than ${PU.rom} in that element, below it poorer. The same numbers are in the Model &amp; limits tab as a table. Band widths are set per element in the left panel.</p>
   <div id="bandTip" class="btip" hidden></div>`;
   return h;
 }
 function bindBandTab(){
   document.querySelectorAll('.bchip').forEach(b=>b.onclick=()=>{ const p=b.dataset.p; let sel=bandSel();
     if(sel.includes(p)){ if(sel.length===1) return; sel=sel.filter(x=>x!==p); } else { if(sel.length>=4){ toast('Up to 4 products at a time — deselect one first'); return; } sel=[...sel,p]; }
-    S.bandSel=BSER.filter(x=>sel.includes(x)); renderPane(); });
+    S.bandSelBy[S.plant]=PU.BSER.filter(x=>sel.includes(x)); save(); renderPane(); });
   const tip=$('bandTip'), pane=$('pane');
   document.querySelectorAll('.bhit').forEach(c=>{
     c.onmouseenter=ev=>{ tip.innerHTML=c.dataset.t; tip.hidden=false; };
@@ -1335,17 +1428,17 @@ function bindBandTab(){
 // ---------- model tab ----------
 function modelTab(){
   const m=S.model, pr=S.pred; const focusP=S.sel;
-  const e=S.set.focus, cols=['SO','CF','JC','HCC','WF','SL','JR'].filter(p=>E.cellFor(m,p,true));
+  const e=S.set.focus, cols=PU.modelCols.filter(p=>E.cellFor(m,p,true));
   const cb=p=>E.cellFor(m,p,true).el[e].bins;
   const los=[...new Set(cols.flatMap(p=>cb(p).map(b=>b.lo)))].sort((a,b)=>a-b);
   const curLo=Math.floor(pr.rom[e]/bw(e)+1e-9)*bw(e);
-  let h=`<h4><span>Δ${ELN[e]} by Wet ROM ${ELN[e]} band (${fb(bw(e),e)}% wide)</span><span>${(m.method||'band')==='band'?'active model':'not active — Linear selected'}</span></h4>
-  <p class="small muted" style="margin-top:-4px">Each cell = product ${ELN[e]} − Wet ROM ${ELN[e]} for shifts whose Wet ROM ${ELN[e]} fell in that band — <b>tonnage-weighted</b> by each shift's product tonnes (small n = shift count). Bands holding little tonnage are pulled toward the overall trend (by ${E.SHRINK} typical shifts' worth of tonnes), so thin bands don't swing wildly. Change the element with FOCUS. Highlighted row = current feed.</p>
-  <div style="overflow:auto;max-height:460px"><table class="t"><tr><th>ROM ${ELN[e]} %</th>${cols.map(p=>`<th>${p==='SO'?'Sized Ore':p==='WF'?'Wet Fines':p==='SL'?'Slime':p}</th>`).join('')}</tr>
+  let h=`<h4><span>Δ${ELN[e]} by ${PU.rom} ${ELN[e]} band (${fb(bw(e),e)}% wide)</span><span>${(m.method||'band')==='band'?'active model':'not active — Linear selected'}</span></h4>
+  <p class="small muted" style="margin-top:-4px">Each cell = product ${ELN[e]} − ${PU.rom} ${ELN[e]} for shifts whose ${PU.rom} ${ELN[e]} fell in that band — <b>tonnage-weighted</b> by each shift's product tonnes (small n = shift count). Bands holding little tonnage are pulled toward the overall trend (by ${E.SHRINK} typical shifts' worth of tonnes), so thin bands don't swing wildly. Change the element with FOCUS. Highlighted row = current feed.</p>
+  <div style="overflow:auto;max-height:460px"><table class="t"><tr><th>ROM ${ELN[e]} %</th>${cols.map(p=>`<th>${SHORT[p]}</th>`).join('')}</tr>
   ${los.map(lo=>`<tr class="${Math.abs(lo-curLo)<bw(e)*1e-3?'sel':''}"><td>${fb(lo,e)} – ${fb(lo+bw(e),e)}</td>${cols.map(p=>{ const b=cb(p).find(x=>Math.abs(x.lo-lo)<bw(e)*1e-3); return b?`<td class="num" style="color:${(e==='Fe'?b.s>0:b.s<0)?'var(--mint)':'var(--rust)'}">${fs(b.s,e)}<span class="sd">n${b.n}</span></td>`:'<td class="muted">·</td>'; }).join('')}</tr>`).join('')}
   <tr><td class="muted">LOO error ±</td>${cols.map(p=>`<td class="muted">${f(E.cellFor(m,p,true).el[e].rmseB,e)}</td>`).join('')}</tr></table></div>
-  <h4 style="margin-top:18px">Linear summary (product − Wet ROM)</h4>
-  <p class="small muted" style="margin-top:-4px">Δ = Δ̄ + β·(Wet ROM grade of the same element − x̄); β only where it beats a fixed Δ on leave-one-out error by ≥10%. Compare ± here with the band table's LOO error to see which model fits better.</p>
+  <h4 style="margin-top:18px">Linear summary (product − ${PU.rom})</h4>
+  <p class="small muted" style="margin-top:-4px">Δ = Δ̄ + β·(${PU.rom} grade of the same element − x̄); β only where it beats a fixed Δ on leave-one-out error by ≥10%. Compare ± here with the band table's LOO error to see which model fits better.</p>
   <div style="overflow:auto"><table class="t"><tr><th>Stream</th><th>El.</th><th>Δ̄</th><th>β</th><th>±</th><th>n</th><th>Mode</th></tr>`;
   const ids=Object.keys(m.cells);
   for(const id of ids){
@@ -1358,9 +1451,9 @@ function modelTab(){
   <h4 style="margin-top:16px">ROM estimator (when only Al₂O₃ is given)</h4><table class="t"><tr><th>Element</th><th>= a + b·Al₂O₃</th><th>±</th></tr>`;
   for(const e of ['Fe','SiO2','P']){ const r=m.romEst[e]; h+=`<tr><td>${ELN[e]}</td><td>${r.a.toFixed(3)} ${r.b<0?'−':'+'} ${Math.abs(r.b).toFixed(3)}·Al</td><td>${f(r.rmse,e)}</td></tr>`; }
   h+=`</table>
-  <h4 style="margin-top:16px">Trained yields (mass %)</h4><p class="small">Sized Ore ${(m.yields.SO*100).toFixed(1)} · Classifier Fines ${(m.yields.CF*100).toFixed(1)} · HC Conc ${(m.yields.HCC*100).toFixed(1)} · Slime ${(m.yields.SL*100).toFixed(1)}<br>Jig: feed ${(m.yields.JF_of_CF*100).toFixed(0)}% of CF · conc ${(m.yields.JC_of_JF*100).toFixed(0)}% of jig feed</p>
+  <h4 style="margin-top:16px">Trained yields (mass %)</h4><p class="small">${E.MB_P.map(k=>`${P[k].name} ${(m.yields[k]*100).toFixed(1)}`).join(' · ')}${PU.jig?`<br>Jig: feed ${(m.yields.JF_of_CF*100).toFixed(0)}% of CF · conc ${(m.yields.JC_of_JF*100).toFixed(0)}% of jig feed`:''}</p>
   <h4 style="margin-top:16px">Spec limits (max %)</h4><div id="limBox">`;
-  for(const p of ['SO','WF','CF','JC','HCC']) for(const e of ['Al2O3','SiO2']){
+  for(const p of PU.limitP) for(const e of ['Al2O3','SiO2']){
     const l=S.limits[p+'|'+e]; h+=`<div class="lim"><span>${P[p].name} ${ELN[e]}</span><input data-k="${p}|${e}" type="number" step="0.01" placeholder="max" value="${l&&l.max!=null?l.max:''}"><span class="muted small">${pr.p[p]?f(pr.p[p].v[e],e)+' pred':''}</span></div>`;
   }
   h+=`</div><p class="small muted">Limits colour the node values and drive the threshold insights. Defaults are placeholders — set your plant specs.</p>
@@ -1394,7 +1487,7 @@ function btTab(){
   const span=R.length?((R[R.length-1].day-R[0].day)>200):false;
   let lastDay=null; R.forEach((r,i)=>{ const dom=r.day%100, mo=Math.floor(r.day/100)%100; if(r.day!==lastDay && (span? dom===1||i===0 : dom%5===0)){ svg+=`<text x="${X(i)}" y="${H-8}" font-size="9" text-anchor="middle" style="fill:var(--muted)">${span?E.MON[mo-1]:dom+' '+E.MON[mo-1]}</text>`; } lastDay=r.day; });
   svg+='</svg>';
-  h+=svg+`<div class="small" style="margin:6px 0 10px"><span>━ actual</span> &nbsp; <span style="color:var(--amber)">╌ predicted (from the shift's Wet ROM assay)</span> &nbsp; <span class="muted">shade ±1σ</span></div>
+  h+=svg+`<div class="small" style="margin:6px 0 10px"><span>━ actual</span> &nbsp; <span style="color:var(--amber)">╌ predicted (from the shift's ${PU.rom} assay)</span> &nbsp; <span class="muted">shade ±1σ</span></div>
   <table class="t"><tr><th>Set</th><th>n</th><th>Tonnes</th><th>MAE (t-wtd)</th><th>Bias (act−pred, t-wtd)</th></tr>
   ${a?`<tr><td>In window ${(m.method||'band')==='band'?'(leave-one-out)':'(fit)'}</td><td>${a.n}</td><td>${Math.round(a.t).toLocaleString('en-IN')}</td><td>${f(a.mae,e)}</td><td>${fs(a.bias,e)}</td></tr>`:''}
   ${b?`<tr><td><b>Outside window (true test)</b></td><td>${b.n}</td><td>${Math.round(b.t).toLocaleString('en-IN')}</td><td><b>${f(b.mae,e)}</b></td><td>${fs(b.bias,e)}</td></tr>`:''}</table>
@@ -1437,17 +1530,17 @@ function batchRun(download){
   if(!rows.length){ $('batchOut').innerHTML='<p class="muted">No valid lines.</p>'; return; }
   const cur=+S.input.jf, def=cur>0?cur:Math.round(Math.min(40,S.model.yields.JF_of_CF*100));
   const res=rows.map(r=>{ const j = r.jfp!=null ? r.jfp : (r.jig===false ? 0 : (r.jig===true ? def : cur)); return {...r, pr:E.predict(S.model,{Al2O3:r.al,jf:j/100,t:r.t})}; });
-  const cols=['SO','CF','JC','HCC','WF','SL'];
+  const cols=PU.batchCols;
   if(download){
-    const hd=['Shift','ROM_Al2O3','ROM_t','JigFeed_pctCF',...['ROM_Fe','ROM_SiO2','ROM_P'],...cols.flatMap(p=>EL.map(x=>`${p}_${x}`)),...cols.map(p=>`${p}_t`)];
+    const hd=['Shift','ROM_Al2O3','ROM_t',...(PU.jig?['JigFeed_pctCF']:[]),...['ROM_Fe','ROM_SiO2','ROM_P'],...cols.flatMap(p=>EL.map(x=>`${p}_${x}`)),...cols.map(p=>`${p}_t`)];
     const lines=[hd.join(',')];
     for(const r of res){ const pr=r.pr;
-      lines.push([r.label,r.al,r.t||'',Math.round(pr.jf*100)+'%',pr.rom.Fe.toFixed(2),pr.rom.SiO2.toFixed(2),pr.rom.P.toFixed(3),
+      lines.push([r.label,r.al,r.t||'',...(PU.jig?[Math.round(pr.jf*100)+'%']:[]),pr.rom.Fe.toFixed(2),pr.rom.SiO2.toFixed(2),pr.rom.P.toFixed(3),
         ...cols.flatMap(p=>EL.map(x=>pr.p[p]?pr.p[p].v[x].toFixed(DP[x]):'')),...cols.map(p=>pr.t&&pr.t[p]!=null?Math.round(pr.t[p]):'')].join(',')); }
-    const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([lines.join('\n')],{type:'text/csv'})); a.download=`WetPlant_predictions_${new Date().toISOString().slice(0,10)}.csv`; a.click(); return;
+    const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([lines.join('\n')],{type:'text/csv'})); a.download=`${PU.label.replace(/\s+/g,'')}_predictions_${new Date().toISOString().slice(0,10)}.csv`; a.click(); return;
   }
   let h=`<div style="overflow:auto"><table class="t"><tr><th>Shift</th><th>ROM</th>${cols.map(p=>`<th>${p}</th>`).join('')}</tr>`;
-  for(const r of res){ h+=`<tr><td>${esc(r.label)}<span class="muted"> · J${Math.round(r.pr.jf*100)}%</span></td><td><b>${f(r.pr.rom[e],e)}</b></td>${cols.map(p=>{ const x=r.pr.p[p]; if(!x) return '<td class="muted">—</td>'; const st=statusCls(p,e,x.v[e],x.sd[e]); return `<td style="${st==='bad'?'color:var(--red);font-weight:700':''}">${f(x.v[e],e)}</td>`; }).join('')}</tr>`; }
+  for(const r of res){ h+=`<tr><td>${esc(r.label)}${PU.jig?`<span class="muted"> · J${Math.round(r.pr.jf*100)}%</span>`:''}</td><td><b>${f(r.pr.rom[e],e)}</b></td>${cols.map(p=>{ const x=r.pr.p[p]; if(!x) return '<td class="muted">—</td>'; const st=statusCls(p,e,x.v[e],x.sd[e]); return `<td style="${st==='bad'?'color:var(--red);font-weight:700':''}">${f(x.v[e],e)}</td>`; }).join('')}</tr>`; }
   h+=`</table></div><p class="small muted">${ELN[e]} % shown (change with FOCUS). CSV contains all elements and tonnages.</p>`;
   $('batchOut').innerHTML=h; save();
 }
@@ -1461,10 +1554,10 @@ function dataTab(){
   if(ds.excluded.length) h+=`<div class="ins warn"><p class="small">Excluded shifts: ${ds.excluded.map(x=>`${x.key.replace('|','-')} (${esc(x.reason)})`).join('; ')}</p></div>`;
   const rows = S.set.basis==='shift' ? ds.shifts : ds.days;
   const e=S.set.focus;
-  h+=`<h4 style="margin-top:12px">${S.set.basis==='shift'?'Shift':'Daily'} data · ${ELN[e]} %</h4><div style="overflow:auto;max-height:520px"><table class="t"><tr><th>Row</th><th>J</th><th>ROM t</th><th>ROM</th>${S.set.basis==='dayPred'?'<th>Pred</th>':''}<th>SO</th><th>CF</th><th>JC</th><th>HCC</th><th>WF</th><th>SL</th></tr>`;
+  h+=`<h4 style="margin-top:12px">${S.set.basis==='shift'?'Shift':'Daily'} data · ${ELN[e]} %</h4><div style="overflow:auto;max-height:520px"><table class="t"><tr><th>Row</th>${PU.jig?'<th>J</th>':''}<th>ROM t</th><th>ROM</th>${S.set.basis==='dayPred'?'<th>Pred</th>':''}${PU.dataCols.map(p=>`<th>${SHORT[p]}</th>`).join('')}</tr>`;
   for(const r of rows){ const rom=r.rom; if(!rom) continue;
-    h+=`<tr class="${W.has(r.day)?'win':''}"><td>${r.label}</td><td>${r.jig?'●':''}</td><td>${Math.round(rom.t||0).toLocaleString('en-IN')}</td><td><b>${f(rom[e],e)}</b></td>${S.set.basis==='dayPred'?`<td>${r.romPred?f(r.romPred[e],e):'—'}</td>`:''}${['SO','CF','JC','HCC','WF','SL'].map(p=>`<td>${r.p[p]?f(r.p[p][e],e):'<span class="muted">—</span>'}</td>`).join('')}</tr>`; }
-  h+=`</table></div><p class="small muted">Shaded = training window. ROM = tonnage-weighted SO + CF + HC Conc + Slime (same as OPR Quality Balance “LRP ROM Actual”).</p>
+    h+=`<tr class="${W.has(r.day)?'win':''}"><td>${r.label}${rom.imputed?'<span class="sd" title="a stream had tonnage but no shift assay — day average used for ROM">*</span>':''}</td>${PU.jig?`<td>${r.jig?'●':''}</td>`:''}<td>${Math.round(rom.t||0).toLocaleString('en-IN')}</td><td><b>${f(rom[e],e)}</b></td>${S.set.basis==='dayPred'?`<td>${r.romPred?f(r.romPred[e],e):'—'}</td>`:''}${PU.dataCols.map(p=>`<td>${r.p[p]?f(r.p[p][e],e):'<span class="muted">—</span>'}</td>`).join('')}</tr>`; }
+  h+=`</table></div><p class="small muted">Shaded = training window. ${S.plant==='iopp'?'ROM = tonnage-weighted IOPP Fines (18TC001) + IOPP Slime (same as OPR Quality Balance “IOPP ROM Actual”). * = slime (or fines) tonnage with no shift assay — the day\'s OPR average used for that shift\'s ROM; — = no measured assay, so not used to train that product.':'ROM = tonnage-weighted SO + CF + HC Conc + Slime (same as OPR Quality Balance “LRP ROM Actual”). * = a stream had tonnage but no shift assay — day average used for ROM.'}</p>
   <div style="margin-top:10px"><button class="btn sec" id="clearBtn">Clear stored data</button></div>`;
   return h;
 }
@@ -1479,7 +1572,7 @@ function renderMain(){
     mn.innerHTML=`<div class="card empty"><div class="dropz"><svg width="70" height="70" viewBox="0 0 70 70"><polygon points="35,4 64,20 64,50 35,66 6,50 6,20" fill="none" stroke="#f2b33d" stroke-width="2"/><path d="M20 42 L30 30 L38 38 L50 24" stroke="#46c29d" stroke-width="3" fill="none"/></svg>
       <div class="big">Drop OPR workbooks here</div>
       <p>One or many monthly <b>Ore Processing Reports (.xlsx)</b> — e.g. April to now, selected together. Sheets used: CLO W7 · Classifier Fines W3 · Hydrocyclone · Jig Fines · Wet Fines W6 · LRP Slime · Plant Production · Quality Balance.</p>
-      <p>Wet ROM → product Δ for Fe, SiO₂, Al₂O₃ and P is learned separately for every Wet ROM Al₂O₃ band (0.2% by default — adjustable); then any shift ROM Al₂O₃ is turned into predicted grades for every Wet Plant stream. Uploaded OPRs are remembered in this browser.</p>
+      <p>${PU.rom} → product Δ for Fe, SiO₂, Al₂O₃ and P is learned separately for every ${PU.rom} Al₂O₃ band (0.2% by default — adjustable); then any shift ROM Al₂O₃ is turned into predicted grades for every plant stream. Uploaded OPRs are remembered in this browser.</p>
       <p class="small">Processed locally — nothing is sent anywhere.</p>
       <button class="btn" style="margin-top:12px" onclick="document.getElementById('file').click()">Choose OPR files</button></div></div>`;
     return;
@@ -1500,7 +1593,7 @@ function renderPane(){
   if(S.tab==='ins') pane.innerHTML=`<h4><span>Process insights</span><span>for this shift feed</span></h4><div class="insgrid">${insights()}</div>`;
   if(S.tab==='model'){ pane.innerHTML=modelTab();
     pane.querySelectorAll('#limBox input').forEach(inp=>inp.onchange=()=>{ const v=inp.value.trim(); if(v==='') delete S.limits[inp.dataset.k]; else S.limits[inp.dataset.k]={max:+v}; save(); renderAll(); });
-    $('dlModel').onclick=()=>{ const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([JSON.stringify(S.model,null,1)],{type:'application/json'})); a.download=`wetplant_model_${(S.ds.month||'').replace(/[^A-Za-z0-9]+/g,'')}_${S.model.endDay}.json`; a.click(); };
+    $('dlModel').onclick=()=>{ const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([JSON.stringify(S.model,null,1)],{type:'application/json'})); a.download=`${S.plant}_model_${(S.ds.month||'').replace(/[^A-Za-z0-9]+/g,'')}_${S.model.endDay}.json`; a.click(); };
   }
   if(S.tab==='bt'){ pane.innerHTML=btTab(); $('btP').onchange=ev=>{S.bt.p=ev.target.value;renderPane();}; $('btE').onchange=ev=>{S.bt.e=ev.target.value;renderPane();}; }
   if(S.tab==='batch'){ pane.innerHTML=batchTab(); $('batchGo').onclick=()=>batchRun(false); $('batchCsv').onclick=()=>batchRun(true);
@@ -1511,7 +1604,7 @@ function renderPane(){
 }
 function renderAll(){ $('fileChip').innerHTML = S.ds?`<i>●</i> ${esc(S.ds.fileName||'OPR')} · ${esc(S.ds.month||'')}`:'no OPR loaded'; renderRail(); renderMain(); }
 
-function applyUrl(){ const q=new URLSearchParams(location.search); if(q.has('al')){ S.input.Al2O3=+q.get('al'); ['Fe','SiO2','P'].forEach(k=>S.input[k]=q.get(k.toLowerCase())||''); if(q.has('jig')&&q.get('jig')==='0') S.input.jf=0; if(q.has('jf')) S.input.jf=Math.max(0,Math.min(40,+q.get('jf'))); if(q.has('t')) S.input.t=q.get('t'); return true; } return false; }
+function applyUrl(){ const q=new URLSearchParams(location.search); if(q.has('plant')&&PUI[q.get('plant')]&&q.get('plant')!==S.plant){ usePlant(q.get('plant')); S.ds=libMerged(); } if(q.has('al')){ S.input.Al2O3=+q.get('al'); ['Fe','SiO2','P'].forEach(k=>S.input[k]=q.get(k.toLowerCase())||''); if(q.has('jig')&&q.get('jig')==='0') S.input.jf=0; if(q.has('jf')) S.input.jf=Math.max(0,Math.min(40,+q.get('jf'))); if(q.has('t')) S.input.t=q.get('t'); return true; } return false; }
 if(load()){ applyUrl(); try{ S.model=E.train(S.ds,{basis:S.set.basis,nDays:+S.set.nDays,endDay:S.set.endDay,method:S.set.method||'band',bands:bandsSet()}); if(S.input.Al2O3==null){ const l=S.model.romStats.last; S.input.Al2O3=+l.X.Al2O3.toFixed(2);} runPredict(); }catch(err){ console.error(err); } }
 else applyUrl();
 renderAll();
