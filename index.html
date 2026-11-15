@@ -178,6 +178,12 @@ input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:6px;
 input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;background:var(--amber);border:3px solid var(--panel);box-shadow:0 0 0 1px var(--amber);cursor:pointer}
 input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;background:var(--amber);border:3px solid var(--panel);cursor:pointer}
 input[type=range]:disabled{opacity:.35}
+.lib{display:flex;flex-direction:column;gap:4px;margin-bottom:8px;max-height:210px;overflow:auto}
+.libit{display:grid;grid-template-columns:1fr auto 26px;align-items:center;gap:8px;background:var(--panel);border:1px solid var(--line);border-radius:5px;padding:5px 6px 5px 10px}
+.libit b{font:600 14px var(--cond)}.libit span{font:11px var(--mono);color:var(--muted)}
+.libit button{background:none;border:0;color:var(--dim);cursor:pointer;font-size:13px;border-radius:4px;height:24px}.libit button:hover{color:var(--red);background:var(--panel2)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+#jigSw{cursor:pointer}
 .jigticks{display:flex;justify-content:space-between;font:10px var(--mono);color:var(--dim)}
 .brandimg{width:40px;height:40px;display:block;filter:drop-shadow(0 0 6px #2fa8ff55)}
 .themebtn{display:flex;align-items:center;gap:7px;background:transparent;border:1px solid var(--line2);border-radius:20px;padding:5px 11px 5px 6px;cursor:pointer;font:600 12px var(--cond);letter-spacing:.06em;color:var(--muted);text-transform:uppercase}
@@ -216,8 +222,8 @@ input[type=range]:disabled{opacity:.35}
   <span class="filechip" id="fileChip">no OPR loaded</span>
   <button class="themebtn" id="themeBtn" title="Change colour theme"><i></i>Theme</button>
   <button class="up ghost" id="installBtn" hidden>Install app</button>
-  <button class="up" id="uploadBtn">Upload OPR</button>
-  <input type="file" id="file" accept=".xlsx,.xlsm,.xls" hidden>
+  <button class="up" id="uploadBtn">Upload OPRs</button>
+  <input type="file" id="file" accept=".xlsx,.xlsm,.xls" multiple hidden>
 </div>
 <div class="app">
   <aside class="rail" id="rail"></aside>
@@ -467,6 +473,25 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   }
 
   // ---------- modelling ----------
+  const BAND = 0.2, SHRINK = 3;
+  function bandOf(f, x) { // returns {s, lo, n, how}
+    const B = f.bins; if (!B || !B.length) return null;
+    const k = Math.floor(x / BAND + 1e-9);
+    const hit = B.find(b => Math.round(b.lo / BAND) === k);
+    if (hit) return { s: hit.s, lo: hit.lo, n: hit.n, how: 'band' };
+    if (x < B[0].lo) return { s: B[0].s, lo: B[0].lo, n: B[0].n, how: 'edge' };
+    const L = B[B.length - 1]; if (x >= L.lo + BAND) return { s: L.s, lo: L.lo, n: L.n, how: 'edge' };
+    let i = 0; while (i < B.length - 1 && B[i + 1].lo + BAND / 2 < x) i++;
+    const a = B[i], b = B[i + 1], ca = a.lo + BAND / 2, cb = b.lo + BAND / 2, t = (x - ca) / (cb - ca);
+    return { s: a.s + (b.s - a.s) * t, lo: +(k * BAND).toFixed(2), n: 0, how: 'interp' };
+  }
+  function cellDelta(model, f, x) {
+    if ((model.method || 'band') === 'band' && f.bins) { const b = bandOf(f, x); if (b) return b; }
+    const pad = 0.25 * (f.xmax - f.xmin);
+    const xc = Math.min(Math.max(x, f.xmin - pad), f.xmax + pad);
+    return { s: f.dbar + f.beta * (xc - f.xbar), how: 'linear' };
+  }
+  function cellRmse(model, f) { return (model.method || 'band') === 'band' && f.bins ? f.rmseB : f.rmseLin; }
   function fitCell(xs, ds) {
     let idx = xs.map((_, i) => i);
     const run = (I) => {
@@ -492,8 +517,22 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     }
     const adaptive = f.n >= 8 && f.Sxx > 1e-9 && Math.abs(f.beta) <= 3 && f.rmseA < 0.9 * f.rmseF;
     const xi = idx.map(i => xs[i]);
+    // ---- ROM Al2O3 band model (0.2 % bands), each band shrunk toward the overall trend by K pseudo-rows
+    const tb = Math.abs(f.beta) <= 3 ? f.beta : 0;
+    const trend = x => f.db + tb * (x - f.xb);
+    const map = {};
+    for (const i of idx) { const k = Math.floor(xs[i] / BAND + 1e-9); (map[k] = map[k] || []).push(ds[i]); }
+    const bins = Object.keys(map).map(Number).sort((a, b) => a - b).map(k => {
+      const d = map[k], n = d.length, m = mean(d), c = (k + 0.5) * BAND;
+      const sd = n > 1 ? Math.sqrt(d.reduce((a, v) => a + (v - m) ** 2, 0) / (n - 1)) : null;
+      return { lo: +(k * BAND).toFixed(2), n, mean: m, sd, s: (n * m + SHRINK * trend(c)) / (n + SHRINK) };
+    });
+    let se = 0;
+    for (const b of bins) { const d = map[Math.round(b.lo / BAND)]; const sum = d.reduce((a, v) => a + v, 0);
+      for (const v of d) { const sl = (sum - v + SHRINK * trend(b.lo + BAND / 2)) / (b.n - 1 + SHRINK); se += (v - sl) ** 2; } }
+    const rmseB = Math.sqrt(se / Math.max(1, f.n));
     return { xmin: Math.min(...xi), xmax: Math.max(...xi), n: f.n, nOut, dbar: f.db, xbar: f.xb, beta: adaptive ? f.beta : 0, betaRaw: f.beta, mode: adaptive ? 'adaptive' : 'fixed',
-      rmse: adaptive ? f.rmseA : f.rmseF, rmseF: f.rmseF, rmseA: f.rmseA, r2: f.r2 };
+      rmseLin: adaptive ? f.rmseA : f.rmseF, rmse: adaptive ? f.rmseA : f.rmseF, rmseF: f.rmseF, rmseA: f.rmseA, r2: f.r2, bins, rmseB, trendB: tb };
   }
   function ols(xs, ys) {
     const xb = mean(xs), yb = mean(ys);
@@ -510,7 +549,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   }
 
   function train(ds, opt) {
-    opt = Object.assign({ basis: 'shift', nDays: 10, endDay: null }, opt || {});
+    opt = Object.assign({ basis: 'shift', nDays: 10, endDay: null, method: 'band' }, opt || {});
     const all = basisRows(ds, opt.basis);
     if (!all.length) throw new Error('No rows with valid Wet ROM quality for this basis.');
     let opDays = [...new Set(all.map(r => r.day))].sort((a, b) => a - b);
@@ -573,11 +612,12 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     yields.jigData = !!(cells.JC && cells.JF);
     // Wet Fines anchor: one model for all jig-feed %; slider effect added mechanistically
     const wfOn = cells.WF_on, wfOff = cells.WF_off;
-    const wfAnchor = wfOn && (wfOn.scope === 'window' || !wfOff) ? 'WF_on' : (wfOff ? 'WF_off' : null);
+    const cand = [['WF_on', wfOn], ['WF_off', wfOff]].filter(x => x[1]).sort((x, y) => ((y[1].scope === 'window') - (x[1].scope === 'window')) || (y[1].n - x[1].n));
+    const wfAnchor = cand.length ? cand[0][0] : null;
     yields.wfAnchor = wfAnchor;
     yields.wfAnchorF = wfAnchor === 'WF_on' ? yields.JF_of_CF : 0;
 
-    return { opt, basis: opt.basis, winDays, endDay, nRows: win.length, cells, romEst, notes,
+    return { opt, basis: opt.basis, method: opt.method, winDays, endDay, nRows: win.length, cells, romEst, notes,
       romStats: { mean: mean(romAl), min: Math.min(...romAl), max: Math.max(...romAl), last: win[win.length - 1] },
       yields, trainedAt: new Date().toISOString(), month: ds.month, fileName: ds.fileName };
   }
@@ -605,18 +645,16 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     for (const p of PKEYS) {
       const c = cellFor(model, p, jig);
       if (!c) { out.p[p] = null; continue; }
-      const v = {}, sd = {}, dl = {};
+      const v = {}, sd = {}, dl = {}, band = {};
       for (const e of EL) {
         const f = c.el[e];
-        const pad = 0.25 * (f.xmax - f.xmin);
-        const xc = Math.min(Math.max(al, f.xmin - pad), f.xmax + pad);
-        const delta = f.dbar + f.beta * (xc - f.xbar);
-        let val = rom[e] + delta;
+        const cd = cellDelta(model, f, al);
+        let val = rom[e] + cd.s;
         val = Math.max(0, e === 'Fe' ? Math.min(val, 70) : val);
-        v[e] = val; dl[e] = val - rom[e];
-        sd[e] = Math.sqrt(f.rmse ** 2 + (romSrc[e] === 'est' ? model.romEst[e].rmse ** 2 : 0));
+        v[e] = val; dl[e] = val - rom[e]; band[e] = cd;
+        sd[e] = Math.sqrt(cellRmse(model, f) ** 2 + (romSrc[e] === 'est' ? model.romEst[e].rmse ** 2 : 0));
       }
-      out.p[p] = { v, sd, dl, cell: c };
+      out.p[p] = { v, sd, dl, cell: c, band };
     }
     // Wet Fines fallback = blend of components when no direct model
     if (!out.p.WF) {
@@ -635,7 +673,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       const jcCell = cellFor(model, 'JC', true);
       const jcV = e => out.p.JC ? out.p.JC.v[e] : null;
       let jcRef = null;
-      if (jcCell) { jcRef = {}; for (const e of EL) { const fc = jcCell.el[e]; jcRef[e] = rom[e] + fc.dbar + fc.beta * (Math.min(Math.max(al, fc.xmin), fc.xmax) - fc.xbar); } }
+      if (jcCell) { jcRef = {}; for (const e of EL) jcRef[e] = rom[e] + cellDelta(model, jcCell.el[e], al).s; }
       const blend = (ff, e) => {
         const jq = jcV(e) != null ? jcV(e) : (jcRef ? jcRef[e] : out.p.CF.v[e]);
         const m1 = CFm * (1 - ff), m2 = CFm * ff * r, m3 = HCm;
@@ -680,17 +718,59 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     return { rom: (limit - icpt) / slope, slope };
   }
 
+  function solveLimitNum(model, p, e, limit, base) {
+    const rs = model.romStats, lo = Math.max(0.5, rs.min - 0.6), hi = rs.max + 0.6;
+    const val = x => { const q = predict(model, Object.assign({}, base, { Al2O3: x, Fe: '', SiO2: '', P: '' })); return q.p[p] ? q.p[p].v[e] : null; };
+    const v0 = val(lo); if (v0 == null) return null;
+    if (v0 >= limit) return { rom: lo, below: true, already: true };
+    for (let x = lo; x <= hi + 1e-9; x += 0.01) { const v = val(x); if (v != null && v >= limit) return { rom: x }; }
+    return { rom: null, never: true, hi };
+  }
   function backtest(model, ds) {
     const rows = basisRows(ds, model.basis);
     const win = new Set(model.winDays);
     return rows.map(r => {
       const jfr = r.jig && r.t && r.t.CF > 0 ? Math.min(1, (r.t.JF || 0) / r.t.CF) : 0;
       const pr = predict(model, { Al2O3: r.X.Al2O3, jf: r.jig ? (jfr > 0 ? jfr : model.yields.JF_of_CF) : 0 });
+      if (win.has(r.day) && (model.method || 'band') === 'band') {
+        for (const p of PKEYS) { const x = pr.p[p]; if (!x || !x.cell || !r.p[p]) continue;
+          for (const e of EL) { const b = x.band[e]; if (!b || b.how !== 'band' || b.n < 2) continue;
+            const d = r.p[p][e] - r.X[e]; const sl = (b.s * (b.n + SHRINK) - d) / (b.n - 1 + SHRINK); x.v[e] += sl - b.s; } }
+      }
       return { label: r.label, day: r.day, shift: r.shift, inWin: win.has(r.day), jig: r.jig, romAl: r.X.Al2O3, act: r.p, pred: pr.p };
     });
   }
 
-  const api = { EL, PRODUCTS, PKEYS, MB_P, parseWorkbook, train, predict, solveLimit, backtest, cellFor };
+  const MON = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  function ymFromName(name) {
+    const m = /(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)[A-Z]*[-_ .']*(\d{2,4})/i.exec(name || '');
+    if (!m) return null;
+    const mi = MON.findIndex(x => x.toLowerCase() === m[1].slice(0, 3).toLowerCase()) + 1;
+    const y = m[2].length === 2 ? 2000 + +m[2] : +m[2];
+    return `${y}-${String(mi).padStart(2, '0')}`;
+  }
+  function fmtOrd(o, withYear) { const y = Math.floor(o / 10000), m = Math.floor(o / 100) % 100, d = o % 100; return `${d} ${MON[m - 1]}${withYear ? ' ' + String(y).slice(2) : ''}`; }
+  function mergeDatasets(items) {
+    items = [...items].sort((a, b) => a.ym.localeCompare(b.ym));
+    const out = { shifts: [], days: [], excluded: [], warn: [], info: [], files: [] };
+    for (const it of items) {
+      const [y, m] = it.ym.split('-').map(Number), mon = MON[m - 1], base = y * 10000 + m * 100;
+      const ds = it.ds;
+      for (const r of ds.shifts) out.shifts.push(Object.assign({}, r, { dom: r.day, ym: it.ym, day: base + r.day, key: it.ym + '|' + r.key, label: `${r.day} ${mon}-${r.shift}` }));
+      for (const r of ds.days) out.days.push(Object.assign({}, r, { dom: r.day, ym: it.ym, day: base + r.day, key: it.ym + '|' + r.key, label: `${r.day} ${mon}` }));
+      for (const x of ds.excluded) out.excluded.push({ key: `${x.key.split('|')[0]} ${mon}-${x.key.split('|')[1]}`, reason: x.reason });
+      for (const w of ds.warn) out.warn.push(`${mon} ${y}: ${w}`);
+      out.info.push(`${mon} ${y} · ${it.name}: ${ds.shifts.filter(s => s.rom).length} valid shifts. ${ds.info.filter(t => /reproduces|Jig operated/.test(t)).join(' ')}`);
+      out.files.push({ ym: it.ym, name: it.name });
+    }
+    const f = items[0], l = items[items.length - 1];
+    const lab = ym => { const [y, m] = ym.split('-').map(Number); return `${MON[m - 1]} ${y}`; };
+    out.month = items.length ? (items.length === 1 ? lab(f.ym) : `${lab(f.ym)} – ${lab(l.ym)}`) : '';
+    out.fileName = items.length === 1 ? f.name : `${items.length} OPRs`;
+    return out;
+  }
+
+  const api = { BAND, SHRINK, MON, ymFromName, fmtOrd, mergeDatasets, solveLimitNum, cellDelta, bandOf, EL, PRODUCTS, PKEYS, MB_P, parseWorkbook, train, predict, solveLimit, backtest, cellFor };
   if (typeof module !== 'undefined' && module.exports) module.exports = api; else global.VCEngine = api;
 })(typeof window !== 'undefined' ? window : globalThis);
 </script>
@@ -706,7 +786,7 @@ const f = (v,e) => v==null||!isFinite(v) ? '—' : (+v).toFixed(DP[e]??2);
 const fs = (v,e) => (v>0?'+':'')+f(v,e);
 
 const S = { ds:null, model:null, pred:null, sel:'WF', tab:'ledger',
-  set:{ basis:'shift', nDays:10, endDay:null, focus:'Al2O3' },
+  set:{ basis:'shift', nDays:9999, endDay:null, focus:'Al2O3', method:'band' },
   input:{ Al2O3:null, Fe:'', SiO2:'', P:'', t:'', jf:33 }, theme:'amber',
   limits:{ 'WF|Al2O3':{max:4.5} }, bt:{p:'WF',e:'Al2O3'}, batch:'' };
 
@@ -714,20 +794,53 @@ const ORDER = ['ROM','SO','CF','JF','JC','HCF','HCU','HCO','HCC','WF','SL','JR']
 const SHORTN = {ROM:'Wet ROM feed',SO:'Sized Ore (CLO)',CF:'Classifier Fines',JF:'Jig Feed',JC:'Jig Concentrate',JR:'Jig Reject',HCF:'Cyclone Feed',HCU:'Cyclone Underflow',HCO:'Cyclone Overflow',HCC:'HC Concentrate',WF:'Wet Fines (W-6)',SL:'LRP Slime'};
 
 // ---------- persistence ----------
-function save(){ try{ localStorage.setItem(LS, JSON.stringify({ds:S.ds,set:S.set,input:S.input,limits:S.limits,sel:S.sel})); }catch(e){} }
-function load(){ try{ const o=JSON.parse(localStorage.getItem(LS)||'null'); if(o&&o.ds){ S.ds=o.ds; Object.assign(S.set,o.set||{}); Object.assign(S.input,o.input||{}); if(o.limits) S.limits=o.limits; if(o.sel) S.sel=o.sel; return true; } }catch(e){} return false; }
+function save(){ try{ localStorage.setItem(LS, JSON.stringify({set:S.set,input:S.input,limits:S.limits,sel:S.sel})); }catch(e){} }
+// ---------- OPR library (each month stored separately, merged for training) ----------
+const LIBK='wpvc.lib', OPRK='wpvc.opr.';
+function libGet(){ try{ return JSON.parse(localStorage.getItem(LIBK)||'[]'); }catch(e){ return []; } }
+function libPut(lib){ localStorage.setItem(LIBK, JSON.stringify(lib)); }
+function libAdd(ym,name,ds){
+  try{ localStorage.setItem(OPRK+ym, JSON.stringify(ds)); }
+  catch(e){ toast('Browser storage is full — remove some older OPRs from the library first.',6000); return false; }
+  const lib=libGet().filter(x=>x.ym!==ym); lib.push({ym,name,n:ds.shifts.filter(r=>r.rom).length,addedAt:new Date().toISOString()}); lib.sort((a,b)=>a.ym.localeCompare(b.ym)); libPut(lib); return true;
+}
+function libRemove(ym){ localStorage.removeItem(OPRK+ym); libPut(libGet().filter(x=>x.ym!==ym)); }
+function libMerged(){
+  const items=[]; for(const it of libGet()){ try{ const ds=JSON.parse(localStorage.getItem(OPRK+it.ym)||'null'); if(ds) items.push({ym:it.ym,name:it.name,ds}); }catch(e){} }
+  return items.length?E.mergeDatasets(items):null;
+}
+function load(){
+  let o=null; try{ o=JSON.parse(localStorage.getItem(LS)||'null'); }catch(e){}
+  if(o){ // migrate v1 single-OPR storage into the library
+    if(o.ds&&!libGet().length){ const ym=E.ymFromName(o.ds.fileName)||'2026-09'; libAdd(ym,o.ds.fileName||'OPR',o.ds); }
+    Object.assign(S.set,o.set||{}); Object.assign(S.input,o.input||{}); if(o.limits) S.limits=o.limits; if(o.sel) S.sel=o.sel;
+    if(o.ds){ delete o.ds; try{ localStorage.setItem(LS,JSON.stringify(o)); }catch(e){} }
+  }
+  S.ds=libMerged(); return !!S.ds;
+}
 function toast(msg,ms){ const d=document.createElement('div'); d.className='toast'; d.innerHTML=msg; document.body.appendChild(d); setTimeout(()=>d.remove(),ms||3200); }
 
 // ---------- file handling ----------
-async function handleFile(file){
-  try{
-    const buf = await file.arrayBuffer();
-    const wb = XLSX.read(buf,{type:'array',cellDates:true});
-    S.ds = E.parseWorkbook(wb, file.name); S.set.endDay = null; S.input.Al2O3 = null;
-    retrain(true);
-    toast(`Loaded <b>${esc(file.name)}</b> · ${S.ds.shifts.filter(s=>s.rom).length} shifts parsed`);
-  }catch(err){ console.error(err); toast('Could not read this file: '+esc(err.message||err),6000); }
+async function handleFiles(files){
+  files=[...files].filter(fl=>/\.(xlsx|xlsm|xls)$/i.test(fl.name)); if(!files.length) return;
+  const before=libGet().length; const ok=[], bad=[];
+  for(const file of files){
+    try{
+      toast(`Reading <b>${esc(file.name)}</b>…`,1500);
+      const wb = XLSX.read(await file.arrayBuffer(),{type:'array',cellDates:true});
+      const ds = E.parseWorkbook(wb, file.name);
+      let ym = E.ymFromName(file.name);
+      if(!ym){ const ans=prompt(`Which month is "${file.name}"? Enter as YYYY-MM (e.g. 2026-04)`,''); if(!ans||!/^\d{4}-\d{2}$/.test(ans.trim())){ bad.push(file.name+' (month unknown)'); continue; } ym=ans.trim(); }
+      if(libAdd(ym,file.name,ds)) ok.push(`${E.MON[+ym.slice(5)-1]} ${ym.slice(0,4)}`);
+    }catch(err){ console.error(err); bad.push(file.name+': '+(err.message||err)); }
+  }
+  S.ds=libMerged(); S.set.endDay=null; S.input.Al2O3=null;
+  if(libGet().length>1 && before<=1) S.set.nDays=9999;
+  retrain(true);
+  if(ok.length) toast(`Added <b>${ok.join(', ')}</b> · library now ${libGet().length} OPR(s)`,4500);
+  if(bad.length) toast('Could not read: '+esc(bad.join('; ')),7000);
 }
+const handleFile=fl=>handleFiles([fl]);
 $('uploadBtn').onclick = () => $('file').click();
 // ---------- colour themes ----------
 const THEMES=[['amber','Amber','#f2b33d','#0f1317'],['blue','Blue','#4c8dff','#0b111c'],['violet','Violet','#a582ff','#100d1a'],['sky','Light blue','#54c6f2','#0b1519'],
@@ -760,21 +873,22 @@ window.addEventListener('beforeinstallprompt',ev=>{ ev.preventDefault(); deferre
 $('installBtn').onclick=async()=>{ if(!deferredInstall) return; deferredInstall.prompt(); const r=await deferredInstall.userChoice; deferredInstall=null; $('installBtn').hidden=true; if(r.outcome==='accepted') toast('Installed — find <b>Quality Value Chain</b> in your Start menu / desktop.'); };
 window.addEventListener('appinstalled',()=>{ $('installBtn').hidden=true; });
 // open .xlsx straight into the app ("Open with → Grade Flow")
-if('launchQueue' in window){ window.launchQueue.setConsumer(async params=>{ if(params.files&&params.files.length){ const fh=params.files[0]; handleFile(await fh.getFile()); } }); }
+if('launchQueue' in window){ window.launchQueue.setConsumer(async params=>{ if(params.files&&params.files.length){ handleFiles(await Promise.all(params.files.map(h=>h.getFile()))); } }); }
 if(new URLSearchParams(location.search).get('action')==='upload') setTimeout(()=>$('file').click(),400);
 function netState(){ const n=$('netDot'); if(!n) return; n.classList.toggle('off',!navigator.onLine); n.querySelector('span').textContent=navigator.onLine?'online':'offline · works fully'; }
 window.addEventListener('online',netState); window.addEventListener('offline',netState); netState();
-$('file').onchange = e => { if(e.target.files[0]) handleFile(e.target.files[0]); e.target.value=''; };
+$('file').onchange = e => { if(e.target.files.length) handleFiles(e.target.files); e.target.value=''; };
 const dz=()=>document.querySelector('.dropz');
 ['dragover','dragenter'].forEach(ev=>document.addEventListener(ev,e=>{e.preventDefault(); dz()&&dz().classList.add('hover');}));
 ['dragleave','drop'].forEach(ev=>document.addEventListener(ev,e=>{e.preventDefault(); dz()&&dz().classList.remove('hover');}));
-document.addEventListener('drop',e=>{ const fl=e.dataTransfer&&e.dataTransfer.files[0]; if(fl) handleFile(fl); });
+document.addEventListener('drop',e=>{ const fl=e.dataTransfer&&e.dataTransfer.files; if(fl&&fl.length) handleFiles(fl); });
 
 // ---------- training ----------
 function retrain(resetInput){
   if(!S.ds) return;
   if(!S.ds.days.some(d=>d.romPred) && S.set.basis==='dayPred') S.set.basis='shift';
-  try{ S.model = E.train(S.ds,{basis:S.set.basis,nDays:+S.set.nDays,endDay:S.set.endDay}); }
+  if(!S.ds){ S.model=null; S.pred=null; save(); renderAll(); return; }
+  try{ S.model = E.train(S.ds,{basis:S.set.basis,nDays:+S.set.nDays,endDay:S.set.endDay,method:S.set.method||'band'}); }
   catch(err){ toast(esc(err.message),5000); if(S.set.basis!=='shift'){ S.set.basis='shift'; return retrain(resetInput);} return; }
   if(resetInput || S.input.Al2O3==null || S.input.Al2O3===''){
     const last = S.model.romStats.last; S.input.Al2O3 = +last.X.Al2O3.toFixed(2); S.input.jf = defaultJf(last);
@@ -809,9 +923,21 @@ function gradeCol(e,v){
 }
 
 // ---------- rail ----------
+function libraryHTML(){
+  const lib=libGet();
+  return `<div class="sec"><h5><span>OPR library</span><span>${lib.length} file${lib.length===1?'':'s'}</span></h5>
+    <div class="lib">${lib.map(x=>`<div class="libit"><b>${E.MON[+x.ym.slice(5)-1]} ${x.ym.slice(0,4)}</b><span title="${esc(x.name)}">${x.n} shifts</span><button data-ym="${x.ym}" title="Remove ${esc(x.name)}">✕</button></div>`).join('')||'<div class="modelstate">Empty — upload one or more monthly OPRs.</div>'}</div>
+    <div class="duo"><button class="btn" id="libAdd" style="padding:7px 8px">+ Add OPRs</button><button class="btn sec" id="libClear" style="padding:7px 8px" ${lib.length?'':'disabled'}>Clear all</button></div>
+    <div class="hint">Stored in this browser — reopen the app and the model is ready. Re-uploading a month replaces it.</div></div>`;
+}
+function bindLibrary(){
+  $('libAdd').onclick=()=>$('file').click();
+  $('libClear').onclick=()=>{ if(!confirm('Remove all stored OPRs and the trained model from this browser?')) return; libGet().forEach(x=>localStorage.removeItem(OPRK+x.ym)); libPut([]); S.ds=null; retrain(true); };
+  document.querySelectorAll('.libit button').forEach(b=>b.onclick=()=>{ const ym=b.dataset.ym; if(!confirm(`Remove ${E.MON[+ym.slice(5)-1]} ${ym.slice(0,4)} from the library?`)) return; libRemove(ym); S.ds=libMerged(); S.set.endDay=null; retrain(true); });
+}
 function renderRail(){
   const r=$('rail'), i=S.input, m=S.model, pr=S.pred, e=S.set.focus;
-  if(!m){ r.innerHTML=`<div class="sec"><h5>Status</h5><div class="modelstate">No model yet.<br>Upload the monthly OPR to train.</div></div>`; return; }
+  if(!m){ r.innerHTML=libraryHTML()+`<div class="sec"><h5>Status</h5><div class="modelstate">No model yet.<br>Upload monthly OPRs (several at once is fine) to train.</div></div>`; bindLibrary(); return; }
   const ph=k=>pr&&pr.romSrc[k]==='est'?f(pr.rom[k],k):'';
   const hasPred=S.ds.days.some(d=>d.romPred);
   const days=[...new Set(S.ds.shifts.filter(s=>s.rom).map(s=>s.day))];
@@ -830,7 +956,7 @@ function renderRail(){
     </div>
     <div class="duo">
       <div class="f"><label>ROM tonnes</label><input id="inT" type="number" step="50" placeholder="optional" value="${i.t??''}"></div>
-      <div class="f"><label>Jig status</label><div class="switch ${(+i.jf)>0?'on':''}" style="cursor:default"><span id="jigState">${(+i.jf)>0?'JIG ON':'JIG OFF'}</span><div class="knob"></div></div></div>
+      <div class="f"><label>Jig status</label><div class="switch ${(+i.jf)>0?'on':''}" id="jigSw" title="Click to switch the jig on/off"><span id="jigState">${(+i.jf)>0?'JIG ON':'JIG OFF'}</span><div class="knob"></div></div></div>
     </div>
     <div class="jigbox">
       <div class="jighead"><span>Jig feed · % of Classifier Fines</span><b id="jfVal">${(+i.jf).toFixed(0)}%</b></div>
@@ -850,11 +976,13 @@ function renderRail(){
       <button data-v="day" class="${S.set.basis==='day'?'on':''}" title="Daily OPR Wet ROM">Daily</button>
       <button data-v="dayPred" class="${S.set.basis==='dayPred'?'on':''}" ${hasPred?'':'disabled'} title="Mine-predicted ROM → actual products">Pred ROM</button></div>
     <div class="duo">
-      <div class="f"><label>Window</label><select id="nDays">${[5,7,10,15,31].map(n=>`<option value="${n}" ${+S.set.nDays===n?'selected':''}>${n===31?'all days':n+' days'}</option>`).join('')}</select></div>
-      <div class="f"><label>Ending</label><select id="endDay">${days.map(d=>`<option value="${d}" ${d===m.endDay?'selected':''}>Day ${d}</option>`).join('')}</select></div>
+      <div class="f"><label>Window</label><select id="nDays">${[[10,'last 10 days'],[30,'last 30 days'],[60,'last 60 days'],[90,'last 90 days'],[180,'last 180 days'],[9999,'all uploaded']].map(([n,l])=>`<option value="${n}" ${+S.set.nDays===n?'selected':''}>${l}</option>`).join('')}</select></div>
+      <div class="f"><label>Ending</label><select id="endDay">${days.slice().reverse().map(d=>`<option value="${d}" ${d===m.endDay?'selected':''}>${E.fmtOrd(d,true)}</option>`).join('')}</select></div>
     </div>
-    <div class="modelstate" style="margin-top:10px"><b>● trained</b> on Day ${m.winDays[0]}–${m.winDays[m.winDays.length-1]} ${esc(S.ds.month||'')}<br>${m.nRows} ${S.set.basis==='shift'?'shifts':'days'} · jig ran in ${(m.yields.jigShare*100).toFixed(0)}% of them</div>
-  </div>`;
+    <div class="f" style="margin-top:8px"><label>Δ model</label></div>
+    <div class="pills" id="methP"><button data-v="band" class="${(S.set.method||'band')==='band'?'on':''}" title="Delta looked up in 0.2% Wet ROM Al₂O₃ bands">ROM Al bands 0.2%</button><button data-v="linear" class="${S.set.method==='linear'?'on':''}" title="Single delta, optionally sloped with ROM Al₂O₃">Linear</button></div>
+    <div class="modelstate" style="margin-top:10px"><b>● trained</b> on ${E.fmtOrd(m.winDays[0],true)} – ${E.fmtOrd(m.winDays[m.winDays.length-1],true)} · ${m.winDays.length} operating days<br>${m.nRows} ${S.set.basis==='shift'?'shifts':'days'} · jig ran in ${(m.yields.jigShare*100).toFixed(0)}% of them</div>
+  </div>${libraryHTML()}`;
   const apply=(full)=>{ const g=id=>$(id).value.trim(); const al=parseFloat(g('inAl')); if(!isFinite(al)||al<=0) return;
     Object.assign(S.input,{Al2O3:al,Fe:g('inFe'),SiO2:g('inSiO2'),P:g('inP'),t:g('inT')}); runPredict(); save();
     if(full===true) renderAll(); else { renderMain(); $('railHeads').innerHTML=heads(); ['Fe','SiO2','P'].forEach(k=>{ $('in'+k).placeholder=S.pred.romSrc[k]==='est'?f(S.pred.rom[k],k):''; }); } };
@@ -862,13 +990,19 @@ function renderRail(){
   const step=d=>{ $('inAl').value=(Math.max(0.1,(parseFloat($('inAl').value)||0)+d)).toFixed(2); apply(true); };
   $('stMinus').onclick=()=>step(-0.05); $('stPlus').onclick=()=>step(0.05);
   let jt; $('jfSl').oninput=ev=>{ const v=+ev.target.value; S.input.jf=v; $('jfVal').textContent=v+'%'; $('jigState').textContent=v>0?'JIG ON':'JIG OFF'; ev.target.style.setProperty('--p',(v/40*100)+'%'); clearTimeout(jt); jt=setTimeout(()=>apply(false),120); };
-  $('jfSl').onchange=()=>apply(true);
+  $('jfSl').onchange=()=>{ if(+S.input.jf>0) S.input.jfLast=+S.input.jf; apply(true); };
+  $('jigSw').onclick=()=>{ if(!m.yields.jigData){ toast('No jig data in the loaded OPRs — jig cannot be switched on.'); return; }
+    if(+S.input.jf>0){ S.input.jfLast=+S.input.jf; S.input.jf=0; }
+    else S.input.jf = +S.input.jfLast>0 ? +S.input.jfLast : Math.max(1,Math.round(Math.min(40,m.yields.JF_of_CF*100)));
+    apply(true); };
   $('qLast').onclick=()=>{ const l=m.romStats.last; $('inAl').value=l.X.Al2O3.toFixed(2); S.input.jf=defaultJf(l); ['inFe','inSiO2','inP'].forEach(k=>$(k).value=''); apply(true); };
   $('qMean').onclick=()=>{ $('inAl').value=m.romStats.mean.toFixed(2); ['inFe','inSiO2','inP'].forEach(k=>$(k).value=''); apply(true); };
   $('focusP').querySelectorAll('button').forEach(b=>b.onclick=()=>{ S.set.focus=b.dataset.v; save(); renderAll(); });
   $('basisP').querySelectorAll('button').forEach(b=>b.onclick=()=>{ if(b.disabled) return; S.set.basis=b.dataset.v; retrain(true); });
   $('nDays').onchange=ev=>{ S.set.nDays=+ev.target.value; retrain(false); };
   $('endDay').onchange=ev=>{ S.set.endDay=+ev.target.value; retrain(false); };
+  $('methP').querySelectorAll('button').forEach(b=>b.onclick=()=>{ S.set.method=b.dataset.v; retrain(false); });
+  bindLibrary();
 }
 
 // ---------- mass-proportional grade flow (sankey) ----------
@@ -949,7 +1083,7 @@ function inspector(){
     let bar='', meta='';
     if(cell){ const a=cell.act[el]; const lo=Math.min(a.min,v), hi=Math.max(a.max,v), sp=(hi-lo)||1, ps=q=>((q-lo)/sp*100).toFixed(1);
       bar=`<div class="rangebar"><div class="r" style="left:${ps(a.min)}%;width:${(ps(a.max)-ps(a.min)).toFixed(1)}%"></div><div class="m" style="left:calc(${ps(v)}% - 2px)"></div></div><div class="rl"><span>${f(a.min,el)}</span><span>trained range</span><span>${f(a.max,el)}</span></div>`;
-      const c=cell.el[el]; meta=`<div class="meta">±${f(x.sd[el],el)} · ${c.mode==='adaptive'?'feed-adaptive':'fixed'} Δ · last ${f(cell.last.v[el],el)}</div>`; }
+      meta=`<div class="meta">±${f(x.sd[el],el)} · ${bandTxt(x,el,cell)} · last ${f(cell.last.v[el],el)}</div>`; }
     else if(p==='ROM') meta=`<div class="meta">${el==='Al2O3'?'input':(pr.romSrc[el]==='est'?'estimated ±'+f(m.romEst[el].rmse,el):'input')}</div>`;
     const st = x? statusCls(p,el,v,x.sd[el]) : '';
     h+=`<div class="el" style="${el===e?'background:var(--tint)':''}"><small>${ELN[el]}${el===e?' · FOCUS':''}</small><div class="val" style="${st==='bad'?'color:var(--red)':''}">${f(v,el)}<i>%</i></div>
@@ -978,12 +1112,19 @@ function ledger(){
       ${S.pred.t?`<td class="num">${p==='ROM'?Math.round(+S.input.t).toLocaleString('en-IN'):(S.pred.t[p]!=null?Math.round(S.pred.t[p]).toLocaleString('en-IN'):'—')}</td>`:''}
       ${EL.map(el=>{ const q=v(el); const st=x?statusCls(p,el,q,x.sd[el]):''; return `<td class="num ${el===e?'fc':''}" style="${st==='bad'?'color:var(--red)':''}">${f(q,el)}${x?`<span class="sd">±${f(x.sd[el],el)}</span>`:''}</td>`; }).join('')}
       <td class="num" style="color:${dl==null||Math.abs(dl)<0.005?'var(--muted)':(bad?'var(--rust)':'var(--mint)')}">${dl==null?'':fs(dl,e)}</td>
-      <td>${mini}</td><td class="small muted">${p==='ROM'?'input':(cell?(cell.el[e].mode==='adaptive'?'adaptive':'fixed')+' · n'+cell.n:(x&&x.blend?'blend':'idle'))}</td></tr>`;
+      <td>${mini}</td><td class="small muted">${p==='ROM'?'input':(cell?bandTxt(x,e,cell):(x&&x.blend?'blend':'idle'))}</td></tr>`;
   }
   h+=`</table></div><p class="small muted" style="margin-top:10px">Mass split from trained Plant Production yields. Wet ROM = SO + CF + HC Conc + Slime (OPR mass balance). Wet Fines = CF (not jigged) + Jig Conc + HC Conc. Jig Reject and LRP Slime are separate waste streams.</p>`;
   return h;
 }
 
+function bandTxt(x,el,cell){
+  const b=x.band&&x.band[el]; if(!b) return '';
+  if(b.how==='band') return `band ${b.lo.toFixed(1)}–${(b.lo+0.2).toFixed(1)} · n${b.n}`;
+  if(b.how==='interp') return `band ${b.lo.toFixed(1)}–${(b.lo+0.2).toFixed(1)} · empty, interpolated`;
+  if(b.how==='edge') return `outside bands · edge n${b.n}`;
+  const c=cell.el[el]; return `${c.mode==='adaptive'?'feed-adaptive':'fixed'} Δ · n${c.n}`;
+}
 // ---------- insights ----------
 function insights(){
   const m=S.model, pr=S.pred, out=[];
@@ -992,11 +1133,11 @@ function insights(){
   for(const key in S.limits){
     const [p,e]=key.split('|'); const L=limitFor(p,e); if(L==null||!pr.p[p]) continue;
     const v=pr.p[p].v[e], gap=v-L;
-    const sol=E.solveLimit(m,p,e,L-((pr.p[p].adj&&pr.p[p].adj[e])||0),pr.jig);
-    const romTxt = sol ? (sol.slope>0?`exceeds <b>${f(sol.rom,'Al2O3')}%</b>`:`falls below <b>${f(sol.rom,'Al2O3')}%</b>`) : 'n/a';
+    const sol=E.solveLimitNum(m,p,e,L,{jf:pr.jf});
+    const romTxt = !sol ? '' : sol.already ? `already exceeds it across the whole trained range` : sol.never ? `stays below it up to ROM Al₂O₃ ${f(sol.hi,'Al2O3')}%` : `reaches <b>${f(sol.rom,'Al2O3')}%</b>`;
     card(`Threshold · ${P[p].name} ${ELN[e]} vs ${f(L,e)}%`, gap>0?'bad':(gap>-pr.p[p].sd[e]?'warn':'good'),
       `At the current feed, ${P[p].name} ${ELN[e]} is predicted at <b>${f(v,e)}%</b> — ${f(Math.abs(gap),e)} ${gap>0?'above':'below'} the ${f(L,e)}% limit (±${f(pr.p[p].sd[e],e)} 1σ).`,
-      sol?`Limit is breached if ROM Al₂O₃ ${romTxt} (jig feed ${Math.round(pr.jf*100)}% of CF)`:'');
+      sol?(sol.rom!=null&&!sol.already?`Limit is first breached when ROM Al₂O₃ ${romTxt} (jig feed ${Math.round(pr.jf*100)}% of CF)`:`${P[p].name} ${romTxt} (jig feed ${Math.round(pr.jf*100)}% of CF)`):'');
   }
   // alumina distribution
   const ad=pr.alDist, Y=m.yields;
@@ -1007,10 +1148,22 @@ function insights(){
       ad.CF>ad.SO?'Classifier Fines is the largest alumina carrier — fines circuit (jig/HC) is the lever':'');
   }
   // sensitivity
-  const slope=(p,e)=>{ const c=E.cellFor(m,p,pr.jig); if(!c) return null; return (e==='Al2O3'?1:m.romEst[e].b)+c.el[e].beta; };
+  const at=x=>E.predict(m,{Al2O3:x,jf:pr.jf});
+  const lo_=at(pr.rom.Al2O3-0.25), hi_=at(pr.rom.Al2O3+0.25);
+  const slope=(p,e)=>{ if(!lo_.p[p]||!hi_.p[p]) return null; return (hi_.p[p].v[e]-lo_.p[p].v[e])/0.5; };
   const sens=['SO','WF','SL'].map(p=>{const s=slope(p,'Al2O3'); return s==null?null:`${P[p].name} ${fs(s*0.5,'Al2O3')}`}).filter(Boolean).join(' · ');
   const feS=['SO','WF'].map(p=>{const s=slope(p,'Fe'); return s==null?null:`${P[p].name} Fe ${fs(s*0.5,'Fe')}`}).filter(Boolean).join(' · ');
-  card('Sensitivity · per +0.5% ROM Al₂O₃','', `${sens}.<br>${feS}.`, 'Use with the ROM Monitoring App shift forecast to pre-empt product slippage');
+  card('Sensitivity · per +0.5% ROM Al₂O₃ around this feed','', `${sens}.<br>${feS}.`, 'Use with the ROM Monitoring App shift forecast to pre-empt product slippage');
+  // band behaviour: how the delta changes with feed grade
+  if((m.method||'band')==='band'){
+    const lines=[];
+    for(const p of ['WF','SO','CF','SL']){
+      const c=E.cellFor(m,p,true); if(!c) continue; const B=c.el.Al2O3.bins.filter(b=>b.n>=5); if(B.length<2) continue;
+      const lo=B[0], hi=B[B.length-1], cur=pr.p[p]&&pr.p[p].band.Al2O3;
+      lines.push(`${P[p].name}: <b>${fs(lo.s,'Al2O3')}</b> at ${lo.lo.toFixed(1)}–${(lo.lo+0.2).toFixed(1)}% → <b>${fs(hi.s,'Al2O3')}</b> at ${hi.lo.toFixed(1)}–${(hi.lo+0.2).toFixed(1)}%${cur&&cur.lo!=null?` (now ${fs(cur.s,'Al2O3')})`:''}`);
+    }
+    if(lines.length) card('Bands · ΔAl₂O₃ vs Wet ROM Al₂O₃','', lines.join('<br>'), 'Full band tables for all four elements are in the Model & limits tab');
+  }
   // jig
   if(m.yields.jigData){
     const sweep=[0,10,20,30,40].map(j=>{ const q=E.predict(m,{Al2O3:pr.rom.Al2O3,Fe:S.input.Fe,SiO2:S.input.SiO2,P:S.input.P,jf:j/100}); return q.p.WF?`${j}% → <b>${f(q.p.WF.v.Al2O3,'Al2O3')}</b>`:null; }).filter(Boolean).join(' · ');
@@ -1027,8 +1180,8 @@ function insights(){
     const sd=r[0].pred[p].sd.Al2O3;
     if(Math.abs(bias)>0.5*sd && Math.abs(bias)>0.25) drift.push(`${P[p].name} ${bias>0?'+':''}${bias.toFixed(2)}`);
   }
-  card('Pattern · last 3 days vs model', drift.length?'warn':'good', drift.length?`Actual Al₂O₃ has drifted from the model over Day ${last3.join(', ')}: <b>${drift.join(' · ')}</b> (actual − predicted).`:`No material drift: actual Al₂O₃ over Day ${last3.join(', ')} sits within half a standard error of the model for all main streams.`,
-    drift.length?'Shorten the training window (5–7 days) or check plant changes (classifier, cyclone, jig settings)':'');
+  card('Pattern · last 3 days vs model', drift.length?'warn':'good', drift.length?`Actual Al₂O₃ has drifted from the model over ${last3.map(d=>E.fmtOrd(d)).join(', ')}: <b>${drift.join(' · ')}</b> (actual − predicted).`:`No material drift: actual Al₂O₃ over ${last3.map(d=>E.fmtOrd(d)).join(', ')} sits within half a standard error of the model for all main streams.`,
+    drift.length?'Shorten the training window or check plant changes (classifier, cyclone, jig settings)':'');
   // predicted ROM bias
   const W=new Set(m.winDays), dd=S.ds.days.filter(d=>W.has(d.day)&&d.rom&&d.romPred);
   if(dd.length>=3){
@@ -1037,7 +1190,7 @@ function insights(){
     card('Feed · mine-predicted vs plant ROM', Math.abs(b)>0.2?'warn':'good', `Over the window, plant mass-balance ROM Al₂O₃ was <b>${fs(b,'Al2O3')}%</b> vs the mine-predicted ROM (Fe ${fs(bf,'Fe')}%).`,
       S.set.basis==='dayPred'?'Day · Pred ROM basis active — this bias is absorbed in the deltas':(Math.abs(b)>0.2?'If you feed ROM-app predictions, consider the "Day · Pred ROM" basis or add this offset':''));
   }
-  if(pr.outOfRange) card('Caution · extrapolation','bad',`ROM Al₂O₃ ${f(pr.rom.Al2O3,'Al2O3')}% is outside the trained range (${f(m.romStats.min,'Al2O3')}–${f(m.romStats.max,'Al2O3')}%). Feed-adaptive deltas are clamped; treat predictions as indicative.`);
+  if(pr.outOfRange) card('Caution · extrapolation','bad',`ROM Al₂O₃ ${f(pr.rom.Al2O3,'Al2O3')}% is outside the trained range (${f(m.romStats.min,'Al2O3')}–${f(m.romStats.max,'Al2O3')}%). Edge-band deltas are used; treat predictions as indicative.`);
   const cl=pr.closure;
   card('Check · mass balance closure', Math.abs(cl.Al2O3)<0.15?'good':'warn', `Recombining predicted SO + CF + HC Conc + Slime at trained yields gives ROM Al₂O₃ ${fs(cl.Al2O3,'Al2O3')}, Fe ${fs(cl.Fe,'Fe')} vs input — ${Math.abs(cl.Al2O3)<0.15?'predictions are mutually consistent':'streams disagree; read individual product predictions with care'}.`);
   for(const n of m.notes) card('Model note','warn',esc(n));
@@ -1047,15 +1200,24 @@ function insights(){
 // ---------- model tab ----------
 function modelTab(){
   const m=S.model, pr=S.pred; const focusP=S.sel;
-  let h=`<h4>Learned Δ (product − Wet ROM)</h4>
-  <p class="small muted" style="margin-top:-4px">Δ = Δ̄ + β·(ROM Al₂O₃ − x̄). β is used only when it beats a fixed Δ on leave-one-out error by ≥10% (n ≥ 8). ± is the leave-one-out RMSE.</p>
+  const e=S.set.focus, cols=['SO','CF','JC','HCC','WF','SL','JR'].filter(p=>E.cellFor(m,p,true));
+  const cb=p=>E.cellFor(m,p,true).el[e].bins;
+  const los=[...new Set(cols.flatMap(p=>cb(p).map(b=>b.lo)))].sort((a,b)=>a-b);
+  const curLo=Math.floor(pr.rom.Al2O3/E.BAND+1e-9)*E.BAND;
+  let h=`<h4><span>Δ${ELN[e]} by Wet ROM Al₂O₃ band (0.2%)</span><span>${(m.method||'band')==='band'?'active model':'not active — Linear selected'}</span></h4>
+  <p class="small muted" style="margin-top:-4px">Each cell = product ${ELN[e]} − Wet ROM ${ELN[e]} for shifts whose ROM Al₂O₃ fell in that band (small n = shift count). Bands with few shifts are pulled toward the overall trend (${E.SHRINK} pseudo-shifts), so thin bands don't swing wildly. Change the element with FOCUS. Highlighted row = current feed.</p>
+  <div style="overflow:auto;max-height:460px"><table class="t"><tr><th>ROM Al₂O₃ %</th>${cols.map(p=>`<th>${p==='SO'?'Sized Ore':p==='WF'?'Wet Fines':p==='SL'?'Slime':p}</th>`).join('')}</tr>
+  ${los.map(lo=>`<tr class="${Math.abs(lo-curLo)<1e-6?'sel':''}"><td>${lo.toFixed(1)} – ${(lo+0.2).toFixed(1)}</td>${cols.map(p=>{ const b=cb(p).find(x=>Math.abs(x.lo-lo)<1e-6); return b?`<td class="num" style="color:${(e==='Fe'?b.s>0:b.s<0)?'var(--mint)':'var(--rust)'}">${fs(b.s,e)}<span class="sd">n${b.n}</span></td>`:'<td class="muted">·</td>'; }).join('')}</tr>`).join('')}
+  <tr><td class="muted">LOO error ±</td>${cols.map(p=>`<td class="muted">${f(E.cellFor(m,p,true).el[e].rmseB,e)}</td>`).join('')}</tr></table></div>
+  <h4 style="margin-top:18px">Linear summary (product − Wet ROM)</h4>
+  <p class="small muted" style="margin-top:-4px">Δ = Δ̄ + β·(ROM Al₂O₃ − x̄); β only where it beats a fixed Δ on leave-one-out error by ≥10%. Compare ± here with the band table's LOO error to see which model fits better.</p>
   <div style="overflow:auto"><table class="t"><tr><th>Stream</th><th>El.</th><th>Δ̄</th><th>β</th><th>±</th><th>n</th><th>Mode</th></tr>`;
   const ids=Object.keys(m.cells);
   for(const id of ids){
     const c=m.cells[id]; if(!c) continue;
     const nm=P[c.p].name+(id==='WF_on'?' (jig ON)':id==='WF_off'?' (jig OFF)':'');
     EL.forEach((e,j)=>{ const x=c.el[e];
-      h+=`<tr style="${focusP&&c.p===focusP?'background:var(--rowsel)':''}"><td>${j===0?`<b>${nm}</b>${c.scope==='month'?' <span class="muted">(month)</span>':''}`:''}</td><td>${ELN[e]}</td><td>${fs(x.dbar,e)}</td><td>${x.beta?x.beta.toFixed(2):'—'}</td><td>${f(x.rmse,e)}</td><td>${x.n}${x.nOut?`<span class="muted">−${x.nOut}</span>`:''}</td><td class="${x.mode==='adaptive'?'a':''}">${x.mode==='adaptive'?'adaptive':'fixed'}</td></tr>`; });
+      h+=`<tr style="${focusP&&c.p===focusP?'background:var(--rowsel)':''}"><td>${j===0?`<b>${nm}</b>${c.scope==='month'?' <span class="muted">(month)</span>':''}`:''}</td><td>${ELN[e]}</td><td>${fs(x.dbar,e)}</td><td>${x.beta?x.beta.toFixed(2):'—'}</td><td>${f(x.rmseLin,e)}</td><td>${x.n}${x.nOut?`<span class="muted">−${x.nOut}</span>`:''}</td><td class="${x.mode==='adaptive'?'a':''}">${x.mode==='adaptive'?'adaptive':'fixed'}</td></tr>`; });
   }
   h+=`</table></div>
   <h4 style="margin-top:16px">ROM estimator (when only Al₂O₃ is given)</h4><table class="t"><tr><th>Element</th><th>= a + b·Al₂O₃</th><th>±</th></tr>`;
@@ -1094,11 +1256,12 @@ function btTab(){
   svg+=`<polyline fill="none" style="stroke:var(--amber)" stroke-width="1.8" stroke-dasharray="4 3" points="${R.map((r,i)=>`${X(i)},${Yv(r.pred[p].v[e])}`).join(' ')}"/>`;
   svg+=`<polyline fill="none" style="stroke:var(--text)" stroke-width="1.6" points="${R.map((r,i)=>`${X(i)},${Yv(r.act[p][e])}`).join(' ')}"/>`;
   R.forEach((r,i)=>{ svg+=`<circle cx="${X(i)}" cy="${Yv(r.act[p][e])}" r="2" style="fill:var(--text)"><title>${r.label}: actual ${f(r.act[p][e],e)} · pred ${f(r.pred[p].v[e],e)} · ROM Al ${f(r.romAl,'Al2O3')}</title></circle>`; });
-  let lastDay=null; R.forEach((r,i)=>{ if(r.day!==lastDay && r.day%5===0){ svg+=`<text x="${X(i)}" y="${H-8}" font-size="9" text-anchor="middle" fill="#789">D${r.day}</text>`; } lastDay=r.day; });
+  const span=R.length?((R[R.length-1].day-R[0].day)>200):false;
+  let lastDay=null; R.forEach((r,i)=>{ const dom=r.day%100, mo=Math.floor(r.day/100)%100; if(r.day!==lastDay && (span? dom===1||i===0 : dom%5===0)){ svg+=`<text x="${X(i)}" y="${H-8}" font-size="9" text-anchor="middle" style="fill:var(--muted)">${span?E.MON[mo-1]:dom+' '+E.MON[mo-1]}</text>`; } lastDay=r.day; });
   svg+='</svg>';
   h+=svg+`<div class="small" style="margin:6px 0 10px"><span>━ actual</span> &nbsp; <span style="color:var(--amber)">╌ predicted (from ROM Al₂O₃ only)</span> &nbsp; <span class="muted">shade ±1σ</span></div>
   <table class="t"><tr><th>Set</th><th>n</th><th>MAE</th><th>Bias (act−pred)</th></tr>
-  ${a?`<tr><td>In window (fit)</td><td>${a.n}</td><td>${f(a.mae,e)}</td><td>${fs(a.bias,e)}</td></tr>`:''}
+  ${a?`<tr><td>In window ${(m.method||'band')==='band'?'(leave-one-out)':'(fit)'}</td><td>${a.n}</td><td>${f(a.mae,e)}</td><td>${fs(a.bias,e)}</td></tr>`:''}
   ${b?`<tr><td><b>Outside window (true test)</b></td><td>${b.n}</td><td><b>${f(b.mae,e)}</b></td><td>${fs(b.bias,e)}</td></tr>`:''}</table>
   <p class="small muted">Out-of-window rows were not used for training, so their error is an honest estimate of shift-ahead accuracy. Hover points for details.</p>`;
   return h;
@@ -1179,11 +1342,11 @@ function renderMain(){
   const mn=$('main');
   if(!S.model){
     mn.innerHTML=`<div class="card empty"><div class="dropz"><svg width="70" height="70" viewBox="0 0 70 70"><polygon points="35,4 64,20 64,50 35,66 6,50 6,20" fill="none" stroke="#f2b33d" stroke-width="2"/><path d="M20 42 L30 30 L38 38 L50 24" stroke="#46c29d" stroke-width="3" fill="none"/></svg>
-      <div class="big">Drop the OPR workbook here</div>
-      <p>Monthly <b>Ore Processing Report (.xlsx)</b>. Sheets used: CLO W7 · Classifier Fines W3 · Hydrocyclone · Jig Fines · Wet Fines W6 · LRP Slime · Plant Production · Quality Balance.</p>
-      <p>Wet ROM → product Δ for Fe, SiO₂, Al₂O₃ and P is learned from the last 10 operating days; then any shift ROM Al₂O₃ is turned into predicted grades for every Wet Plant stream.</p>
-      <p class="small">Processed locally in this browser — nothing is uploaded anywhere.</p>
-      <button class="btn" style="margin-top:12px" onclick="document.getElementById('file').click()">Choose file</button></div></div>`;
+      <div class="big">Drop OPR workbooks here</div>
+      <p>One or many monthly <b>Ore Processing Reports (.xlsx)</b> — e.g. April to now, selected together. Sheets used: CLO W7 · Classifier Fines W3 · Hydrocyclone · Jig Fines · Wet Fines W6 · LRP Slime · Plant Production · Quality Balance.</p>
+      <p>Wet ROM → product Δ for Fe, SiO₂, Al₂O₃ and P is learned separately for every 0.2% Wet ROM Al₂O₃ band; then any shift ROM Al₂O₃ is turned into predicted grades for every Wet Plant stream. Uploaded OPRs are remembered in this browser.</p>
+      <p class="small">Processed locally — nothing is sent anywhere.</p>
+      <button class="btn" style="margin-top:12px" onclick="document.getElementById('file').click()">Choose OPR files</button></div></div>`;
     return;
   }
   const e=S.set.focus;
@@ -1202,18 +1365,18 @@ function renderPane(){
   if(S.tab==='ins') pane.innerHTML=`<h4><span>Process insights</span><span>for this shift feed</span></h4><div class="insgrid">${insights()}</div>`;
   if(S.tab==='model'){ pane.innerHTML=modelTab();
     pane.querySelectorAll('#limBox input').forEach(inp=>inp.onchange=()=>{ const v=inp.value.trim(); if(v==='') delete S.limits[inp.dataset.k]; else S.limits[inp.dataset.k]={max:+v}; save(); renderAll(); });
-    $('dlModel').onclick=()=>{ const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([JSON.stringify(S.model,null,1)],{type:'application/json'})); a.download=`wetplant_model_${(S.ds.month||'').replace(' ','')}_D${S.model.endDay}.json`; a.click(); };
+    $('dlModel').onclick=()=>{ const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([JSON.stringify(S.model,null,1)],{type:'application/json'})); a.download=`wetplant_model_${(S.ds.month||'').replace(/[^A-Za-z0-9]+/g,'')}_${S.model.endDay}.json`; a.click(); };
   }
   if(S.tab==='bt'){ pane.innerHTML=btTab(); $('btP').onchange=ev=>{S.bt.p=ev.target.value;renderPane();}; $('btE').onchange=ev=>{S.bt.e=ev.target.value;renderPane();}; }
   if(S.tab==='batch'){ pane.innerHTML=batchTab(); $('batchGo').onclick=()=>batchRun(false); $('batchCsv').onclick=()=>batchRun(true);
-    $('batchFill').onclick=()=>{ const sh=S.ds.shifts.filter(s=>s.rom).slice(-3); $('batchIn').value=sh.map(s=>`${s.day} ${s.shift} ${s.rom.Al2O3.toFixed(2)} ${Math.round(s.rom.t)} ${s.jig&&s.t.CF>0?Math.round(Math.min(40,s.t.JF/s.t.CF*100))+'%':'OFF'}`).join('\n'); batchRun(false); };
+    $('batchFill').onclick=()=>{ const sh=S.ds.shifts.filter(s=>s.rom).slice(-3); $('batchIn').value=sh.map(s=>`${s.dom||s.day} ${s.shift} ${s.rom.Al2O3.toFixed(2)} ${Math.round(s.rom.t)} ${s.jig&&s.t.CF>0?Math.round(Math.min(40,s.t.JF/s.t.CF*100))+'%':'OFF'}`).join('\n'); batchRun(false); };
     if(S.batch) batchRun(false); }
   if(S.tab==='data'){ pane.innerHTML=dataTab(); $('clearBtn').onclick=()=>{ if(confirm('Clear stored OPR data and model from this browser?')){ localStorage.removeItem(LS); location.reload(); } }; }
 }
-function renderAll(){ $('fileChip').innerHTML = S.ds?`<i>●</i> ${esc(S.ds.fileName||'OPR')}`:'no OPR loaded'; renderRail(); renderMain(); }
+function renderAll(){ $('fileChip').innerHTML = S.ds?`<i>●</i> ${esc(S.ds.fileName||'OPR')} · ${esc(S.ds.month||'')}`:'no OPR loaded'; renderRail(); renderMain(); }
 
 function applyUrl(){ const q=new URLSearchParams(location.search); if(q.has('al')){ S.input.Al2O3=+q.get('al'); ['Fe','SiO2','P'].forEach(k=>S.input[k]=q.get(k.toLowerCase())||''); if(q.has('jig')&&q.get('jig')==='0') S.input.jf=0; if(q.has('jf')) S.input.jf=Math.max(0,Math.min(40,+q.get('jf'))); if(q.has('t')) S.input.t=q.get('t'); return true; } return false; }
-if(load()){ applyUrl(); try{ S.model=E.train(S.ds,{basis:S.set.basis,nDays:+S.set.nDays,endDay:S.set.endDay}); if(S.input.Al2O3==null){ const l=S.model.romStats.last; S.input.Al2O3=+l.X.Al2O3.toFixed(2);} runPredict(); }catch(err){ console.error(err); } }
+if(load()){ applyUrl(); try{ S.model=E.train(S.ds,{basis:S.set.basis,nDays:+S.set.nDays,endDay:S.set.endDay,method:S.set.method||'band'}); if(S.input.Al2O3==null){ const l=S.model.romStats.last; S.input.Al2O3=+l.X.Al2O3.toFixed(2);} runPredict(); }catch(err){ console.error(err); } }
 else applyUrl();
 renderAll();
 })();
