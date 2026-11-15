@@ -3,12 +3,12 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Noamundi Wet Plant · Grade Flow</title>
+<title>Quality Value Chain · Noamundi</title>
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#11161b">
-<meta name="application-name" content="Grade Flow">
+<meta name="application-name" content="Quality Value Chain">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="Grade Flow">
+<meta name="apple-mobile-web-app-title" content="Value Chain">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -19,6 +19,10 @@
   --bg:#0f1317; --rail:#141a20; --panel:#181f26; --panel2:#1f2730; --line:#2a343f; --line2:#35414d;
   --text:#e7ebee; --muted:#8c99a5; --dim:#5d6a76;
   --amber:#f2b33d; --rust:#d9583a; --mint:#46c29d; --red:#ef5b4c; --steel:#7fa7c9;
+  --onacc:#1b1306; --topa:#151b21; --topb:#11161b; --press:#2a3440; --knob:#3a4652;
+  --track:#26303a; --trackr:#3f5466; --rowwin:#1d2a2a; --rowsel:color-mix(in srgb,var(--amber) 14%,var(--panel)); --rowhov:#222b34;
+  --tint:#ffffff06; --instext:#cfd6dc; --insb:#fff; --kbg:#2c3742; --kwarn:#3a2f17; --kbad:#3d1f1c; --kgood:#183428;
+  --svgtxt:#aeb9c3; --svgval:#e7ebee; --svgmut:#6f7d89; --svgdim:#5d6a76; --idle:#2a343f; --idles:#4a5866; --chartbg:#151b21; --shadow:#0008;
   --cond:"Barlow Semi Condensed",Bahnschrift,"DIN Alternate","Arial Narrow",sans-serif;
   --sans:Barlow,"Segoe UI Variable Text","Segoe UI",system-ui,sans-serif;
   --mono:"JetBrains Mono","Cascadia Mono",Consolas,monospace;
@@ -26,16 +30,16 @@
 *{box-sizing:border-box}
 html,body{margin:0;background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14px}
 button,input,select,textarea{font:inherit;color:inherit}
-::selection{background:#f2b33d55}
+::selection{background:color-mix(in srgb,var(--amber) 35%,transparent)}
 /* top bar */
-.top{display:flex;align-items:center;gap:14px;padding:10px 18px;border-bottom:1px solid var(--line);background:linear-gradient(180deg,#151b21,#11161b)}
+.top{display:flex;align-items:center;gap:14px;padding:10px 18px;border-bottom:1px solid var(--line);background:linear-gradient(180deg,var(--topa),var(--topb))}
 .mark{width:34px;height:34px;display:grid;place-items:center;border-radius:4px;background:conic-gradient(from 210deg,var(--rust),var(--amber),var(--rust));color:#1a0f08;font:700 15px var(--cond);clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%)}
 .ttl small{display:block;font:600 10.5px var(--mono);letter-spacing:.18em;color:var(--amber)}
 .ttl b{font:600 23px var(--cond);letter-spacing:.02em;text-transform:uppercase}
 .sp{flex:1}
 .filechip{font:12px var(--mono);color:var(--muted);border:1px solid var(--line2);border-radius:20px;padding:5px 12px;max-width:340px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .filechip i{font-style:normal;color:var(--mint)}
-.up{background:var(--amber);color:#1b1306;border:0;border-radius:4px;padding:9px 16px;font:700 13px var(--cond);letter-spacing:.08em;text-transform:uppercase;cursor:pointer}
+.up{background:var(--amber);color:var(--onacc);border:0;border-radius:4px;padding:9px 16px;font:700 13px var(--cond);letter-spacing:.08em;text-transform:uppercase;cursor:pointer}
 .up:hover{filter:brightness(1.08)}
 /* layout */
 .app{display:grid;grid-template-columns:300px minmax(0,1fr);min-height:calc(100vh - 56px)}
@@ -44,7 +48,7 @@ button,input,select,textarea{font:inherit;color:inherit}
 .sec h5{margin:0 0 9px;font:600 10.5px var(--mono);letter-spacing:.2em;color:var(--muted);text-transform:uppercase;display:flex;justify-content:space-between}
 .stepper{display:grid;grid-template-columns:44px 1fr 44px;border:1px solid var(--line2);border-radius:6px;overflow:hidden;background:var(--panel)}
 .stepper button{background:var(--panel2);border:0;font:600 22px var(--cond);color:var(--amber);cursor:pointer}
-.stepper button:active{background:#2a3440}
+.stepper button:active{background:var(--press)}
 .stepper input{width:100%;border:0;background:transparent;text-align:center;font:600 34px var(--cond);padding:6px 0;color:var(--text);outline:none;-moz-appearance:textfield}
 .stepper input::-webkit-outer-spin-button,.stepper input::-webkit-inner-spin-button{-webkit-appearance:none}
 .unit{font:11px var(--mono);color:var(--muted);text-align:center;margin-top:4px}
@@ -57,14 +61,14 @@ button,input,select,textarea{font:inherit;color:inherit}
 .duo{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px}
 .switch{display:flex;align-items:center;justify-content:space-between;background:var(--panel);border:1px solid var(--line2);border-radius:5px;padding:6px 9px;cursor:pointer;user-select:none}
 .switch span{font:600 13px var(--cond);letter-spacing:.06em}
-.knob{width:38px;height:20px;border-radius:10px;background:#3a4652;position:relative;transition:.2s}
+.knob{width:38px;height:20px;border-radius:10px;background:var(--knob);position:relative;transition:.2s}
 .knob::after{content:"";position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:#cfd6dc;transition:.2s}
 .switch.on .knob{background:var(--mint)}.switch.on .knob::after{left:20px;background:#fff}
 .hint{font-size:11.5px;color:var(--muted);line-height:1.5;margin-top:8px}
 .hint button{background:none;border:0;color:var(--amber);padding:0;cursor:pointer;font-size:11.5px;border-bottom:1px dotted var(--amber)}
 .pills{display:flex;flex-wrap:wrap;gap:5px}
 .pills button{flex:1;background:var(--panel);border:1px solid var(--line2);border-radius:4px;padding:6px 4px;font:600 13px var(--cond);cursor:pointer;color:var(--muted)}
-.pills button.on{background:var(--amber);border-color:var(--amber);color:#1b1306}
+.pills button.on{background:var(--amber);border-color:var(--amber);color:var(--onacc)}
 .pills button:disabled{opacity:.35;cursor:not-allowed}
 .heads{display:flex;flex-direction:column;gap:6px}
 .hd{display:grid;grid-template-columns:1fr auto;align-items:center;background:var(--panel);border-radius:5px;padding:7px 10px;border-left:3px solid var(--line2)}
@@ -89,7 +93,7 @@ button,input,select,textarea{font:inherit;color:inherit}
 .lnk{transition:opacity .15s;cursor:pointer}
 .lnk:hover{opacity:.95!important}
 .nd{cursor:pointer}
-.nl{paint-order:stroke;stroke:#181f26;stroke-width:3.5px;stroke-linejoin:round;stroke-opacity:.85}
+.nl{paint-order:stroke;stroke:var(--panel);stroke-width:3.5px;stroke-linejoin:round;stroke-opacity:.85}
 .inspector{display:grid;grid-template-columns:230px 1fr;border-top:1px solid var(--line)}
 @media (max-width:760px){.inspector{grid-template-columns:1fr}}
 .insp-l{padding:14px 16px;border-right:1px solid var(--line)}
@@ -105,8 +109,8 @@ button,input,select,textarea{font:inherit;color:inherit}
 .el .val i{font-style:normal;font-size:13px;color:var(--muted)}
 .el .dl{font:600 12px var(--mono)}
 .dl.pos{color:var(--rust)}.dl.neg{color:var(--mint)}.dl.fe.pos{color:var(--mint)}.dl.fe.neg{color:var(--rust)}
-.rangebar{position:relative;height:6px;background:#26303a;border-radius:3px;margin:10px 0 3px}
-.rangebar .r{position:absolute;top:0;bottom:0;background:#3f5466;border-radius:3px}
+.rangebar{position:relative;height:6px;background:var(--track);border-radius:3px;margin:10px 0 3px}
+.rangebar .r{position:absolute;top:0;bottom:0;background:var(--trackr);border-radius:3px}
 .rangebar .m{position:absolute;top:-4px;width:4px;height:14px;border-radius:2px;background:var(--amber)}
 .rl{display:flex;justify-content:space-between;font:10px var(--mono);color:var(--dim)}
 .el .meta{font:10.5px var(--mono);color:var(--muted);margin-top:4px}
@@ -121,34 +125,34 @@ button,input,select,textarea{font:inherit;color:inherit}
 .ins{background:var(--panel2);border-radius:6px;padding:12px 14px;position:relative;overflow:hidden}
 .ins::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--steel)}
 .ins.warn::before{background:var(--amber)}.ins.bad::before{background:var(--red)}.ins.good::before{background:var(--mint)}
-.ins .k{display:inline-block;font:600 10px var(--mono);letter-spacing:.12em;text-transform:uppercase;padding:2px 7px;border-radius:3px;background:#2c3742;color:var(--steel);margin-bottom:7px}
-.ins.warn .k{background:#3a2f17;color:var(--amber)}.ins.bad .k{background:#3d1f1c;color:#ff8a7c}.ins.good .k{background:#183428;color:var(--mint)}
-.ins p{margin:0;line-height:1.5;color:#cfd6dc}
-.ins p b{color:#fff}
+.ins .k{display:inline-block;font:600 10px var(--mono);letter-spacing:.12em;text-transform:uppercase;padding:2px 7px;border-radius:3px;background:var(--kbg);color:var(--steel);margin-bottom:7px}
+.ins.warn .k{background:var(--kwarn);color:#e8a02a}.ins.bad .k{background:var(--kbad);color:#ff7a6b}.ins.good .k{background:var(--kgood);color:var(--mint)}
+.ins p{margin:0;line-height:1.5;color:var(--instext)}
+.ins p b{color:var(--insb)}
 .ins .act{margin-top:8px;font-size:12.5px;color:var(--amber)}
 table.t{border-collapse:collapse;width:100%;font-size:13px}
 table.t th,table.t td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
 table.t th{font:600 10.5px var(--mono);color:var(--muted);letter-spacing:.06em;text-transform:uppercase;position:sticky;top:0;background:var(--panel)}
 table.t td:first-child,table.t th:first-child{text-align:left}
-table.t tr.win td{background:#1d2a2a}
-table.t tr.sel td{background:#2b2617}
+table.t tr.win td{background:var(--rowwin)}
+table.t tr.sel td{background:var(--rowsel)}
 table.t tr.click{cursor:pointer}
-table.t tr.click:hover td{background:#222b34}
+table.t tr.click:hover td{background:var(--rowhov)}
 table.t .a{color:var(--mint);font-weight:600}
 table.t td.num{font-family:var(--cond);font-size:15px}
-table.t td.fc{background:#ffffff06}
+table.t td.fc{background:var(--tint)}
 .sd{font:10.5px var(--mono);color:var(--dim);margin-left:3px}
 .dot{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:7px;vertical-align:middle}
-.mini{position:relative;width:110px;height:6px;background:#26303a;border-radius:3px;display:inline-block;vertical-align:middle}
-.mini .r{position:absolute;top:0;bottom:0;background:#3f5466;border-radius:3px}
+.mini{position:relative;width:110px;height:6px;background:var(--track);border-radius:3px;display:inline-block;vertical-align:middle}
+.mini .r{position:absolute;top:0;bottom:0;background:var(--trackr);border-radius:3px}
 .mini .m{position:absolute;top:-3px;width:3px;height:12px;background:var(--amber);border-radius:1px}
 .muted{color:var(--muted)}.small{font-size:12px}
-.btn{background:var(--amber);color:#1b1306;border:0;border-radius:4px;padding:8px 13px;font:700 13px var(--cond);letter-spacing:.05em;text-transform:uppercase;cursor:pointer}
+.btn{background:var(--amber);color:var(--onacc);border:0;border-radius:4px;padding:8px 13px;font:700 13px var(--cond);letter-spacing:.05em;text-transform:uppercase;cursor:pointer}
 .btn.sec{background:transparent;color:var(--amber);border:1px solid var(--amber)}
 .selrow{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
 .selrow select{background:var(--panel2);border:1px solid var(--line2);border-radius:5px;padding:6px 8px}
 textarea{width:100%;min-height:120px;background:var(--panel2);border:1px solid var(--line2);border-radius:6px;padding:10px;font:13px var(--mono);outline:none}
-code{font-family:var(--mono);background:#26303a;padding:1px 5px;border-radius:3px;font-size:12px}
+code{font-family:var(--mono);background:var(--track);padding:1px 5px;border-radius:3px;font-size:12px}
 .lim{display:grid;grid-template-columns:1fr 80px 90px;gap:8px;align-items:center;margin-bottom:6px;font-size:13px}
 .lim input{background:var(--panel2);border:1px solid var(--line2);border-radius:4px;padding:5px 7px;width:100%}
 .twocol{display:grid;grid-template-columns:1.4fr 1fr;gap:20px}
@@ -157,23 +161,59 @@ code{font-family:var(--mono);background:#26303a;padding:1px 5px;border-radius:3p
 .empty .big{font:600 34px var(--cond);text-transform:uppercase;letter-spacing:.04em;margin:14px 0 8px}
 .empty p{color:var(--muted);max-width:560px;margin:6px auto;line-height:1.55}
 .dropz{border:1.5px dashed var(--line2);border-radius:10px;margin:0 auto;max-width:720px;padding:34px 20px}
-.dropz.hover{border-color:var(--amber);background:#f2b33d0d}
-.toast{position:fixed;bottom:20px;right:20px;background:var(--panel2);border:1px solid var(--amber);color:var(--text);padding:11px 16px;border-radius:6px;box-shadow:0 10px 30px #0008;z-index:50;max-width:90vw}
+.dropz.hover{border-color:var(--amber);background:color-mix(in srgb,var(--amber) 6%,transparent)}
+.toast{position:fixed;bottom:20px;right:20px;background:var(--panel2);border:1px solid var(--amber);color:var(--text);padding:11px 16px;border-radius:6px;box-shadow:0 10px 30px var(--shadow);z-index:50;max-width:90vw}
 .up.ghost{background:transparent;color:var(--amber);border:1px solid var(--amber)}
 .netdot{font:11px var(--mono);color:var(--muted);display:flex;align-items:center;gap:6px}
 .netdot i{width:7px;height:7px;border-radius:50%;background:var(--mint);display:inline-block}
 .netdot.off i{background:var(--amber)}
 @media (display-mode: standalone){ .top{padding-top:max(10px,env(titlebar-area-height,0px))} }
 .top{-webkit-app-region:drag}.top button,.top .filechip{-webkit-app-region:no-drag}
+
+.jigbox{margin-top:10px;background:var(--panel);border:1px solid var(--line2);border-radius:6px;padding:9px 10px 8px}
+.jighead{display:flex;justify-content:space-between;align-items:baseline;font:600 10.5px var(--mono);color:var(--muted);letter-spacing:.04em}
+.jighead b{font:600 22px var(--cond);color:var(--amber)}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:6px;border-radius:3px;margin:9px 0 4px;background:linear-gradient(90deg,var(--amber) var(--p,50%),var(--track) var(--p,50%));outline:none}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;background:var(--amber);border:3px solid var(--panel);box-shadow:0 0 0 1px var(--amber);cursor:pointer}
+input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;background:var(--amber);border:3px solid var(--panel);cursor:pointer}
+input[type=range]:disabled{opacity:.35}
+.jigticks{display:flex;justify-content:space-between;font:10px var(--mono);color:var(--dim)}
+.brandimg{width:38px;height:38px;border-radius:9px;display:block;box-shadow:0 0 0 1px var(--line2),0 0 14px color-mix(in srgb,var(--amber) 30%,transparent)}
+.themebtn{display:flex;align-items:center;gap:7px;background:transparent;border:1px solid var(--line2);border-radius:20px;padding:5px 11px 5px 6px;cursor:pointer;font:600 12px var(--cond);letter-spacing:.06em;color:var(--muted);text-transform:uppercase}
+.themebtn i{width:18px;height:18px;border-radius:50%;background:var(--amber);box-shadow:0 0 0 2px var(--panel2)}
+.thmenu{position:absolute;right:18px;top:58px;z-index:60;background:var(--panel);border:1px solid var(--line2);border-radius:10px;padding:12px;box-shadow:0 14px 40px var(--shadow);width:290px}
+.thmenu h6{margin:0 0 9px;font:600 10.5px var(--mono);letter-spacing:.18em;color:var(--muted)}
+.thgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.thgrid button{background:var(--panel2);border:1px solid var(--line2);border-radius:8px;padding:8px 4px 6px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:5px;font:600 11px var(--cond);color:var(--muted)}
+.thgrid button.on{border-color:var(--amber);color:var(--text)}
+.thgrid .sw{width:30px;height:30px;border-radius:50%;position:relative;overflow:hidden}
+.thgrid .sw::after{content:"";position:absolute;right:0;bottom:0;width:50%;height:50%}
+.top{position:relative}
+/* ---------- themes ---------- */
+[data-theme=blue]{--amber:#4c8dff;--onacc:#fff;--bg:#0b111c;--rail:#0f1724;--panel:#121c2b;--panel2:#182436;--line:#22314a;--line2:#2c3d59;--topa:#111a29;--topb:#0c1320;--chartbg:#0f1825;--rowwin:#14243a;--rowhov:#1a2840}
+[data-theme=violet]{--amber:#a582ff;--onacc:#fff;--bg:#100d1a;--rail:#151124;--panel:#1a152c;--panel2:#221b38;--line:#30274b;--line2:#3b315b;--topa:#181330;--topb:#110d20;--chartbg:#151127;--rowwin:#221a3a;--rowhov:#241d3c;--kbg:#2b2447}
+[data-theme=sky]{--amber:#54c6f2;--onacc:#062433;--bg:#0b1519;--rail:#0e1b21;--panel:#122229;--panel2:#172b33;--line:#213a45;--line2:#2b4855;--topa:#10202a;--topb:#0b171d;--chartbg:#0f1e24;--rowwin:#14303a;--rowhov:#183039}
+[data-theme=emerald]{--amber:#34c38f;--onacc:#04261a;--bg:#0b1411;--rail:#0f1a16;--panel:#13211c;--panel2:#182a23;--line:#22372f;--line2:#2c463c;--topa:#11201a;--topb:#0b1612;--chartbg:#0f1c17;--rowwin:#173027;--rowhov:#1a2e26}
+[data-theme=copper]{--amber:#e5814f;--onacc:#241005;--bg:#131010;--rail:#1a1514;--panel:#201a18;--panel2:#29211e;--line:#3a2f2a;--line2:#4a3c35;--topa:#1c1614;--topb:#141010;--chartbg:#1b1513;--rowwin:#2b211c;--rowhov:#2a211d}
+[data-theme=grey]{--amber:#c3ccd5;--onacc:#15191d;--bg:#121315;--rail:#17191b;--panel:#1c1e21;--panel2:#24272a;--line:#33373b;--line2:#41464b;--topa:#1a1c1f;--topb:#131416;--chartbg:#18191c;--rowwin:#262a2e;--rowhov:#2a2d31;--steel:#a8b3bd}
+[data-theme=white]{--amber:#2563eb;--onacc:#fff;--bg:#f3f5f8;--rail:#fbfcfd;--panel:#ffffff;--panel2:#f2f5f9;--line:#e1e6ec;--line2:#cfd6df;--text:#17212b;--muted:#5d6b78;--dim:#93a0ad;
+  --steel:#3d6f9e;--topa:#ffffff;--topb:#f6f8fb;--press:#e4e9f0;--knob:#c5ced8;--track:#e3e8ee;--trackr:#b7c4d2;--rowwin:#eef5ff;--rowhov:#f3f6fa;--tint:#2563eb08;
+  --instext:#2b3843;--insb:#0d1720;--kbg:#e4ecf5;--kwarn:#fdf0d8;--kbad:#fde4e1;--kgood:#dcf3ea;--svgtxt:#46525e;--svgval:#121b24;--svgmut:#7a8794;--svgdim:#93a0ad;--idle:#dfe5ec;--idles:#b3bfcb;--chartbg:#fbfcfd;--shadow:#1b2b3c33;--mint:#1f9d74;--rust:#c94a2c}
+[data-theme=white] .knob::after{background:#fff}
+[data-theme=lavender]{--amber:#7c4dff;--onacc:#fff;--bg:#f5f3fb;--rail:#fbfaff;--panel:#ffffff;--panel2:#f3f0fb;--line:#e6e1f3;--line2:#d4cdea;--text:#1d1830;--muted:#64607a;--dim:#9a95b0;
+  --steel:#5b55a0;--topa:#ffffff;--topb:#f8f6fd;--press:#ebe6f7;--knob:#cdc5e4;--track:#e8e3f5;--trackr:#c2b6e6;--rowwin:#f2eefe;--rowhov:#f6f3fc;--tint:#7c4dff08;
+  --instext:#2e2a40;--insb:#120e22;--kbg:#ebe6f8;--kwarn:#fdf0d8;--kbad:#fde4e1;--kgood:#dcf3ea;--svgtxt:#4c4763;--svgval:#151126;--svgmut:#7d7895;--svgdim:#9a95b0;--idle:#e6e1f3;--idles:#bdb4d8;--chartbg:#fcfbff;--shadow:#2a1f5533;--mint:#1f9d74;--rust:#c94a2c}
+[data-theme=lavender] .knob::after{background:#fff}
 </style>
 </head>
 <body>
 <div class="top">
-  <div class="mark">WP</div>
-  <div class="ttl"><small>NOAMUNDI · NRD · WET PLANT</small><b>Grade Flow Predictor</b></div>
+  <img class="brandimg" src="icon-192.png" alt="">
+  <div class="ttl"><small>NOAMUNDI · NRD · WET PLANT</small><b>Quality Value Chain</b></div>
   <div class="sp"></div>
   <span class="netdot" id="netDot"><i></i><span>online</span></span>
   <span class="filechip" id="fileChip">no OPR loaded</span>
+  <button class="themebtn" id="themeBtn" title="Change colour theme"><i></i>Theme</button>
   <button class="up ghost" id="installBtn" hidden>Install app</button>
   <button class="up" id="uploadBtn">Upload OPR</button>
   <input type="file" id="file" accept=".xlsx,.xlsm,.xls" hidden>
@@ -529,6 +569,12 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     yields.WF_on = jw.length ? sumT(jw, 'WF') / MB_P.reduce((a, k) => a + sumT(jw, k), 0) : null;
     yields.WF_off = wfRows.off.length ? sumT(wfRows.off, 'WF') / MB_P.reduce((a, k) => a + sumT(wfRows.off, k), 0) : null;
     yields.jigShare = win.length ? jw.length / win.length : 0;
+    yields.jigData = !!(cells.JC && cells.JF);
+    // Wet Fines anchor: one model for all jig-feed %; slider effect added mechanistically
+    const wfOn = cells.WF_on, wfOff = cells.WF_off;
+    const wfAnchor = wfOn && (wfOn.scope === 'window' || !wfOff) ? 'WF_on' : (wfOff ? 'WF_off' : null);
+    yields.wfAnchor = wfAnchor;
+    yields.wfAnchorF = wfAnchor === 'WF_on' ? yields.JF_of_CF : 0;
 
     return { opt, basis: opt.basis, winDays, endDay, nRows: win.length, cells, romEst, notes,
       romStats: { mean: mean(romAl), min: Math.min(...romAl), max: Math.max(...romAl), last: win[win.length - 1] },
@@ -536,14 +582,17 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   }
 
   function cellFor(model, p, jig) {
-    if (p === 'WF') return model.cells[jig ? 'WF_on' : 'WF_off'] || null;
+    if (p === 'WF') return model.yields.wfAnchor ? model.cells[model.yields.wfAnchor] : null;
     if (JIG_P.includes(p) && !jig) return null;
     return model.cells[p] || null;
   }
 
   function predict(model, input) {
     const al = +input.Al2O3;
-    const jig = !!input.jig;
+    const Yd = model.yields;
+    let jf = input.jf != null && isFinite(+input.jf) ? Math.max(0, Math.min(1, +input.jf)) : (input.jig ? Yd.JF_of_CF : 0);
+    if (!Yd.jigData) jf = 0;
+    const jig = jf > 0;
     const rom = { Al2O3: al };
     const romSrc = {};
     for (const e of ['Fe', 'SiO2', 'P']) {
@@ -551,7 +600,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       else { const m = model.romEst[e]; rom[e] = m.a + m.b * al; romSrc[e] = 'est'; }
     }
     const rs = model.romStats;
-    const out = { rom, romSrc, jig, p: {}, outOfRange: al < rs.min - 0.3 || al > rs.max + 0.3 };
+    const out = { rom, romSrc, jig, jf, p: {}, outOfRange: al < rs.min - 0.3 || al > rs.max + 0.3 };
     for (const p of PKEYS) {
       const c = cellFor(model, p, jig);
       if (!c) { out.p[p] = null; continue; }
@@ -570,13 +619,31 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     }
     // Wet Fines fallback = blend of components when no direct model
     if (!out.p.WF) {
-      const parts = jig ? [['CF', model.yields.CF * (1 - model.yields.JF_of_CF)], ['JC', model.yields.CF * model.yields.JF_of_CF * model.yields.JC_of_JF], ['HCC', model.yields.HCC]]
+      const parts = jig ? [['CF', model.yields.CF * (1 - jf)], ['JC', model.yields.CF * jf * model.yields.JC_of_JF], ['HCC', model.yields.HCC]]
                         : [['CF', model.yields.CF], ['HCC', model.yields.HCC]];
       const ok = parts.filter(([k, w]) => out.p[k] && w > 0);
       if (ok.length) {
         const W = ok.reduce((a, [, w]) => a + w, 0), v = {}, sd = {}, dl = {};
         for (const e of EL) { v[e] = ok.reduce((a, [k, w]) => a + w * out.p[k].v[e], 0) / W; dl[e] = v[e] - rom[e]; sd[e] = Math.max(...ok.map(([k]) => out.p[k].sd[e])); }
         out.p.WF = { v, sd, dl, cell: null, blend: true };
+      }
+    }
+    // Jig-feed slider: shift Wet Fines by the mechanistic blend change vs the anchor's jig-feed %
+    if (out.p.WF && !out.p.WF.blend && out.p.CF && out.p.HCC && (jf > 0 ? out.p.JC : true)) {
+      const fa = Yd.wfAnchorF || 0, r = Yd.JC_of_JF || 0, CFm = Yd.CF, HCm = Yd.HCC;
+      const jcCell = cellFor(model, 'JC', true);
+      const jcV = e => out.p.JC ? out.p.JC.v[e] : null;
+      let jcRef = null;
+      if (jcCell) { jcRef = {}; for (const e of EL) { const fc = jcCell.el[e]; jcRef[e] = rom[e] + fc.dbar + fc.beta * (Math.min(Math.max(al, fc.xmin), fc.xmax) - fc.xbar); } }
+      const blend = (ff, e) => {
+        const jq = jcV(e) != null ? jcV(e) : (jcRef ? jcRef[e] : out.p.CF.v[e]);
+        const m1 = CFm * (1 - ff), m2 = CFm * ff * r, m3 = HCm;
+        return (m1 * out.p.CF.v[e] + m2 * jq + m3 * out.p.HCC.v[e]) / (m1 + m2 + m3);
+      };
+      if (Math.abs(jf - fa) > 1e-6 && (jcV('Fe') != null || jcRef)) {
+        const adj = {};
+        for (const e of EL) { adj[e] = blend(jf, e) - blend(fa, e); out.p.WF.v[e] += adj[e]; out.p.WF.dl[e] = out.p.WF.v[e] - rom[e]; }
+        out.p.WF.adj = adj;
       }
     }
     // mass balance closure
@@ -592,9 +659,9 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     if (input.t > 0) {
       const t = {};
       for (const k of MB_P) t[k] = input.t * Y[k];
-      if (jig) { t.JF = t.CF * Y.JF_of_CF; t.JC = t.JF * Y.JC_of_JF; t.JR = t.JF * Y.JR_of_JF; }
-      const wy = jig ? Y.WF_on : Y.WF_off;
-      if (wy) t.WF = input.t * wy;
+      t.JF = t.CF * jf; t.JC = t.JF * Y.JC_of_JF; t.JR = t.JF - t.JC;
+      if (!jig) { delete t.JF; delete t.JC; delete t.JR; }
+      t.WF = t.CF - (t.JR || 0) + t.HCC;
       out.t = t;
     }
     return out;
@@ -616,7 +683,8 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     const rows = basisRows(ds, model.basis);
     const win = new Set(model.winDays);
     return rows.map(r => {
-      const pr = predict(model, { Al2O3: r.X.Al2O3, jig: r.jig });
+      const jfr = r.jig && r.t && r.t.CF > 0 ? Math.min(1, (r.t.JF || 0) / r.t.CF) : 0;
+      const pr = predict(model, { Al2O3: r.X.Al2O3, jf: r.jig ? (jfr > 0 ? jfr : model.yields.JF_of_CF) : 0 });
       return { label: r.label, day: r.day, shift: r.shift, inWin: win.has(r.day), jig: r.jig, romAl: r.X.Al2O3, act: r.p, pred: pr.p };
     });
   }
@@ -638,10 +706,10 @@ const fs = (v,e) => (v>0?'+':'')+f(v,e);
 
 const S = { ds:null, model:null, pred:null, sel:'WF', tab:'ledger',
   set:{ basis:'shift', nDays:10, endDay:null, focus:'Al2O3' },
-  input:{ Al2O3:null, Fe:'', SiO2:'', P:'', t:'', jig:true },
+  input:{ Al2O3:null, Fe:'', SiO2:'', P:'', t:'', jf:33 }, theme:'amber',
   limits:{ 'WF|Al2O3':{max:4.5} }, bt:{p:'WF',e:'Al2O3'}, batch:'' };
 
-const ORDER = ['ROM','SO','CF','JF','JC','JR','HCF','HCU','HCO','HCC','WF','SL'];
+const ORDER = ['ROM','SO','CF','JF','JC','HCF','HCU','HCO','HCC','WF','SL','JR'];
 const SHORTN = {ROM:'Wet ROM feed',SO:'Sized Ore (CLO)',CF:'Classifier Fines',JF:'Jig Feed',JC:'Jig Concentrate',JR:'Jig Reject',HCF:'Cyclone Feed',HCU:'Cyclone Underflow',HCO:'Cyclone Overflow',HCC:'HC Concentrate',WF:'Wet Fines (W-6)',SL:'LRP Slime'};
 
 // ---------- persistence ----------
@@ -660,6 +728,26 @@ async function handleFile(file){
   }catch(err){ console.error(err); toast('Could not read this file: '+esc(err.message||err),6000); }
 }
 $('uploadBtn').onclick = () => $('file').click();
+// ---------- colour themes ----------
+const THEMES=[['amber','Amber','#f2b33d','#0f1317'],['blue','Blue','#4c8dff','#0b111c'],['violet','Violet','#a582ff','#100d1a'],['sky','Light blue','#54c6f2','#0b1519'],
+  ['emerald','Emerald','#34c38f','#0b1411'],['copper','Copper','#e5814f','#131010'],['grey','Grey','#c3ccd5','#121315'],['white','White','#2563eb','#f3f5f8'],['lavender','Lavender','#7c4dff','#f5f3fb']];
+function applyTheme(t){
+  const th=THEMES.find(x=>x[0]===t)||THEMES[0];
+  if(th[0]==='amber') document.documentElement.removeAttribute('data-theme'); else document.documentElement.setAttribute('data-theme',th[0]);
+  const mc=document.querySelector('meta[name=theme-color]'); if(mc) mc.content=th[3];
+  try{ localStorage.setItem('wpvc.theme',th[0]); }catch(e){}
+}
+applyTheme((()=>{ try{ return localStorage.getItem('wpvc.theme')||'amber'; }catch(e){ return 'amber'; } })());
+$('themeBtn').onclick=ev=>{
+  ev.stopPropagation();
+  const ex=document.querySelector('.thmenu'); if(ex){ ex.remove(); return; }
+  const cur=document.documentElement.getAttribute('data-theme')||'amber';
+  const d=document.createElement('div'); d.className='thmenu';
+  d.innerHTML=`<h6>COLOUR THEME</h6><div class="thgrid">${THEMES.map(([k,n,a,b])=>`<button data-k="${k}" class="${k===cur?'on':''}"><span class="sw" style="background:${b};box-shadow:inset 0 0 0 1px #8885"><span style="position:absolute;inset:8px;border-radius:50%;background:${a}"></span></span>${n}</button>`).join('')}</div>`;
+  document.querySelector('.top').appendChild(d);
+  d.querySelectorAll('button').forEach(b=>b.onclick=e2=>{ e2.stopPropagation(); applyTheme(b.dataset.k); d.querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b)); if(S.model) renderAll(); });
+};
+document.addEventListener('click',e=>{ const m=document.querySelector('.thmenu'); if(m&&!m.contains(e.target)) m.remove(); });
 // ---------- installable app (PWA) ----------
 if('serviceWorker' in navigator && location.protocol!=='file:'){
   window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').then(reg=>{
@@ -668,7 +756,7 @@ if('serviceWorker' in navigator && location.protocol!=='file:'){
 }
 let deferredInstall=null;
 window.addEventListener('beforeinstallprompt',ev=>{ ev.preventDefault(); deferredInstall=ev; $('installBtn').hidden=false; });
-$('installBtn').onclick=async()=>{ if(!deferredInstall) return; deferredInstall.prompt(); const r=await deferredInstall.userChoice; deferredInstall=null; $('installBtn').hidden=true; if(r.outcome==='accepted') toast('Installed — find <b>Grade Flow</b> in your Start menu / desktop.'); };
+$('installBtn').onclick=async()=>{ if(!deferredInstall) return; deferredInstall.prompt(); const r=await deferredInstall.userChoice; deferredInstall=null; $('installBtn').hidden=true; if(r.outcome==='accepted') toast('Installed — find <b>Quality Value Chain</b> in your Start menu / desktop.'); };
 window.addEventListener('appinstalled',()=>{ $('installBtn').hidden=true; });
 // open .xlsx straight into the app ("Open with → Grade Flow")
 if('launchQueue' in window){ window.launchQueue.setConsumer(async params=>{ if(params.files&&params.files.length){ const fh=params.files[0]; handleFile(await fh.getFile()); } }); }
@@ -688,14 +776,20 @@ function retrain(resetInput){
   try{ S.model = E.train(S.ds,{basis:S.set.basis,nDays:+S.set.nDays,endDay:S.set.endDay}); }
   catch(err){ toast(esc(err.message),5000); if(S.set.basis!=='shift'){ S.set.basis='shift'; return retrain(resetInput);} return; }
   if(resetInput || S.input.Al2O3==null || S.input.Al2O3===''){
-    const last = S.model.romStats.last; S.input.Al2O3 = +last.X.Al2O3.toFixed(2); S.input.jig = !!last.jig;
+    const last = S.model.romStats.last; S.input.Al2O3 = +last.X.Al2O3.toFixed(2); S.input.jf = defaultJf(last);
   }
   runPredict(); save(); renderAll();
+}
+function defaultJf(row){
+  const Y=S.model.yields; if(!Y.jigData) return 0;
+  if(row&&row.jig&&row.t&&row.t.CF>0&&row.t.JF>0) return Math.round(Math.min(40,row.t.JF/row.t.CF*100));
+  return row&&row.jig ? Math.round(Math.min(40,Y.JF_of_CF*100)) : 0;
 }
 function runPredict(){
   if(!S.model) return;
   const i=S.input;
-  S.pred = E.predict(S.model,{Al2O3:+i.Al2O3, Fe:i.Fe, SiO2:i.SiO2, P:i.P, t:+i.t||0, jig:i.jig});
+  if(i.jf==null||!isFinite(+i.jf)) i.jf=defaultJf(S.model.romStats.last);
+  S.pred = E.predict(S.model,{Al2O3:+i.Al2O3, Fe:i.Fe, SiO2:i.SiO2, P:i.P, t:+i.t||0, jf:(+i.jf)/100});
 }
 function limitFor(p,e){ const l=S.limits[p+'|'+e]; return l&&l.max!==''&&l.max!=null&&isFinite(l.max)?+l.max:null; }
 function statusCls(p,e,v,sd){ const L=limitFor(p,e); if(L==null) return ''; return v>L?'bad':(v>L-(sd||0)?'warn':'ok'); }
@@ -705,7 +799,7 @@ function val(p,e){ const pr=S.pred; if(!pr) return null; if(p==='ROM') return pr
 const STOPS=[[70,194,157],[242,179,61],[239,91,76]]; // mint → amber → red
 function mix(a,b,t){ return a.map((x,i)=>Math.round(x+(b[i]-x)*t)); }
 function gradeCol(e,v){
-  if(v==null) return '#3a4652';
+  if(v==null) return 'var(--idle)';
   const vals=ORDER.map(p=>val(p,e)).filter(x=>x!=null);
   let lo=Math.min(...vals), hi=Math.max(...vals); if(hi-lo<1e-9) hi=lo+1;
   let t=(v-lo)/(hi-lo); if(e==='Fe') t=1-t; t=Math.max(0,Math.min(1,t));
@@ -735,7 +829,13 @@ function renderRail(){
     </div>
     <div class="duo">
       <div class="f"><label>ROM tonnes</label><input id="inT" type="number" step="50" placeholder="optional" value="${i.t??''}"></div>
-      <div class="f"><label>Jig</label><div class="switch ${i.jig?'on':''}" id="jigSw"><span>${i.jig?'RUNNING':'STOPPED'}</span><div class="knob"></div></div></div>
+      <div class="f"><label>Jig status</label><div class="switch ${(+i.jf)>0?'on':''}" style="cursor:default"><span id="jigState">${(+i.jf)>0?'JIG ON':'JIG OFF'}</span><div class="knob"></div></div></div>
+    </div>
+    <div class="jigbox">
+      <div class="jighead"><span>Jig feed · % of Classifier Fines</span><b id="jfVal">${(+i.jf).toFixed(0)}%</b></div>
+      <input type="range" id="jfSl" min="0" max="40" step="1" value="${+i.jf}" ${m.yields.jigData?'':'disabled'} style="--p:${(+i.jf)/40*100}%">
+      <div class="jigticks"><span>0 · off</span><span>10</span><span>20</span><span>30</span><span>40</span></div>
+      <div class="hint" style="margin-top:4px">${m.yields.jigData?`Trained at ${(m.yields.JF_of_CF*100).toFixed(0)}% · ${(+i.jf)>0?`≈ ${(m.yields.CF*(+i.jf)/100*100).toFixed(1)}% of ROM to jig`:'all classifier fines bypass the jig'}`:'No jig data in this OPR — slider disabled.'}</div>
     </div>
     <div class="hint">Grey Fe/SiO₂/P are estimated from Al₂O₃. Fill: <button id="qLast">last ${S.set.basis==='shift'?'shift':'day'} ${f(m.romStats.last.X.Al2O3,'Al2O3')}</button> · <button id="qMean">window mean ${f(m.romStats.mean,'Al2O3')}</button>
     ${pr.outOfRange?`<br><span style="color:var(--red)">Outside trained range ${f(m.romStats.min,'Al2O3')}–${f(m.romStats.max,'Al2O3')}% — extrapolating.</span>`:''}</div>
@@ -760,8 +860,9 @@ function renderRail(){
   let tmr; r.querySelectorAll('input').forEach(inp=>{ inp.oninput=()=>{ clearTimeout(tmr); tmr=setTimeout(()=>apply(false),450); }; inp.onchange=()=>{ clearTimeout(tmr); apply(true); }; });
   const step=d=>{ $('inAl').value=(Math.max(0.1,(parseFloat($('inAl').value)||0)+d)).toFixed(2); apply(true); };
   $('stMinus').onclick=()=>step(-0.05); $('stPlus').onclick=()=>step(0.05);
-  $('jigSw').onclick=()=>{ S.input.jig=!S.input.jig; apply(true); };
-  $('qLast').onclick=()=>{ const l=m.romStats.last; $('inAl').value=l.X.Al2O3.toFixed(2); S.input.jig=!!l.jig; ['inFe','inSiO2','inP'].forEach(k=>$(k).value=''); apply(true); };
+  let jt; $('jfSl').oninput=ev=>{ const v=+ev.target.value; S.input.jf=v; $('jfVal').textContent=v+'%'; $('jigState').textContent=v>0?'JIG ON':'JIG OFF'; ev.target.style.setProperty('--p',(v/40*100)+'%'); clearTimeout(jt); jt=setTimeout(()=>apply(false),120); };
+  $('jfSl').onchange=()=>apply(true);
+  $('qLast').onclick=()=>{ const l=m.romStats.last; $('inAl').value=l.X.Al2O3.toFixed(2); S.input.jf=defaultJf(l); ['inFe','inSiO2','inP'].forEach(k=>$(k).value=''); apply(true); };
   $('qMean').onclick=()=>{ $('inAl').value=m.romStats.mean.toFixed(2); ['inFe','inSiO2','inP'].forEach(k=>$(k).value=''); apply(true); };
   $('focusP').querySelectorAll('button').forEach(b=>b.onclick=()=>{ S.set.focus=b.dataset.v; save(); renderAll(); });
   $('basisP').querySelectorAll('button').forEach(b=>b.onclick=()=>{ if(b.disabled) return; S.set.basis=b.dataset.v; retrain(true); });
@@ -772,13 +873,13 @@ function renderRail(){
 // ---------- mass-proportional grade flow (sankey) ----------
 function flowGraph(){
   const Y=S.model.yields, jig=S.pred.jig;
-  const jf = jig ? Y.CF*Y.JF_of_CF : 0, jc=jf*Y.JC_of_JF, jr=jf-jc;
-  const mass={ROM:1, SO:Y.SO, CF:Y.CF, HCF:Y.HCC+Y.SL, JF:jf, JC:jc, JR:jr, HCU:Y.HCC, HCO:Y.SL, HCC:Y.HCC, WF:Y.CF-jr+Y.HCC, SL:Y.SL+jr};
+  const jf = jig ? Y.CF*S.pred.jf : 0, jc=jf*Y.JC_of_JF, jr=jf-jc;
+  const mass={ROM:1, SO:Y.SO, CF:Y.CF, HCF:Y.HCC+Y.SL, JF:jf, JC:jc, JR:jr, HCU:Y.HCC, HCO:Y.SL, HCC:Y.HCC, WF:Y.CF-jr+Y.HCC, SL:Y.SL};
   const links=[['ROM','SO',Y.SO],['ROM','CF',Y.CF],['ROM','HCF',Y.HCC+Y.SL],
     ['CF','JF',jf],['CF','WF',Y.CF-jf],['JF','JC',jc],['JF','JR',jr],
     ['HCF','HCU',Y.HCC],['HCF','HCO',Y.SL],['HCU','HCC',Y.HCC],
-    ['JC','WF',jc],['HCC','WF',Y.HCC],['HCO','SL',Y.SL],['JR','SL',jr]];
-  const cols=[['ROM'],['CF','HCF'],['JF','HCU','HCO'],['JC','JR','HCC'],['SO','WF','SL']];
+    ['JC','WF',jc],['HCC','WF',Y.HCC],['HCO','SL',Y.SL]];
+  const cols=[['ROM'],['CF','HCF'],['JF','HCU','HCO'],['JC','HCC'],['SO','WF','SL','JR']];
   return {mass,links,cols};
 }
 function renderFlow(){
@@ -819,17 +920,17 @@ function renderFlow(){
   for(const p of Object.keys(pos)){
     const n=pos[p], v=val(p,e), col=gradeCol(e,v), idle=v==null;
     const sel=S.sel===p;
-    nodes+=`<g class="nd" data-p="${p}"><rect x="${n.x}" y="${n.y}" width="${NW}" height="${n.h}" rx="2" fill="${idle?'#2a343f':col}" ${idle?'stroke="#4a5866" stroke-dasharray="3 3"':''} ${sel?'stroke="#fff" stroke-width="2"':''}/>`;
+    nodes+=`<g class="nd" data-p="${p}"><rect x="${n.x}" y="${n.y}" width="${NW}" height="${n.h}" rx="2" style="fill:${idle?'var(--idle)':col}" ${idle?'stroke="var(--idles)" stroke-dasharray="3 3"':''} ${sel?'stroke="#fff" stroke-width="2"':''}/>`;
     const lx=n.x+NW+8, cy=n.y+n.h/2;
     const ms = p==='ROM'?'100% mass': (g.mass[p]>0?(g.mass[p]*100).toFixed(1)+'% mass':'idle');
     const tn = S.pred.t&&S.pred.t[p]!=null&&!['HCF','HCU','HCO'].includes(p) ? ' · '+Math.round(S.pred.t[p]).toLocaleString('en-IN')+' t' : (p==='ROM'&&S.input.t?' · '+Math.round(+S.input.t).toLocaleString('en-IN')+' t':'');
     const dl = p!=='ROM'&&v!=null ? v-S.pred.rom[e] : null;
     const bad = e==='Fe' ? dl<0 : dl>0;
-    nodes+=`<text class="nl" x="${lx}" y="${cy-12}" font-family="Barlow Semi Condensed,Bahnschrift,Arial Narrow,sans-serif" font-size="12.5" font-weight="600" fill="${sel?'#f2b33d':'#aeb9c3'}" letter-spacing=".6">${SHORTN[p].toUpperCase()}</text>`;
-    nodes+=`<text class="nl" x="${lx}" y="${cy+9}" font-family="Barlow Semi Condensed,Bahnschrift,Arial Narrow,sans-serif" font-size="21" font-weight="600" fill="${idle?'#5d6a76':'#e7ebee'}">${idle?'—':f(v,e)}<tspan font-size="11" fill="#8c99a5">%</tspan>${dl!=null?`<tspan dx="7" font-size="12" font-family="JetBrains Mono,Consolas,monospace" fill="${Math.abs(dl)<0.005?'#8c99a5':(bad?'#d9583a':'#46c29d')}">${dl>0?'+':''}${f(dl,e)}</tspan>`:''}</text>`;
-    nodes+=`<text class="nl" x="${lx}" y="${cy+24}" font-family="JetBrains Mono,Consolas,monospace" font-size="10" fill="#6f7d89">${ms}${tn}</text></g>`;
+    nodes+=`<text class="nl" x="${lx}" y="${cy-12}" font-family="Barlow Semi Condensed,Bahnschrift,Arial Narrow,sans-serif" font-size="12.5" font-weight="600" style="fill:${sel?'var(--amber)':'var(--svgtxt)'}" letter-spacing=".6">${SHORTN[p].toUpperCase()}</text>`;
+    nodes+=`<text class="nl" x="${lx}" y="${cy+9}" font-family="Barlow Semi Condensed,Bahnschrift,Arial Narrow,sans-serif" font-size="21" font-weight="600" style="fill:${idle?'var(--svgdim)':'var(--svgval)'}">${idle?'—':f(v,e)}<tspan font-size="11" style="fill:var(--muted)">%</tspan>${dl!=null?`<tspan dx="7" font-size="12" font-family="JetBrains Mono,Consolas,monospace" style="fill:${Math.abs(dl)<0.005?'var(--muted)':(bad?'var(--rust)':'var(--mint)')}">${dl>0?'+':''}${f(dl,e)}</tspan>`:''}</text>`;
+    nodes+=`<text class="nl" x="${lx}" y="${cy+24}" font-family="JetBrains Mono,Consolas,monospace" font-size="10" style="fill:var(--svgmut)">${ms}${tn}</text></g>`;
   }
-  const heads=['FEED','CLASSIFY','SEPARATE','CONCENTRATE','PRODUCTS'].map((h,i)=>`<text x="${X[i]}" y="16" font-family="JetBrains Mono,Consolas,monospace" font-size="10" letter-spacing="2.5" fill="#5d6a76">${h}</text>`).join('');
+  const heads=['FEED','CLASSIFY','SEPARATE','CONCENTRATE','PRODUCTS & WASTE'].map((h,i)=>`<text x="${X[i]}" y="16" font-family="JetBrains Mono,Consolas,monospace" font-size="10" letter-spacing="2.5" style="fill:var(--svgdim)">${h}</text>`).join('');
   return `<svg viewBox="0 0 ${W} ${H}" id="flowSvg">${heads}${paths}${nodes}</svg>`;
 }
 function inspector(){
@@ -850,7 +951,7 @@ function inspector(){
       const c=cell.el[el]; meta=`<div class="meta">±${f(x.sd[el],el)} · ${c.mode==='adaptive'?'feed-adaptive':'fixed'} Δ · last ${f(cell.last.v[el],el)}</div>`; }
     else if(p==='ROM') meta=`<div class="meta">${el==='Al2O3'?'input':(pr.romSrc[el]==='est'?'estimated ±'+f(m.romEst[el].rmse,el):'input')}</div>`;
     const st = x? statusCls(p,el,v,x.sd[el]) : '';
-    h+=`<div class="el" style="${el===e?'background:#ffffff05':''}"><small>${ELN[el]}${el===e?' · FOCUS':''}</small><div class="val" style="${st==='bad'?'color:var(--red)':''}">${f(v,el)}<i>%</i></div>
+    h+=`<div class="el" style="${el===e?'background:var(--tint)':''}"><small>${ELN[el]}${el===e?' · FOCUS':''}</small><div class="val" style="${st==='bad'?'color:var(--red)':''}">${f(v,el)}<i>%</i></div>
       ${dl!=null?`<div class="dl ${el==='Fe'?'fe':''} ${dl>0?'pos':'neg'}">${dl>0?'+':''}${f(dl,el)} vs ROM</div>`:'<div class="dl" style="color:var(--dim)">&nbsp;</div>'}${bar}${meta}</div>`;
   }
   return h+'</div></div>';
@@ -878,7 +979,7 @@ function ledger(){
       <td class="num" style="color:${dl==null||Math.abs(dl)<0.005?'var(--muted)':(bad?'var(--rust)':'var(--mint)')}">${dl==null?'':fs(dl,e)}</td>
       <td>${mini}</td><td class="small muted">${p==='ROM'?'input':(cell?(cell.el[e].mode==='adaptive'?'adaptive':'fixed')+' · n'+cell.n:(x&&x.blend?'blend':'idle'))}</td></tr>`;
   }
-  h+=`</table></div><p class="small muted" style="margin-top:10px">Mass split from trained Plant Production yields. Wet ROM = SO + CF + HC Conc + Slime (OPR mass balance). Wet Fines = CF (not jigged) + Jig Conc + HC Conc; jig reject reports with slime.</p>`;
+  h+=`</table></div><p class="small muted" style="margin-top:10px">Mass split from trained Plant Production yields. Wet ROM = SO + CF + HC Conc + Slime (OPR mass balance). Wet Fines = CF (not jigged) + Jig Conc + HC Conc. Jig Reject and LRP Slime are separate waste streams.</p>`;
   return h;
 }
 
@@ -890,11 +991,11 @@ function insights(){
   for(const key in S.limits){
     const [p,e]=key.split('|'); const L=limitFor(p,e); if(L==null||!pr.p[p]) continue;
     const v=pr.p[p].v[e], gap=v-L;
-    const sol=E.solveLimit(m,p,e,L,pr.jig);
+    const sol=E.solveLimit(m,p,e,L-((pr.p[p].adj&&pr.p[p].adj[e])||0),pr.jig);
     const romTxt = sol ? (sol.slope>0?`exceeds <b>${f(sol.rom,'Al2O3')}%</b>`:`falls below <b>${f(sol.rom,'Al2O3')}%</b>`) : 'n/a';
     card(`Threshold · ${P[p].name} ${ELN[e]} vs ${f(L,e)}%`, gap>0?'bad':(gap>-pr.p[p].sd[e]?'warn':'good'),
       `At the current feed, ${P[p].name} ${ELN[e]} is predicted at <b>${f(v,e)}%</b> — ${f(Math.abs(gap),e)} ${gap>0?'above':'below'} the ${f(L,e)}% limit (±${f(pr.p[p].sd[e],e)} 1σ).`,
-      sol?`Limit is breached if ROM Al₂O₃ ${romTxt} (JIG ${pr.jig?'ON':'OFF'})`:'');
+      sol?`Limit is breached if ROM Al₂O₃ ${romTxt} (jig feed ${Math.round(pr.jf*100)}% of CF)`:'');
   }
   // alumina distribution
   const ad=pr.alDist, Y=m.yields;
@@ -910,9 +1011,10 @@ function insights(){
   const feS=['SO','WF'].map(p=>{const s=slope(p,'Fe'); return s==null?null:`${P[p].name} Fe ${fs(s*0.5,'Fe')}`}).filter(Boolean).join(' · ');
   card('Sensitivity · per +0.5% ROM Al₂O₃','', `${sens}.<br>${feS}.`, 'Use with the ROM Monitoring App shift forecast to pre-empt product slippage');
   // jig
-  if(pr.jig&&pr.p.JF&&pr.p.JC){
-    const d=pr.p.JC.v.Al2O3-pr.p.JF.v.Al2O3;
-    card('Jig · upgrading', d<0?'good':'warn', `Jig is predicted to move Al₂O₃ from <b>${f(pr.p.JF.v.Al2O3,'Al2O3')}%</b> (feed) to <b>${f(pr.p.JC.v.Al2O3,'Al2O3')}%</b> (concentrate), ${(Y.JC_of_JF*100).toFixed(0)}% mass recovery; reject at ${pr.p.JR?f(pr.p.JR.v.Al2O3,'Al2O3'):'—'}% Al₂O₃.`, 'Switch the jig off in the left panel to compare Wet Fines without jigging');
+  if(m.yields.jigData){
+    const sweep=[0,10,20,30,40].map(j=>{ const q=E.predict(m,{Al2O3:pr.rom.Al2O3,Fe:S.input.Fe,SiO2:S.input.SiO2,P:S.input.P,jf:j/100}); return q.p.WF?`${j}% → <b>${f(q.p.WF.v.Al2O3,'Al2O3')}</b>`:null; }).filter(Boolean).join(' · ');
+    const cur = pr.jig&&pr.p.JF&&pr.p.JC ? `At ${Math.round(pr.jf*100)}% diversion the jig moves Al₂O₃ from <b>${f(pr.p.JF.v.Al2O3,'Al2O3')}%</b> (feed) to <b>${f(pr.p.JC.v.Al2O3,'Al2O3')}%</b> (concentrate), ${(Y.JC_of_JF*100).toFixed(0)}% mass recovery; reject at ${pr.p.JR?f(pr.p.JR.v.Al2O3,'Al2O3'):'—'}%.<br>` : 'Jig is off — all classifier fines go to Wet Fines.<br>';
+    card('Jig · feed diversion', pr.jig?'good':'warn', `${cur}Wet Fines Al₂O₃ vs jig feed: ${sweep}.`, 'Drag the jig-feed slider in the left panel to test diversion (0–40% of CF)');
   }
   // drift — last 3 operating days of window
   const bt=E.backtest(m,S.ds), last3=m.winDays.slice(-3);
@@ -952,7 +1054,7 @@ function modelTab(){
     const c=m.cells[id]; if(!c) continue;
     const nm=P[c.p].name+(id==='WF_on'?' (jig ON)':id==='WF_off'?' (jig OFF)':'');
     EL.forEach((e,j)=>{ const x=c.el[e];
-      h+=`<tr style="${focusP&&c.p===focusP?'background:#2b2617':''}"><td>${j===0?`<b>${nm}</b>${c.scope==='month'?' <span class="muted">(month)</span>':''}`:''}</td><td>${ELN[e]}</td><td>${fs(x.dbar,e)}</td><td>${x.beta?x.beta.toFixed(2):'—'}</td><td>${f(x.rmse,e)}</td><td>${x.n}${x.nOut?`<span class="muted">−${x.nOut}</span>`:''}</td><td class="${x.mode==='adaptive'?'a':''}">${x.mode==='adaptive'?'adaptive':'fixed'}</td></tr>`; });
+      h+=`<tr style="${focusP&&c.p===focusP?'background:var(--rowsel)':''}"><td>${j===0?`<b>${nm}</b>${c.scope==='month'?' <span class="muted">(month)</span>':''}`:''}</td><td>${ELN[e]}</td><td>${fs(x.dbar,e)}</td><td>${x.beta?x.beta.toFixed(2):'—'}</td><td>${f(x.rmse,e)}</td><td>${x.n}${x.nOut?`<span class="muted">−${x.nOut}</span>`:''}</td><td class="${x.mode==='adaptive'?'a':''}">${x.mode==='adaptive'?'adaptive':'fixed'}</td></tr>`; });
   }
   h+=`</table></div>
   <h4 style="margin-top:16px">ROM estimator (when only Al₂O₃ is given)</h4><table class="t"><tr><th>Element</th><th>= a + b·Al₂O₃</th><th>±</th></tr>`;
@@ -982,15 +1084,15 @@ function btTab(){
   const W=900,H=250,pl=40,pr_=8,pt=10,pb=24;
   const vals=R.flatMap(r=>[r.act[p][e],r.pred[p].v[e]]); let lo=Math.min(...vals),hi=Math.max(...vals); const pad=(hi-lo)*0.08||0.1; lo-=pad; hi+=pad;
   const X=i=>pl+(i/(R.length-1))*(W-pl-pr_), Yv=v=>pt+(1-(v-lo)/(hi-lo))*(H-pt-pb);
-  let svg=`<svg viewBox="0 0 ${W} ${H}" style="width:100%;background:#151b21;border:1px solid var(--line);border-radius:8px">`;
+  let svg=`<svg viewBox="0 0 ${W} ${H}" style="width:100%;background:var(--chartbg);border:1px solid var(--line);border-radius:8px">`;
   const wi=R.map((r,i)=>r.inWin?i:-1).filter(i=>i>=0);
-  if(wi.length) svg+=`<rect x="${X(wi[0])}" y="${pt}" width="${Math.max(2,X(wi[wi.length-1])-X(wi[0]))}" height="${H-pt-pb}" fill="#f2b33d" fill-opacity=".07"/><text x="${X(wi[0])+4}" y="${pt+11}" font-size="9" fill="#f2b33d" font-family="monospace">TRAINING WINDOW</text>`;
-  for(let k=0;k<=4;k++){ const v=lo+(hi-lo)*k/4; svg+=`<line x1="${pl}" x2="${W-pr_}" y1="${Yv(v)}" y2="${Yv(v)}" stroke="#2a343f"/><text x="${pl-4}" y="${Yv(v)+3}" font-size="9" text-anchor="end" fill="#789">${v.toFixed(DP[e]===3?3:1)}</text>`; }
+  if(wi.length) svg+=`<rect x="${X(wi[0])}" y="${pt}" width="${Math.max(2,X(wi[wi.length-1])-X(wi[0]))}" height="${H-pt-pb}" style="fill:var(--amber)" fill-opacity=".07"/><text x="${X(wi[0])+4}" y="${pt+11}" font-size="9" style="fill:var(--amber)" font-family="monospace">TRAINING WINDOW</text>`;
+  for(let k=0;k<=4;k++){ const v=lo+(hi-lo)*k/4; svg+=`<line x1="${pl}" x2="${W-pr_}" y1="${Yv(v)}" y2="${Yv(v)}" style="stroke:var(--line)"/><text x="${pl-4}" y="${Yv(v)+3}" font-size="9" text-anchor="end" fill="#789">${v.toFixed(DP[e]===3?3:1)}</text>`; }
   const band=R.map((r,i)=>`${X(i)},${Yv(r.pred[p].v[e]+r.pred[p].sd[e])}`).join(' ')+' '+R.map((r,i)=>`${X(i)},${Yv(r.pred[p].v[e]-r.pred[p].sd[e])}`).reverse().join(' ');
-  svg+=`<polygon points="${band}" fill="#f2b33d" opacity=".14"/>`;
-  svg+=`<polyline fill="none" stroke="#f2b33d" stroke-width="1.8" stroke-dasharray="4 3" points="${R.map((r,i)=>`${X(i)},${Yv(r.pred[p].v[e])}`).join(' ')}"/>`;
-  svg+=`<polyline fill="none" stroke="#e7ebee" stroke-width="1.6" points="${R.map((r,i)=>`${X(i)},${Yv(r.act[p][e])}`).join(' ')}"/>`;
-  R.forEach((r,i)=>{ svg+=`<circle cx="${X(i)}" cy="${Yv(r.act[p][e])}" r="2" fill="#e7ebee"><title>${r.label}: actual ${f(r.act[p][e],e)} · pred ${f(r.pred[p].v[e],e)} · ROM Al ${f(r.romAl,'Al2O3')}</title></circle>`; });
+  svg+=`<polygon points="${band}" style="fill:var(--amber)" opacity=".16"/>`;
+  svg+=`<polyline fill="none" style="stroke:var(--amber)" stroke-width="1.8" stroke-dasharray="4 3" points="${R.map((r,i)=>`${X(i)},${Yv(r.pred[p].v[e])}`).join(' ')}"/>`;
+  svg+=`<polyline fill="none" style="stroke:var(--text)" stroke-width="1.6" points="${R.map((r,i)=>`${X(i)},${Yv(r.act[p][e])}`).join(' ')}"/>`;
+  R.forEach((r,i)=>{ svg+=`<circle cx="${X(i)}" cy="${Yv(r.act[p][e])}" r="2" style="fill:var(--text)"><title>${r.label}: actual ${f(r.act[p][e],e)} · pred ${f(r.pred[p].v[e],e)} · ROM Al ${f(r.romAl,'Al2O3')}</title></circle>`; });
   let lastDay=null; R.forEach((r,i)=>{ if(r.day!==lastDay && r.day%5===0){ svg+=`<text x="${X(i)}" y="${H-8}" font-size="9" text-anchor="middle" fill="#789">D${r.day}</text>`; } lastDay=r.day; });
   svg+='</svg>';
   h+=svg+`<div class="small" style="margin:6px 0 10px"><span>━ actual</span> &nbsp; <span style="color:var(--amber)">╌ predicted (from ROM Al₂O₃ only)</span> &nbsp; <span class="muted">shade ±1σ</span></div>
@@ -1007,9 +1109,10 @@ function parseBatch(txt){
   txt.split(/\r?\n/).forEach((line,i)=>{
     const s=line.trim(); if(!s||/^#/.test(s)) return;
     const tk=s.split(/[\s,;\t]+/).filter(Boolean);
-    let label='', shift='', nums=[], jig=null;
+    let label='', shift='', nums=[], jig=null, jfp=null;
     for(const t of tk){
       if(/^[ABC]$/i.test(t)) shift=t.toUpperCase();
+      else if(/^\d{1,2}(\.\d+)?%$/.test(t)) jfp=Math.min(40,parseFloat(t));
       else if(/^(on|jig)$/i.test(t)) jig=true;
       else if(/^(off|nojig)$/i.test(t)) jig=false;
       else if(/^\d{1,4}[-/]\d{1,2}([-/]\d{1,4})?$/.test(t)||/^\d{1,2}\.\d{1,2}\.\d{2,4}$/.test(t)) label=t;
@@ -1019,32 +1122,33 @@ function parseBatch(txt){
     if(!label && nums.length>=2 && Number.isInteger(nums[0]) && nums[0]>=1 && nums[0]<=31){ label='D'+nums.shift(); }
     const al=nums[0], t=nums[1];
     if(!(al>0&&al<20)) return;
-    out.push({label:(label||('Row '+(i+1)))+(shift?'-'+shift:''), al, t:t>50?t:0, jig});
+    out.push({label:(label||('Row '+(i+1)))+(shift?'-'+shift:''), al, t:t>50?t:0, jig, jfp});
   });
   return out;
 }
 function batchTab(){
   const e=S.set.focus;
-  let h=`<h4>Shift-wise prediction</h4><p class="small muted" style="margin-top:-4px">Paste shift ROM Al₂O₃ from the ROM Monitoring App — one shift per line: <code>day shift Al₂O₃ [tonnes] [ON/OFF]</code>. Example:<br><code>16 A 4.35 7200</code> · <code>16,B,4.62</code> · <code>4.10</code></p>
-  <textarea id="batchIn" placeholder="16 A 4.35 7200&#10;16 B 4.62 7400&#10;16 C 4.18 6900 OFF">${esc(S.batch)}</textarea>
+  let h=`<h4>Shift-wise prediction</h4><p class="small muted" style="margin-top:-4px">Paste shift ROM Al₂O₃ from the ROM Monitoring App — one shift per line: <code>day shift Al₂O₃ [tonnes] [jig %]</code>. Example:<br><code>16 A 4.35 7200 25%</code> · <code>16,B,4.62</code> · <code>16 C 4.10 OFF</code> · <code>4.10</code></p>
+  <textarea id="batchIn" placeholder="16 A 4.35 7200 30%&#10;16 B 4.62 7400&#10;16 C 4.18 6900 OFF">${esc(S.batch)}</textarea>
   <div style="display:flex;gap:8px;margin:8px 0 12px"><button class="btn" id="batchGo">Predict</button><button class="btn sec" id="batchCsv">Download CSV</button><button class="btn sec" id="batchFill">Fill with last 3 shifts</button></div><div id="batchOut"></div>`;
   return h;
 }
 function batchRun(download){
   S.batch=$('batchIn').value; const rows=parseBatch(S.batch); const e=S.set.focus;
   if(!rows.length){ $('batchOut').innerHTML='<p class="muted">No valid lines.</p>'; return; }
-  const res=rows.map(r=>({...r, pr:E.predict(S.model,{Al2O3:r.al,jig:r.jig==null?S.input.jig:r.jig,t:r.t})}));
+  const cur=+S.input.jf, def=cur>0?cur:Math.round(Math.min(40,S.model.yields.JF_of_CF*100));
+  const res=rows.map(r=>{ const j = r.jfp!=null ? r.jfp : (r.jig===false ? 0 : (r.jig===true ? def : cur)); return {...r, pr:E.predict(S.model,{Al2O3:r.al,jf:j/100,t:r.t})}; });
   const cols=['SO','CF','JC','HCC','WF','SL'];
   if(download){
-    const hd=['Shift','ROM_Al2O3','ROM_t','Jig',...['ROM_Fe','ROM_SiO2','ROM_P'],...cols.flatMap(p=>EL.map(x=>`${p}_${x}`)),...cols.map(p=>`${p}_t`)];
+    const hd=['Shift','ROM_Al2O3','ROM_t','JigFeed_pctCF',...['ROM_Fe','ROM_SiO2','ROM_P'],...cols.flatMap(p=>EL.map(x=>`${p}_${x}`)),...cols.map(p=>`${p}_t`)];
     const lines=[hd.join(',')];
     for(const r of res){ const pr=r.pr;
-      lines.push([r.label,r.al,r.t||'',pr.jig?'ON':'OFF',pr.rom.Fe.toFixed(2),pr.rom.SiO2.toFixed(2),pr.rom.P.toFixed(3),
+      lines.push([r.label,r.al,r.t||'',Math.round(pr.jf*100)+'%',pr.rom.Fe.toFixed(2),pr.rom.SiO2.toFixed(2),pr.rom.P.toFixed(3),
         ...cols.flatMap(p=>EL.map(x=>pr.p[p]?pr.p[p].v[x].toFixed(DP[x]):'')),...cols.map(p=>pr.t&&pr.t[p]!=null?Math.round(pr.t[p]):'')].join(',')); }
     const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([lines.join('\n')],{type:'text/csv'})); a.download=`WetPlant_predictions_${new Date().toISOString().slice(0,10)}.csv`; a.click(); return;
   }
   let h=`<div style="overflow:auto"><table class="t"><tr><th>Shift</th><th>ROM</th>${cols.map(p=>`<th>${p}</th>`).join('')}</tr>`;
-  for(const r of res){ h+=`<tr><td>${esc(r.label)}${r.pr.jig?'':' <span class="muted">noJ</span>'}</td><td><b>${f(r.pr.rom[e],e)}</b></td>${cols.map(p=>{ const x=r.pr.p[p]; if(!x) return '<td class="muted">—</td>'; const st=statusCls(p,e,x.v[e],x.sd[e]); return `<td style="${st==='bad'?'color:var(--red);font-weight:700':''}">${f(x.v[e],e)}</td>`; }).join('')}</tr>`; }
+  for(const r of res){ h+=`<tr><td>${esc(r.label)}<span class="muted"> · J${Math.round(r.pr.jf*100)}%</span></td><td><b>${f(r.pr.rom[e],e)}</b></td>${cols.map(p=>{ const x=r.pr.p[p]; if(!x) return '<td class="muted">—</td>'; const st=statusCls(p,e,x.v[e],x.sd[e]); return `<td style="${st==='bad'?'color:var(--red);font-weight:700':''}">${f(x.v[e],e)}</td>`; }).join('')}</tr>`; }
   h+=`</table></div><p class="small muted">${ELN[e]} % shown (change with FOCUS). CSV contains all elements and tonnages.</p>`;
   $('batchOut').innerHTML=h; save();
 }
@@ -1101,13 +1205,13 @@ function renderPane(){
   }
   if(S.tab==='bt'){ pane.innerHTML=btTab(); $('btP').onchange=ev=>{S.bt.p=ev.target.value;renderPane();}; $('btE').onchange=ev=>{S.bt.e=ev.target.value;renderPane();}; }
   if(S.tab==='batch'){ pane.innerHTML=batchTab(); $('batchGo').onclick=()=>batchRun(false); $('batchCsv').onclick=()=>batchRun(true);
-    $('batchFill').onclick=()=>{ const sh=S.ds.shifts.filter(s=>s.rom).slice(-3); $('batchIn').value=sh.map(s=>`${s.day} ${s.shift} ${s.rom.Al2O3.toFixed(2)} ${Math.round(s.rom.t)} ${s.jig?'ON':'OFF'}`).join('\n'); batchRun(false); };
+    $('batchFill').onclick=()=>{ const sh=S.ds.shifts.filter(s=>s.rom).slice(-3); $('batchIn').value=sh.map(s=>`${s.day} ${s.shift} ${s.rom.Al2O3.toFixed(2)} ${Math.round(s.rom.t)} ${s.jig&&s.t.CF>0?Math.round(Math.min(40,s.t.JF/s.t.CF*100))+'%':'OFF'}`).join('\n'); batchRun(false); };
     if(S.batch) batchRun(false); }
   if(S.tab==='data'){ pane.innerHTML=dataTab(); $('clearBtn').onclick=()=>{ if(confirm('Clear stored OPR data and model from this browser?')){ localStorage.removeItem(LS); location.reload(); } }; }
 }
 function renderAll(){ $('fileChip').innerHTML = S.ds?`<i>●</i> ${esc(S.ds.fileName||'OPR')}`:'no OPR loaded'; renderRail(); renderMain(); }
 
-function applyUrl(){ const q=new URLSearchParams(location.search); if(q.has('al')){ S.input.Al2O3=+q.get('al'); ['Fe','SiO2','P'].forEach(k=>S.input[k]=q.get(k.toLowerCase())||''); if(q.has('jig')) S.input.jig=q.get('jig')!=='0'; if(q.has('t')) S.input.t=q.get('t'); return true; } return false; }
+function applyUrl(){ const q=new URLSearchParams(location.search); if(q.has('al')){ S.input.Al2O3=+q.get('al'); ['Fe','SiO2','P'].forEach(k=>S.input[k]=q.get(k.toLowerCase())||''); if(q.has('jig')&&q.get('jig')==='0') S.input.jf=0; if(q.has('jf')) S.input.jf=Math.max(0,Math.min(40,+q.get('jf'))); if(q.has('t')) S.input.t=q.get('t'); return true; } return false; }
 if(load()){ applyUrl(); try{ S.model=E.train(S.ds,{basis:S.set.basis,nDays:+S.set.nDays,endDay:S.set.endDay}); if(S.input.Al2O3==null){ const l=S.model.romStats.last; S.input.Al2O3=+l.X.Al2O3.toFixed(2);} runPredict(); }catch(err){ console.error(err); } }
 else applyUrl();
 renderAll();
