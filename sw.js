@@ -1,8 +1,8 @@
 /* Grade Flow Predictor — offline service worker */
-const VERSION = 'gf-v1.0.0';
+const VERSION = 'gf-v1.0.1';
 const SHELL = ['./', './index.html', './manifest.webmanifest',
-  './icons/icon-192.png', './icons/icon-512.png', './icons/maskable-192.png', './icons/maskable-512.png',
-  './icons/apple-touch-icon.png', './icons/favicon-32.png'];
+  './icon-192.png', './icon-512.png', './maskable-192.png', './maskable-512.png',
+  './apple-touch-icon.png', './favicon-32.png'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(VERSION).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));
