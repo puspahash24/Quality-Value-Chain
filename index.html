@@ -180,6 +180,24 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
 input[type=range]:disabled{opacity:.35}
 .bwrow{margin-top:9px}.bwrow.off{opacity:.45}
 .bwrow label{display:block;font:600 10px var(--mono);color:var(--muted);margin-bottom:4px}
+.bfilter{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:12px}
+.bchip{display:inline-flex;align-items:center;gap:6px;background:var(--panel2);border:1px solid var(--line2);border-radius:20px;padding:5px 11px;font:600 13px var(--cond);color:var(--muted);cursor:pointer}
+.bchip i{width:10px;height:10px;border-radius:50%;opacity:.35}
+.bchip.on{color:var(--text);border-color:var(--muted)}.bchip.on i{opacity:1}
+.bgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (max-width:1150px){.bgrid{grid-template-columns:1fr}}
+.bcard{background:var(--panel2);border-radius:8px;padding:10px 12px 8px}
+.bct{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}.bct b{font:600 18px var(--cond)}.bct span{font-size:11.5px;color:var(--muted)}
+.bchart{width:100%;height:auto;display:block;margin-top:4px}
+.bax{text-align:center;font:10.5px var(--mono);color:var(--muted);margin-top:-2px}
+#pane{position:relative}
+.btip{position:absolute;z-index:30;background:var(--panel);border:1px solid var(--line2);border-radius:6px;padding:8px 10px;font-size:12.5px;line-height:1.45;box-shadow:0 8px 24px var(--shadow);pointer-events:none;max-width:250px}
+.bwel{display:grid;grid-template-columns:34px 1fr 62px 38px;gap:5px;align-items:center;margin-bottom:5px}
+.bwel .bwn{font:600 13px var(--cond)}
+.bwel .pills button{padding:4px 1px;font-size:12px}
+.bwel input{width:100%;background:var(--panel);border:1px solid var(--line2);border-radius:5px;padding:4px 4px;font:600 13px var(--cond);text-align:center;outline:none}
+.bwel input:focus{border-color:var(--amber)}
+.bwel .bwh{font:10px var(--mono);color:var(--dim);text-align:right}
 .bwctl{display:grid;grid-template-columns:1fr 62px;gap:6px;align-items:center}
 .bwctl .pills button{padding:5px 2px;font-size:12.5px}
 .bwctl input{width:100%;background:var(--panel);border:1px solid var(--line2);border-radius:5px;padding:5px 6px;font:600 14px var(--cond);text-align:center;outline:none}
@@ -479,7 +497,9 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   }
 
   // ---------- modelling ----------
-  let BAND = 0.2; const SHRINK = 3;
+  const SHRINK = 3;
+  const DEF_BANDS = { Fe: 0.5, SiO2: 0.2, Al2O3: 0.2, P: 0.002 };
+  const BLIM = { Fe: [0.1, 5], SiO2: [0.05, 2], Al2O3: [0.05, 2], P: [0.0005, 0.02] };
   function bandOf(f, x) { // returns {s, lo, n, how}
     const B = f.bins; if (!B || !B.length) return null;
     const BAND = f.bw || 0.2;
@@ -490,7 +510,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     const L = B[B.length - 1]; if (x >= L.lo + BAND) return { s: L.s, lo: L.lo, n: L.n, how: 'edge' };
     let i = 0; while (i < B.length - 1 && B[i + 1].lo + BAND / 2 < x) i++;
     const a = B[i], b = B[i + 1], ca = a.lo + BAND / 2, cb = b.lo + BAND / 2, t = (x - ca) / (cb - ca);
-    return { s: a.s + (b.s - a.s) * t, lo: +(k * BAND).toFixed(2), n: 0, how: 'interp' };
+    return { s: a.s + (b.s - a.s) * t, lo: +(k * BAND).toFixed(5), n: 0, how: 'interp' };
   }
   function cellDelta(model, f, x) {
     if ((model.method || 'band') === 'band' && f.bins) { const b = bandOf(f, x); if (b) return b; }
@@ -499,7 +519,8 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     return { s: f.dbar + f.beta * (xc - f.xbar), how: 'linear' };
   }
   function cellRmse(model, f) { return (model.method || 'band') === 'band' && f.bins ? f.rmseB : f.rmseLin; }
-  function fitCell(xs, ds) {
+  function fitCell(xs, ds, bwIn) {
+    const BAND = bwIn || 0.2;
     let idx = xs.map((_, i) => i);
     const run = (I) => {
       const n = I.length, x = I.map(i => xs[i]), d = I.map(i => ds[i]);
@@ -532,7 +553,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     const bins = Object.keys(map).map(Number).sort((a, b) => a - b).map(k => {
       const d = map[k], n = d.length, m = mean(d), c = (k + 0.5) * BAND;
       const sd = n > 1 ? Math.sqrt(d.reduce((a, v) => a + (v - m) ** 2, 0) / (n - 1)) : null;
-      return { lo: +(k * BAND).toFixed(2), n, mean: m, sd, s: (n * m + SHRINK * trend(c)) / (n + SHRINK) };
+      return { lo: +(k * BAND).toFixed(5), n, mean: m, sd, s: (n * m + SHRINK * trend(c)) / (n + SHRINK) };
     });
     let se = 0;
     for (const b of bins) { const d = map[Math.round(b.lo / BAND)]; const sum = d.reduce((a, v) => a + v, 0);
@@ -557,7 +578,8 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
 
   function train(ds, opt) {
     opt = Object.assign({ basis: 'shift', nDays: 10, endDay: null, method: 'band', band: 0.2 }, opt || {});
-    BAND = Math.min(2, Math.max(0.05, +opt.band || 0.2));
+    const BW = Object.assign({}, DEF_BANDS, typeof opt.band === 'number' ? { Al2O3: opt.band } : {}, opt.bands || {});
+    for (const e of EL) BW[e] = Math.min(BLIM[e][1], Math.max(BLIM[e][0], +BW[e] || DEF_BANDS[e]));
     const all = basisRows(ds, opt.basis);
     if (!all.length) throw new Error('No rows with valid Wet ROM quality for this basis.');
     let opDays = [...new Set(all.map(r => r.day))].sort((a, b) => a - b);
@@ -585,8 +607,9 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       if (rows.length < 3) { cells[g.id] = null; continue; }
       const c = { p: g.p, scope, n: rows.length, el: {}, act: {} };
       for (const e of EL) {
-        const xs = rows.map(r => r.X.Al2O3), dd = rows.map(r => r.p[g.p][e] - r.X[e]);
-        c.el[e] = fitCell(xs, dd);
+        // each element's delta is banded on Wet ROM grade of the SAME element
+        const xs = rows.map(r => r.X[e]), dd = rows.map(r => r.p[g.p][e] - r.X[e]);
+        c.el[e] = fitCell(xs, dd, BW[e]);
         const av = rows.map(r => r.p[g.p][e]);
         c.act[e] = { min: Math.min(...av), max: Math.max(...av), mean: mean(av) };
       }
@@ -625,7 +648,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     yields.wfAnchor = wfAnchor;
     yields.wfAnchorF = wfAnchor === 'WF_on' ? yields.JF_of_CF : 0;
 
-    return { opt, basis: opt.basis, method: opt.method, band: BAND, winDays, endDay, nRows: win.length, cells, romEst, notes,
+    return { opt, basis: opt.basis, method: opt.method, band: BW.Al2O3, bands: BW, winDays, endDay, nRows: win.length, cells, romEst, notes,
       romStats: { mean: mean(romAl), min: Math.min(...romAl), max: Math.max(...romAl), last: win[win.length - 1] },
       yields, trainedAt: new Date().toISOString(), month: ds.month, fileName: ds.fileName };
   }
@@ -656,7 +679,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       const v = {}, sd = {}, dl = {}, band = {};
       for (const e of EL) {
         const f = c.el[e];
-        const cd = cellDelta(model, f, al);
+        const cd = cellDelta(model, f, rom[e]);
         let val = rom[e] + cd.s;
         val = Math.max(0, e === 'Fe' ? Math.min(val, 70) : val);
         v[e] = val; dl[e] = val - rom[e]; band[e] = cd;
@@ -681,7 +704,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       const jcCell = cellFor(model, 'JC', true);
       const jcV = e => out.p.JC ? out.p.JC.v[e] : null;
       let jcRef = null;
-      if (jcCell) { jcRef = {}; for (const e of EL) jcRef[e] = rom[e] + cellDelta(model, jcCell.el[e], al).s; }
+      if (jcCell) { jcRef = {}; for (const e of EL) jcRef[e] = rom[e] + cellDelta(model, jcCell.el[e], rom[e]).s; }
       const blend = (ff, e) => {
         const jq = jcV(e) != null ? jcV(e) : (jcRef ? jcRef[e] : out.p.CF.v[e]);
         const m1 = CFm * (1 - ff), m2 = CFm * ff * r, m3 = HCm;
@@ -739,7 +762,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     const win = new Set(model.winDays);
     return rows.map(r => {
       const jfr = r.jig && r.t && r.t.CF > 0 ? Math.min(1, (r.t.JF || 0) / r.t.CF) : 0;
-      const pr = predict(model, { Al2O3: r.X.Al2O3, jf: r.jig ? (jfr > 0 ? jfr : model.yields.JF_of_CF) : 0 });
+      const pr = predict(model, { Al2O3: r.X.Al2O3, Fe: r.X.Fe, SiO2: r.X.SiO2, P: r.X.P, jf: r.jig ? (jfr > 0 ? jfr : model.yields.JF_of_CF) : 0 });
       if (win.has(r.day) && (model.method || 'band') === 'band') {
         for (const p of PKEYS) { const x = pr.p[p]; if (!x || !x.cell || !r.p[p]) continue;
           for (const e of EL) { const b = x.band[e]; if (!b || b.how !== 'band' || b.n < 2) continue;
@@ -778,7 +801,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     return out;
   }
 
-  const api = { SHRINK, MON, ymFromName, fmtOrd, mergeDatasets, solveLimitNum, cellDelta, bandOf, EL, PRODUCTS, PKEYS, MB_P, parseWorkbook, train, predict, solveLimit, backtest, cellFor };
+  const api = { SHRINK, DEF_BANDS, BLIM, MON, ymFromName, fmtOrd, mergeDatasets, solveLimitNum, cellDelta, bandOf, EL, PRODUCTS, PKEYS, MB_P, parseWorkbook, train, predict, solveLimit, backtest, cellFor };
   if (typeof module !== 'undefined' && module.exports) module.exports = api; else global.VCEngine = api;
 })(typeof window !== 'undefined' ? window : globalThis);
 </script>
@@ -794,10 +817,11 @@ const f = (v,e) => v==null||!isFinite(v) ? '—' : (+v).toFixed(DP[e]??2);
 const fs = (v,e) => (v>0?'+':'')+f(v,e);
 
 const S = { ds:null, model:null, pred:null, sel:'WF', tab:'ledger',
-  set:{ basis:'shift', nDays:9999, endDay:null, focus:'Al2O3', method:'band', band:0.2 },
+  set:{ basis:'shift', nDays:9999, endDay:null, focus:'Al2O3', method:'band', bands:{Fe:0.5,SiO2:0.2,Al2O3:0.2,P:0.002} },
   input:{ Al2O3:null, Fe:'', SiO2:'', P:'', t:'', jf:33 }, theme:'amber',
   limits:{ 'WF|Al2O3':{max:4.5} }, bt:{p:'WF',e:'Al2O3'}, batch:'' };
 
+function bandsSet(){ const b=Object.assign({},E.DEF_BANDS,S.set.bands||{}); if(S.set.band&&!S.set.bands) b.Al2O3=+S.set.band; return b; }
 const ORDER = ['ROM','SO','CF','JF','JC','HCF','HCU','HCO','HCC','WF','SL','JR'];
 const SHORTN = {ROM:'Wet ROM feed',SO:'Sized Ore (CLO)',CF:'Classifier Fines',JF:'Jig Feed',JC:'Jig Concentrate',JR:'Jig Reject',HCF:'Cyclone Feed',HCU:'Cyclone Underflow',HCO:'Cyclone Overflow',HCC:'HC Concentrate',WF:'Wet Fines (W-6)',SL:'LRP Slime'};
 
@@ -896,7 +920,7 @@ function retrain(resetInput){
   if(!S.ds) return;
   if(!S.ds.days.some(d=>d.romPred) && S.set.basis==='dayPred') S.set.basis='shift';
   if(!S.ds){ S.model=null; S.pred=null; save(); renderAll(); return; }
-  try{ S.model = E.train(S.ds,{basis:S.set.basis,nDays:+S.set.nDays,endDay:S.set.endDay,method:S.set.method||'band',band:+S.set.band||0.2}); }
+  try{ S.model = E.train(S.ds,{basis:S.set.basis,nDays:+S.set.nDays,endDay:S.set.endDay,method:S.set.method||'band',bands:bandsSet()}); }
   catch(err){ toast(esc(err.message),5000); if(S.set.basis!=='shift'){ S.set.basis='shift'; return retrain(resetInput);} return; }
   if(resetInput || S.input.Al2O3==null || S.input.Al2O3===''){
     const last = S.model.romStats.last; S.input.Al2O3 = +last.X.Al2O3.toFixed(2); S.input.jf = defaultJf(last);
@@ -988,11 +1012,13 @@ function renderRail(){
       <div class="f"><label>Ending</label><select id="endDay">${days.slice().reverse().map(d=>`<option value="${d}" ${d===m.endDay?'selected':''}>${E.fmtOrd(d,true)}</option>`).join('')}</select></div>
     </div>
     <div class="f" style="margin-top:8px"><label>Δ model</label></div>
-    <div class="pills" id="methP"><button data-v="band" class="${(S.set.method||'band')==='band'?'on':''}" title="Delta looked up in Wet ROM Al₂O₃ bands">ROM Al bands</button><button data-v="linear" class="${S.set.method==='linear'?'on':''}" title="Single delta, optionally sloped with ROM Al₂O₃">Linear</button></div>
-    <div class="bwrow ${(S.set.method||'band')==='band'?'':'off'}"><label>Band width · % Al₂O₃</label>
-      <div class="bwctl"><div class="pills" id="bwP">${[0.1,0.2,0.25,0.5,1].map(v=>`<button data-v="${v}" class="${Math.abs(bw()-v)<1e-9?'on':''}">${v}</button>`).join('')}</div>
-      <input id="bwIn" type="number" min="0.05" max="2" step="0.05" value="${fb(bw())}" title="Any band width from 0.05 to 2"></div>
-      <div class="hint" style="margin-top:4px">${m.cells.WF_off||m.cells.WF_on?(()=>{ const c=E.cellFor(m,'WF',true); const B=c?c.el.Al2O3.bins:[]; return `Wet Fines: ${B.length} bands, median ${B.length?B.map(b=>b.n).sort((a,b)=>a-b)[Math.floor(B.length/2)]:0} shifts per band`; })():''}</div></div>
+    <div class="pills" id="methP"><button data-v="band" class="${(S.set.method||'band')==='band'?'on':''}" title="Each element's delta looked up in bands of Wet ROM grade of that element">ROM grade bands</button><button data-v="linear" class="${S.set.method==='linear'?'on':''}" title="Single delta, optionally sloped with ROM grade">Linear</button></div>
+    <div class="bwrow ${(S.set.method||'band')==='band'?'':'off'}"><label>Band width · Wet ROM grade %</label>
+      ${EL.map(el=>{ const c=E.cellFor(m,'WF',true); const B=c?c.el[el].bins:[]; const med=B.length?B.map(b=>b.n).sort((a,b)=>a-b)[Math.floor(B.length/2)]:0;
+        return `<div class="bwel"><span class="bwn">${ELN[el]}</span><div class="pills">${BPRE[el].map(v=>`<button data-e="${el}" data-v="${v}" class="${Math.abs(bw(el)-v)<1e-9?'on':''}">${v}</button>`).join('')}</div>
+        <input class="bwIn" data-e="${el}" type="number" min="${E.BLIM[el][0]}" max="${E.BLIM[el][1]}" step="${el==='P'?0.0005:0.05}" value="${fb(bw(el),el)}" title="Any width ${E.BLIM[el][0]}–${E.BLIM[el][1]}">
+        <span class="bwh">${B.length}b·${med}</span></div>`; }).join('')}
+      <div class="hint" style="margin-top:2px">b · n = Wet Fines bands · median shifts per band. Each element's Δ is looked up in bands of Wet ROM grade of that same element.</div></div>
     <div class="modelstate" style="margin-top:10px"><b>● trained</b> on ${E.fmtOrd(m.winDays[0],true)} – ${E.fmtOrd(m.winDays[m.winDays.length-1],true)} · ${m.winDays.length} operating days<br>${m.nRows} ${S.set.basis==='shift'?'shifts':'days'} · jig ran in ${(m.yields.jigShare*100).toFixed(0)}% of them</div>
   </div>${libraryHTML()}`;
   const apply=(full)=>{ const g=id=>$(id).value.trim(); const al=parseFloat(g('inAl')); if(!isFinite(al)||al<=0) return;
@@ -1014,10 +1040,12 @@ function renderRail(){
   $('nDays').onchange=ev=>{ S.set.nDays=+ev.target.value; retrain(false); };
   $('endDay').onchange=ev=>{ S.set.endDay=+ev.target.value; retrain(false); };
   $('methP').querySelectorAll('button').forEach(b=>b.onclick=()=>{ S.set.method=b.dataset.v; retrain(false); });
-  const setBw=v=>{ v=+v; if(!isFinite(v)||v<0.05||v>2){ toast('Band width must be between 0.05 and 2'); $('bwIn').value=fb(bw()); return; } S.set.band=Math.round(v*100)/100; S.set.method='band'; retrain(false); toast(`Retrained with ${fb(S.set.band)}% Al₂O₃ bands`); };
-  $('bwP').querySelectorAll('button').forEach(b=>b.onclick=()=>setBw(b.dataset.v));
-  $('bwIn').onchange=ev=>setBw(ev.target.value);
-  $('bwIn').onkeydown=ev=>{ if(ev.key==='Enter') setBw(ev.target.value); };
+  const setBw=(el,v)=>{ v=+v; const [lo,hi]=E.BLIM[el]; const inp=document.querySelector(`.bwIn[data-e="${el}"]`);
+    if(!isFinite(v)||v<lo||v>hi){ toast(`${ELN[el]} band width must be between ${lo} and ${hi}`); if(inp) inp.value=fb(bw(el),el); return; }
+    S.set.bands=Object.assign(bandsSet(),{[el]:el==='P'?Math.round(v*10000)/10000:Math.round(v*100)/100}); delete S.set.band; S.set.method='band'; retrain(false);
+    toast(`Retrained · ${ELN[el]} bands now ${fb(S.set.bands[el],el)}% wide`); };
+  document.querySelectorAll('.bwel .pills button').forEach(b=>b.onclick=()=>setBw(b.dataset.e,b.dataset.v));
+  document.querySelectorAll('.bwIn').forEach(inp=>{ inp.onchange=()=>setBw(inp.dataset.e,inp.value); inp.onkeydown=ev=>{ if(ev.key==='Enter'){ ev.preventDefault(); setBw(inp.dataset.e,inp.value);} }; });
   bindLibrary();
 }
 
@@ -1134,12 +1162,13 @@ function ledger(){
   return h;
 }
 
-function fb(v){ return (+v).toFixed(2).replace(/0$/,''); }
-function bw(){ return (S.model&&S.model.band)||+S.set.band||0.2; }
+function fb(v,e){ return e==='P' ? (+v).toFixed(4).replace(/0$/,'') : (+v).toFixed(2).replace(/0$/,''); }
+function bw(e){ e=e||'Al2O3'; return (S.model&&S.model.bands&&S.model.bands[e]) || (bandsSet()[e]); }
+const BPRE={Fe:[0.25,0.5,1],SiO2:[0.1,0.2,0.5],Al2O3:[0.1,0.2,0.25,0.5],P:[0.001,0.002,0.005]};
 function bandTxt(x,el,cell){
   const b=x.band&&x.band[el]; if(!b) return '';
-  if(b.how==='band') return `band ${fb(b.lo)}–${fb(b.lo+bw())} · n${b.n}`;
-  if(b.how==='interp') return `band ${fb(b.lo)}–${fb(b.lo+bw())} · empty, interpolated`;
+  if(b.how==='band') return `ROM ${ELN[el]} band ${fb(b.lo,el)}–${fb(b.lo+bw(el),el)} · n${b.n}`;
+  if(b.how==='interp') return `ROM ${ELN[el]} band ${fb(b.lo,el)}–${fb(b.lo+bw(el),el)} · empty, interpolated`;
   if(b.how==='edge') return `outside bands · edge n${b.n}`;
   const c=cell.el[el]; return `${c.mode==='adaptive'?'feed-adaptive':'fixed'} Δ · n${c.n}`;
 }
@@ -1175,12 +1204,13 @@ function insights(){
   // band behaviour: how the delta changes with feed grade
   if((m.method||'band')==='band'){
     const lines=[];
+    const fe=S.set.focus;
     for(const p of ['WF','SO','CF','SL']){
-      const c=E.cellFor(m,p,true); if(!c) continue; const B=c.el.Al2O3.bins.filter(b=>b.n>=5); if(B.length<2) continue;
-      const lo=B[0], hi=B[B.length-1], cur=pr.p[p]&&pr.p[p].band.Al2O3;
-      lines.push(`${P[p].name}: <b>${fs(lo.s,'Al2O3')}</b> at ${fb(lo.lo)}–${fb(lo.lo+bw())}% → <b>${fs(hi.s,'Al2O3')}</b> at ${fb(hi.lo)}–${fb(hi.lo+bw())}%${cur&&cur.lo!=null?` (now ${fs(cur.s,'Al2O3')})`:''}`);
+      const c=E.cellFor(m,p,true); if(!c) continue; const B=c.el[fe].bins.filter(b=>b.n>=5); if(B.length<2) continue;
+      const lo=B[0], hi=B[B.length-1], cur=pr.p[p]&&pr.p[p].band[fe];
+      lines.push(`${P[p].name}: <b>${fs(lo.s,fe)}</b> at ${fb(lo.lo,fe)}–${fb(lo.lo+bw(fe),fe)}% → <b>${fs(hi.s,fe)}</b> at ${fb(hi.lo,fe)}–${fb(hi.lo+bw(fe),fe)}%${cur&&cur.lo!=null?` (now ${fs(cur.s,fe)})`:''}`);
     }
-    if(lines.length) card('Bands · ΔAl₂O₃ vs Wet ROM Al₂O₃','', lines.join('<br>'), 'Full band tables for all four elements are in the Model & limits tab');
+    if(lines.length) card(`Bands · Δ${ELN[fe]} vs Wet ROM ${ELN[fe]}`,'', lines.join('<br>'), 'See the Band analysis tab for the charts (switch element with FOCUS)');
   }
   // jig
   if(m.yields.jigData){
@@ -1215,20 +1245,87 @@ function insights(){
   return out.join('');
 }
 
+// ---------- band analysis (charts) ----------
+const BSER=['SO','WF','SL','CF','HCC','JC','JR'];          // fixed slot per product (never re-coloured)
+const PAL_D=['#3987e5','#d95926','#199e70','#c98500','#d55181','#0ca30c','#9085e9'];
+const PAL_L=['#2a78d6','#eb6834','#1baf7a','#eda100','#e87ba4','#008300','#6250d6'];
+const SHORT={SO:'Sized Ore',WF:'Wet Fines',SL:'Slime',CF:'Class. Fines',HCC:'HC Conc',JC:'Jig Conc',JR:'Jig Reject'};
+function serCol(p){ const lt=['white','lavender'].includes(document.documentElement.getAttribute('data-theme')); return (lt?PAL_L:PAL_D)[BSER.indexOf(p)]; }
+function bandSel(){ if(!S.bandSel) S.bandSel=['WF','SO','SL']; return S.bandSel.filter(p=>E.cellFor(S.model,p,true)); }
+function bandChart(el){
+  const m=S.model, prods=bandSel(), w=bw(el);
+  const W=560,H=274,pl=50,pr=74,pt=16,ph=200,sy=pt+ph+10,sh=26;
+  const ser=prods.map(p=>({p,pts:E.cellFor(m,p,true).el[el].bins.map(b=>({x:b.lo+w/2,lo:b.lo,y:b.s,n:b.n,mean:b.mean,sd:b.sd}))})).filter(z=>z.pts.length);
+  if(!ser.length) return `<div class="muted small">No band data for ${ELN[el]}.</div>`;
+  const anc=E.cellFor(m,'WF',true)||E.cellFor(m,prods[0],true); const dens=anc?anc.el[el].bins:[];
+  const allx=ser.flatMap(z=>z.pts.map(q=>q.lo)).concat(dens.map(b=>b.lo));
+  let x0=Math.min(...allx), x1=Math.max(...allx)+w; const now=S.pred.rom[el]; if(now!=null&&isFinite(now)){ x0=Math.min(x0,now); x1=Math.max(x1,now); }
+  const ys=ser.flatMap(z=>z.pts.map(q=>q.y)).concat([0]); let y0=Math.min(...ys), y1=Math.max(...ys); const pd=(y1-y0)*0.1||0.1; y0-=pd; y1+=pd;
+  const X=v=>pl+(v-x0)/(x1-x0)*(W-pl-pr), Y=v=>pt+(1-(v-y0)/(y1-y0))*ph;
+  let g='';
+  const raw=(y1-y0)/5, mag=Math.pow(10,Math.floor(Math.log10(raw))), st=[1,2,2.5,5,10].map(z=>z*mag).find(z=>z>=raw)||raw;
+  const dec=Math.max(0,-Math.floor(Math.log10(st))+ (st/mag===2.5?1:0));
+  for(let v=Math.ceil(y0/st)*st; v<=y1+1e-12; v+=st){ g+=`<line x1="${pl}" x2="${W-pr}" y1="${Y(v)}" y2="${Y(v)}" style="stroke:var(--line)" stroke-width="1"/><text x="${pl-6}" y="${Y(v)+3.5}" text-anchor="end" font-size="10" style="fill:var(--muted)" font-family="JetBrains Mono,Consolas,monospace">${(v>1e-12?'+':'')+(Math.abs(v)<1e-12?0:v).toFixed(dec)}</text>`; }
+  if(y0<0&&y1>0) g+=`<line x1="${pl}" x2="${W-pr}" y1="${Y(0)}" y2="${Y(0)}" style="stroke:var(--muted)" stroke-width="1" stroke-dasharray="4 3"/>`;
+  // x ticks at band edges (thinned)
+  const nb=Math.round((x1-x0)/w), step=Math.max(1,Math.ceil(nb/8));
+  for(let k=0;k<=nb;k+=step){ const v=Math.floor(x0/w+1e-9)*w+k*w; if(v<x0-1e-9||v>x1+1e-9) continue; g+=`<text x="${X(v)}" y="${sy+sh+14}" text-anchor="middle" font-size="10" style="fill:var(--muted)" font-family="JetBrains Mono,Consolas,monospace">${fb(v,el)}</text>`; }
+  // density strip (Wet Fines shifts per band)
+  const nmax=Math.max(1,...dens.map(b=>b.n));
+  g+=`<text x="${pl-6}" y="${sy+sh/2+3}" text-anchor="end" font-size="9" style="fill:var(--dim)" font-family="JetBrains Mono,Consolas,monospace">shifts</text>`;
+  for(const b of dens){ const hh=Math.max(1.5,b.n/nmax*sh); const bx=X(b.lo)+1, bwid=Math.max(1,X(b.lo+w)-X(b.lo)-2);
+    g+=`<rect x="${bx}" y="${sy+sh-hh}" width="${bwid}" height="${hh}" rx="1.5" style="fill:var(--trackr)"><title>${fb(b.lo,el)}–${fb(b.lo+w,el)}%: ${b.n} shifts</title></rect>`; }
+  // current feed marker
+  if(now!=null&&isFinite(now)) g+=`<line x1="${X(now)}" x2="${X(now)}" y1="${pt}" y2="${sy+sh}" style="stroke:var(--text)" stroke-width="1.2" stroke-dasharray="2 3" opacity=".7"/><text x="${X(now)}" y="${pt-4}" text-anchor="middle" font-size="10" font-weight="600" style="fill:var(--text)" font-family="Barlow Semi Condensed,Bahnschrift,Arial Narrow,sans-serif">now ${fb(now,el)}</text>`;
+  // series lines + markers
+  const ends=[];
+  for(const z of ser){ const c=serCol(z.p);
+    g+=`<polyline fill="none" stroke="${c}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" points="${z.pts.map(q=>`${X(q.x)},${Y(q.y)}`).join(' ')}"/>`;
+    for(const q of z.pts){ const r=Math.max(4,Math.min(8,2.5+Math.sqrt(q.n)));
+      g+=`<circle cx="${X(q.x)}" cy="${Y(q.y)}" r="${r}" fill="${c}" style="stroke:var(--panel)" stroke-width="2"/>`;
+      g+=`<circle class="bhit" cx="${X(q.x)}" cy="${Y(q.y)}" r="12" fill="transparent" data-t="${esc(`<b>${SHORT[z.p]}</b> · Wet ROM ${ELN[el]} ${fb(q.lo,el)}–${fb(q.lo+w,el)}%<br>Δ used by model <b>${fs(q.y,el)}</b><br>raw band mean ${fs(q.mean,el)}${q.sd!=null?` ± ${f(q.sd,el)} (1 sd)`:''}<br>${q.n} shift${q.n===1?'':'s'}${q.n<4?' · thin band, pulled to trend':''}`)}"/>`; }
+    const lp=z.pts[z.pts.length-1]; ends.push({y:Y(lp.y),x:X(lp.x),p:z.p,c});
+  }
+  // direct end labels, de-collided
+  ends.sort((a,b)=>a.y-b.y); for(let i=1;i<ends.length;i++) if(ends[i].y-ends[i-1].y<12) ends[i].y=ends[i-1].y+12;
+  for(const e2 of ends) g+=`<line x1="${e2.x+9}" x2="${W-pr+4}" y1="${e2.y}" y2="${e2.y}" stroke="${e2.c}" stroke-width="1" opacity=".5"/><text x="${W-pr+7}" y="${e2.y+3.5}" font-size="10.5" font-weight="600" style="fill:var(--svgtxt)" font-family="Barlow Semi Condensed,Bahnschrift,Arial Narrow,sans-serif">${SHORT[e2.p]}</text>`;
+  return `<svg viewBox="0 0 ${W} ${H}" class="bchart">${g}</svg>`;
+}
+function bandTab(){
+  const m=S.model, sel=bandSel();
+  let h=`<h4><span>Δ by Wet ROM grade band · all four elements</span><span>${(m.method||'band')==='band'?'active model':'Linear active — showing band fit for reference'}</span></h4>
+  <div class="bfilter"><span class="muted small">Products (up to 4):</span>${BSER.filter(p=>E.cellFor(m,p,true)).map(p=>`<button class="bchip ${sel.includes(p)?'on':''}" data-p="${p}"><i style="background:${serCol(p)}"></i>${SHORT[p]}</button>`).join('')}</div>
+  <div class="bgrid">${['Al2O3','SiO2','Fe','P'].map(el=>`<div class="bcard"><div class="bct"><b>Δ${ELN[el]}</b><span>product − Wet ROM ${ELN[el]} · bands of Wet ROM ${ELN[el]}, ${fb(bw(el),el)}% wide</span></div>${bandChart(el)}<div class="bax">Wet ROM ${ELN[el]} %</div></div>`).join('')}</div>
+  <p class="small muted">Each point = the delta the model uses in that band (raw band mean pulled toward the overall trend when a band has few shifts). Bigger dot = more shifts. Bars underneath = Wet Fines shifts per band. Dashed vertical line = current shift feed. Dashed horizontal line = no change: above it the product is richer than Wet ROM in that element, below it poorer. The same numbers are in the Model &amp; limits tab as a table. Band widths are set per element in the left panel.</p>
+  <div id="bandTip" class="btip" hidden></div>`;
+  return h;
+}
+function bindBandTab(){
+  document.querySelectorAll('.bchip').forEach(b=>b.onclick=()=>{ const p=b.dataset.p; let sel=bandSel();
+    if(sel.includes(p)){ if(sel.length===1) return; sel=sel.filter(x=>x!==p); } else { if(sel.length>=4){ toast('Up to 4 products at a time — deselect one first'); return; } sel=[...sel,p]; }
+    S.bandSel=BSER.filter(x=>sel.includes(x)); renderPane(); });
+  const tip=$('bandTip'), pane=$('pane');
+  document.querySelectorAll('.bhit').forEach(c=>{
+    c.onmouseenter=ev=>{ tip.innerHTML=c.dataset.t; tip.hidden=false; };
+    c.onmousemove=ev=>{ const r=pane.getBoundingClientRect(); let x=ev.clientX-r.left+14, y=ev.clientY-r.top+pane.scrollTop+14; if(x+240>r.width) x-=260; tip.style.left=x+'px'; tip.style.top=y+'px'; };
+    c.onmouseleave=()=>{ tip.hidden=true; };
+    c.ontouchstart=ev=>{ tip.innerHTML=c.dataset.t; tip.hidden=false; const r=pane.getBoundingClientRect(), t=ev.touches[0]; tip.style.left=Math.min(t.clientX-r.left+10,r.width-250)+'px'; tip.style.top=(t.clientY-r.top+pane.scrollTop+14)+'px'; };
+  });
+}
 // ---------- model tab ----------
 function modelTab(){
   const m=S.model, pr=S.pred; const focusP=S.sel;
   const e=S.set.focus, cols=['SO','CF','JC','HCC','WF','SL','JR'].filter(p=>E.cellFor(m,p,true));
   const cb=p=>E.cellFor(m,p,true).el[e].bins;
   const los=[...new Set(cols.flatMap(p=>cb(p).map(b=>b.lo)))].sort((a,b)=>a-b);
-  const curLo=Math.floor(pr.rom.Al2O3/bw()+1e-9)*bw();
-  let h=`<h4><span>Δ${ELN[e]} by Wet ROM Al₂O₃ band (${fb(bw())}% wide)</span><span>${(m.method||'band')==='band'?'active model':'not active — Linear selected'}</span></h4>
-  <p class="small muted" style="margin-top:-4px">Each cell = product ${ELN[e]} − Wet ROM ${ELN[e]} for shifts whose ROM Al₂O₃ fell in that band (small n = shift count). Bands with few shifts are pulled toward the overall trend (${E.SHRINK} pseudo-shifts), so thin bands don't swing wildly. Change the element with FOCUS. Highlighted row = current feed.</p>
-  <div style="overflow:auto;max-height:460px"><table class="t"><tr><th>ROM Al₂O₃ %</th>${cols.map(p=>`<th>${p==='SO'?'Sized Ore':p==='WF'?'Wet Fines':p==='SL'?'Slime':p}</th>`).join('')}</tr>
-  ${los.map(lo=>`<tr class="${Math.abs(lo-curLo)<1e-6?'sel':''}"><td>${fb(lo)} – ${fb(lo+bw())}</td>${cols.map(p=>{ const b=cb(p).find(x=>Math.abs(x.lo-lo)<1e-6); return b?`<td class="num" style="color:${(e==='Fe'?b.s>0:b.s<0)?'var(--mint)':'var(--rust)'}">${fs(b.s,e)}<span class="sd">n${b.n}</span></td>`:'<td class="muted">·</td>'; }).join('')}</tr>`).join('')}
+  const curLo=Math.floor(pr.rom[e]/bw(e)+1e-9)*bw(e);
+  let h=`<h4><span>Δ${ELN[e]} by Wet ROM ${ELN[e]} band (${fb(bw(e),e)}% wide)</span><span>${(m.method||'band')==='band'?'active model':'not active — Linear selected'}</span></h4>
+  <p class="small muted" style="margin-top:-4px">Each cell = product ${ELN[e]} − Wet ROM ${ELN[e]} for shifts whose Wet ROM ${ELN[e]} fell in that band (small n = shift count). Bands with few shifts are pulled toward the overall trend (${E.SHRINK} pseudo-shifts), so thin bands don't swing wildly. Change the element with FOCUS. Highlighted row = current feed.</p>
+  <div style="overflow:auto;max-height:460px"><table class="t"><tr><th>ROM ${ELN[e]} %</th>${cols.map(p=>`<th>${p==='SO'?'Sized Ore':p==='WF'?'Wet Fines':p==='SL'?'Slime':p}</th>`).join('')}</tr>
+  ${los.map(lo=>`<tr class="${Math.abs(lo-curLo)<bw(e)*1e-3?'sel':''}"><td>${fb(lo,e)} – ${fb(lo+bw(e),e)}</td>${cols.map(p=>{ const b=cb(p).find(x=>Math.abs(x.lo-lo)<bw(e)*1e-3); return b?`<td class="num" style="color:${(e==='Fe'?b.s>0:b.s<0)?'var(--mint)':'var(--rust)'}">${fs(b.s,e)}<span class="sd">n${b.n}</span></td>`:'<td class="muted">·</td>'; }).join('')}</tr>`).join('')}
   <tr><td class="muted">LOO error ±</td>${cols.map(p=>`<td class="muted">${f(E.cellFor(m,p,true).el[e].rmseB,e)}</td>`).join('')}</tr></table></div>
   <h4 style="margin-top:18px">Linear summary (product − Wet ROM)</h4>
-  <p class="small muted" style="margin-top:-4px">Δ = Δ̄ + β·(ROM Al₂O₃ − x̄); β only where it beats a fixed Δ on leave-one-out error by ≥10%. Compare ± here with the band table's LOO error to see which model fits better.</p>
+  <p class="small muted" style="margin-top:-4px">Δ = Δ̄ + β·(Wet ROM grade of the same element − x̄); β only where it beats a fixed Δ on leave-one-out error by ≥10%. Compare ± here with the band table's LOO error to see which model fits better.</p>
   <div style="overflow:auto"><table class="t"><tr><th>Stream</th><th>El.</th><th>Δ̄</th><th>β</th><th>±</th><th>n</th><th>Mode</th></tr>`;
   const ids=Object.keys(m.cells);
   for(const id of ids){
@@ -1277,7 +1374,7 @@ function btTab(){
   const span=R.length?((R[R.length-1].day-R[0].day)>200):false;
   let lastDay=null; R.forEach((r,i)=>{ const dom=r.day%100, mo=Math.floor(r.day/100)%100; if(r.day!==lastDay && (span? dom===1||i===0 : dom%5===0)){ svg+=`<text x="${X(i)}" y="${H-8}" font-size="9" text-anchor="middle" style="fill:var(--muted)">${span?E.MON[mo-1]:dom+' '+E.MON[mo-1]}</text>`; } lastDay=r.day; });
   svg+='</svg>';
-  h+=svg+`<div class="small" style="margin:6px 0 10px"><span>━ actual</span> &nbsp; <span style="color:var(--amber)">╌ predicted (from ROM Al₂O₃ only)</span> &nbsp; <span class="muted">shade ±1σ</span></div>
+  h+=svg+`<div class="small" style="margin:6px 0 10px"><span>━ actual</span> &nbsp; <span style="color:var(--amber)">╌ predicted (from the shift's Wet ROM assay)</span> &nbsp; <span class="muted">shade ±1σ</span></div>
   <table class="t"><tr><th>Set</th><th>n</th><th>MAE</th><th>Bias (act−pred)</th></tr>
   ${a?`<tr><td>In window ${(m.method||'band')==='band'?'(leave-one-out)':'(fit)'}</td><td>${a.n}</td><td>${f(a.mae,e)}</td><td>${fs(a.bias,e)}</td></tr>`:''}
   ${b?`<tr><td><b>Outside window (true test)</b></td><td>${b.n}</td><td><b>${f(b.mae,e)}</b></td><td>${fs(b.bias,e)}</td></tr>`:''}</table>
@@ -1355,7 +1452,7 @@ function dataTab(){
 
 
 // ---------- main ----------
-const TABS=[['ledger','Assay ledger'],['ins','Insights'],['model','Model & limits'],['bt','Backtest'],['batch','Shift predict'],['data','Data']];
+const TABS=[['ledger','Assay ledger'],['ins','Insights'],['band','Band analysis'],['model','Model & limits'],['bt','Backtest'],['batch','Shift predict'],['data','Data']];
 function renderMain(){
   const mn=$('main');
   if(!S.model){
@@ -1389,12 +1486,13 @@ function renderPane(){
   if(S.tab==='batch'){ pane.innerHTML=batchTab(); $('batchGo').onclick=()=>batchRun(false); $('batchCsv').onclick=()=>batchRun(true);
     $('batchFill').onclick=()=>{ const sh=S.ds.shifts.filter(s=>s.rom).slice(-3); $('batchIn').value=sh.map(s=>`${s.dom||s.day} ${s.shift} ${s.rom.Al2O3.toFixed(2)} ${Math.round(s.rom.t)} ${s.jig&&s.t.CF>0?Math.round(Math.min(40,s.t.JF/s.t.CF*100))+'%':'OFF'}`).join('\n'); batchRun(false); };
     if(S.batch) batchRun(false); }
+  if(S.tab==='band'){ pane.innerHTML=bandTab(); bindBandTab(); }
   if(S.tab==='data'){ pane.innerHTML=dataTab(); $('clearBtn').onclick=()=>{ if(confirm('Clear stored OPR data and model from this browser?')){ localStorage.removeItem(LS); location.reload(); } }; }
 }
 function renderAll(){ $('fileChip').innerHTML = S.ds?`<i>●</i> ${esc(S.ds.fileName||'OPR')} · ${esc(S.ds.month||'')}`:'no OPR loaded'; renderRail(); renderMain(); }
 
 function applyUrl(){ const q=new URLSearchParams(location.search); if(q.has('al')){ S.input.Al2O3=+q.get('al'); ['Fe','SiO2','P'].forEach(k=>S.input[k]=q.get(k.toLowerCase())||''); if(q.has('jig')&&q.get('jig')==='0') S.input.jf=0; if(q.has('jf')) S.input.jf=Math.max(0,Math.min(40,+q.get('jf'))); if(q.has('t')) S.input.t=q.get('t'); return true; } return false; }
-if(load()){ applyUrl(); try{ S.model=E.train(S.ds,{basis:S.set.basis,nDays:+S.set.nDays,endDay:S.set.endDay,method:S.set.method||'band',band:+S.set.band||0.2}); if(S.input.Al2O3==null){ const l=S.model.romStats.last; S.input.Al2O3=+l.X.Al2O3.toFixed(2);} runPredict(); }catch(err){ console.error(err); } }
+if(load()){ applyUrl(); try{ S.model=E.train(S.ds,{basis:S.set.basis,nDays:+S.set.nDays,endDay:S.set.endDay,method:S.set.method||'band',bands:bandsSet()}); if(S.input.Al2O3==null){ const l=S.model.romStats.last; S.input.Al2O3=+l.X.Al2O3.toFixed(2);} runPredict(); }catch(err){ console.error(err); } }
 else applyUrl();
 renderAll();
 })();
