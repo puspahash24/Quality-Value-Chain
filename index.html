@@ -239,19 +239,43 @@ input[type=range]:disabled{opacity:.35}
   --steel:#5b55a0;--topa:#ffffff;--topb:#f8f6fd;--press:#ebe6f7;--knob:#cdc5e4;--track:#e8e3f5;--trackr:#c2b6e6;--rowwin:#f2eefe;--rowhov:#f6f3fc;--tint:#7c4dff08;
   --instext:#2e2a40;--insb:#120e22;--kbg:#ebe6f8;--kwarn:#fdf0d8;--kbad:#fde4e1;--kgood:#dcf3ea;--svgtxt:#4c4763;--svgval:#151126;--svgmut:#7d7895;--svgdim:#9a95b0;--idle:#e6e1f3;--idles:#bdb4d8;--chartbg:#fcfbff;--shadow:#2a1f5533;--mint:#1f9d74;--rust:#c94a2c}
 [data-theme=lavender] .knob::after{background:#fff}
+/* v1.5 */
+.modeseg{margin-left:4px}
+.subnav{display:flex;flex-wrap:wrap;align-items:center;gap:6px;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:8px 12px}
+.subnav .grp{font:600 10.5px var(--mono);letter-spacing:.18em;color:var(--muted);text-transform:uppercase;margin:0 2px 0 10px}
+.subnav .grp:first-child{margin-left:0}
+.subnav button{background:var(--panel2);border:1px solid var(--line2);border-radius:5px;padding:6px 13px;font:600 14px var(--cond);letter-spacing:.04em;color:var(--muted);cursor:pointer}
+.subnav button.on{background:var(--amber);border-color:var(--amber);color:var(--onacc)}
+.subnote{margin-left:auto;font-size:11.5px;color:var(--dim)}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));border-bottom:1px solid var(--line)}
+.kpi{padding:10px 14px;border-right:1px solid var(--line)}
+.kpi small{display:block;font:600 10px var(--mono);letter-spacing:.06em;color:var(--muted);text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.kpi b{font:600 26px var(--cond)}.kpi b i{font-style:normal;font-size:12px;color:var(--muted)}
+.kpi span{display:block;font:10.5px var(--mono);color:var(--muted)}
+.legend{display:flex;flex-wrap:wrap;gap:14px;margin:0 0 8px;font-size:12px;color:var(--muted)}
+.lg{display:inline-flex;align-items:center;gap:6px}.lg i{width:16px;height:3px;border-radius:2px;display:inline-block}
+.draft{margin-left:auto;font:600 11px var(--mono);color:var(--amber);border:1px dashed var(--amber);border-radius:4px;padding:3px 8px}
+.mfsvg{display:block;width:100%;height:auto}
+.mfsvg .mft{font:600 14.5px var(--cond);fill:var(--svgval)}.mfsvg .mfs{font:10px var(--sans);fill:var(--svgmut)}.mfsvg .mfc{font:10px var(--mono);fill:var(--svgtxt)}.mfsvg .mfl{font:600 10px var(--mono);fill:var(--amber)}.mfsvg .mfh{font:10px var(--mono);letter-spacing:2.5px;fill:var(--svgdim)}
+.mfn{cursor:pointer}.mfn:hover rect:first-child{stroke:var(--amber)!important}
+.mfnotes{margin:0 0 10px;padding-left:20px;line-height:1.6;color:var(--instext)}.mfnotes li{margin-bottom:6px}
+.src{font:600 9.5px var(--mono);padding:1px 5px;border-radius:3px;background:var(--kbg);color:var(--steel);margin-left:5px;letter-spacing:.05em;vertical-align:2px}
+.top{flex-wrap:wrap;row-gap:8px}.ttl small,.ttl b{white-space:nowrap}.ttl b{font-size:21px}
+.plantseg button{white-space:nowrap;padding:7px 12px}.filechip{max-width:250px}
 </style>
 </head>
 <body>
 <div class="top">
   <img class="brandimg" src="icon.svg" alt="">
   <div class="ttl"><small id="plantEyebrow">NOAMUNDI · NRD · WET PLANT</small><b>Quality Value Chain</b></div>
-  <div class="plantseg" id="plantSeg"><button data-v="wet" class="on">Wet Plant</button><button data-v="iopp">IOPP</button><button data-v="ndcmp" disabled title="Coming next">NDCMP</button><button data-v="cs" disabled title="Coming next">C&amp;S</button></div>
+  <div class="plantseg" id="plantSeg"><button data-v="wet" class="on">Wet Plant</button><button data-v="iopp">IOPP</button><button data-v="dry" title="NDCMP and the four C&amp;S plants">NDCMP · C&amp;S</button><button data-v="flow" title="Downstream material flow">Material flow</button></div>
+  <div class="plantseg modeseg" id="modeSeg" title="Switch between the predictive model and what the plants actually processed"><button data-v="predict" class="on">Predict</button><button data-v="vis">Visualise</button></div>
   <div class="sp"></div>
   <span class="netdot" id="netDot"><i></i><span>online</span></span>
   <span class="filechip" id="fileChip">no OPR loaded</span>
   <button class="themebtn" id="themeBtn" title="Change colour theme"><i></i>Theme</button>
   <button class="up ghost" id="installBtn" hidden>Install app</button>
-  <button class="up" id="uploadBtn">Upload OPRs</button>
+  <button class="up" id="uploadBtn" title="Ore Processing Reports and Noa C&amp;S Plant Reports — both recognised automatically">Upload reports</button>
   <input type="file" id="file" accept=".xlsx,.xlsm,.xls" multiple hidden>
 </div>
 <div class="app">
@@ -323,8 +347,43 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       tKeys: ['IF', 'IS'],
       ppPats: { IF: /^iopp\s*fines\s*\(\s*18\s*(tc|cv)\s*0*1/i, IS: /slime\s*loss\s*\(\s*iopp/i },
       qbRe: /iopp rom/i, jig: false, wf: false
+    },
+    // ---- dry plants (no beneficiation: crushing & screening) ----
+    ndcmp: {
+      id: 'ndcmp', name: 'NDCMP', romName: 'NDCMP ROM', source: 'opr-flex', site: 'Noamundi',
+      sheetRe: /^ndc\s*-?\s*20/i,
+      PRODUCTS: { DF: { name: 'NDCMP Fines', sub: 'NDC-20 belt · dry fines (= ROM)', title: /ndc|dry\s*fine/i } },
+      MB_P: ['DF'], JIG_P: [], tKeys: ['DF'], jig: false, wf: false
+    },
+    iss: {
+      id: 'iss', name: 'ISS Plant', romName: 'ISS ROM', source: 'cs', site: 'Noamundi',
+      sheetRe: /^iss[\s_-]+([a-z]+)\s*$/i,
+      PRODUCTS: CS_PRODUCTS('ISS'), MB_P: ['CLO', 'FN'], JIG_P: [], tKeys: ['CLO', 'CF', 'SF', 'FN'], jig: false, wf: false
+    },
+    mnim: {
+      id: 'mnim', name: 'Metso (NIM)', romName: 'Metso NIM ROM', source: 'cs', site: 'Noamundi',
+      sheetRe: /^metso\s*\(\s*nim\s*\)[\s_-]*([a-z]+)\s*$/i,
+      PRODUCTS: CS_PRODUCTS('Metso NIM'), MB_P: ['CLO', 'FN'], JIG_P: [], tKeys: ['CLO', 'CF', 'SF', 'FN'], jig: false, wf: false
+    },
+    sandvik: {
+      id: 'sandvik', name: 'Sandvik', romName: 'Sandvik ROM', source: 'cs', site: 'Katamati',
+      sheetRe: /^sandvik[\s_-]+([a-z]+)\s*$/i,
+      PRODUCTS: CS_PRODUCTS('Sandvik'), MB_P: ['CLO', 'FN'], JIG_P: [], tKeys: ['CLO', 'CF', 'SF', 'FN'], jig: false, wf: false
+    },
+    mktm: {
+      id: 'mktm', name: 'Metso (KTM)', romName: 'Metso KTM ROM', source: 'cs', site: 'Katamati',
+      sheetRe: /^metso\s*\(\s*ktm\s*\)[\s_-]*([a-z]+)\s*$/i,
+      PRODUCTS: CS_PRODUCTS('Metso KTM'), MB_P: ['CLO', 'FN'], JIG_P: [], tKeys: ['CLO', 'CF', 'SF', 'FN'], jig: false, wf: false
     }
   };
+  function CS_PRODUCTS(tag) {
+    return {
+      CLO: { name: 'CLO', sub: tag + ' · +10 mm lump', title: /^clo\b/i },
+      CF:  { name: 'Crushed Fines', sub: tag + ' · crusher product', title: /cru[a-z]*\s*fines/i },
+      SF:  { name: 'Screen Fines', sub: tag + ' · screen undersize', title: /screen\s*fines/i },
+      FN:  { name: 'Combined Fines', sub: tag + ' · CF + SF · product', title: /combined\s*fines/i }
+    };
+  }
 
   function makeEngine(CFG) {
   const PRODUCTS = CFG.PRODUCTS;
@@ -437,6 +496,150 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   }
 
   // ---------- build dataset ----------
+  // ---------- flexible block parser (NDCMP / C&S sheets: Date · Shift · [Sample] · MT · Fe SiO2 Al2O3 P ...) ----------
+  function parseBlocksFlex(aoa) {
+    let h = -1;
+    for (let r = 0; r < Math.min(25, aoa.length); r++) if ((aoa[r] || []).some(c => txt(c) === 'Fe')) { h = r; break; }
+    if (h < 1) return null;
+    const hr = aoa[h], up = aoa[h - 1] || [], tt = aoa[h - 2] || [];
+    const feCols = []; hr.forEach((c, i) => { if (txt(c) === 'Fe' && /al/i.test(txt(hr[i + 2]))) feCols.push(i); });
+    const blocks = feCols.map((c, bi) => {
+      const lo = bi ? feCols[bi - 1] + 4 : 0;
+      let dateC = -1, shiftC = -1, tonC = -1;
+      for (let k = c - 1; k >= Math.max(lo, c - 7); k--) {
+        const a = txt(up[k]);
+        if (dateC < 0 && /^date/i.test(a)) dateC = k;
+        if (shiftC < 0 && /^shift/i.test(a)) shiftC = k;
+        if (tonC < 0 && (/^mt\b/i.test(a) || /\bton|qty/i.test(a))) tonC = k;
+      }
+      let title = '';
+      const st = dateC >= 0 ? dateC : Math.max(lo, c - 4);
+      for (let k = st; k <= c && !title; k++) title = txt(tt[k]);
+      for (let k = st - 1; k >= lo && !title; k--) title = txt(tt[k]);
+      return { c, dateC, shiftC, tonC, title };
+    }).filter(b => b.shiftC >= 0);
+    if (!blocks.length) return null;
+    const dayCol = blocks[0].dateC;
+    const out = blocks.map(b => ({ title: b.title, shifts: {}, daily: {}, tons: {}, dtons: {} }));
+    let cur = null;
+    for (let r = h + 1; r < aoa.length; r++) {
+      const row = aoa[r] || [];
+      if (/^date$/i.test(txt(row[dayCol])) || /^shift$/i.test(txt(row[blocks[0].shiftC]))) break;
+      const d = dayOf(row[dayCol]);
+      if (d != null) { if (cur != null && d < cur) break; cur = d; }
+      if (cur == null) continue;
+      blocks.forEach((b, i) => {
+        const s = txt(row[b.shiftC]).toUpperCase();
+        const q = { t: b.tonC >= 0 ? num(row[b.tonC]) : null, Fe: num(row[b.c]), SiO2: num(row[b.c + 1]), Al2O3: num(row[b.c + 2]), P: num(row[b.c + 3]) };
+        const ok = q.Fe != null && q.Fe > 1 && q.Al2O3 != null;
+        if (['A', 'B', 'C'].includes(s)) {
+          const key = cur + '|' + s;
+          out[i].tons[key] = Math.max(0, q.t || 0);
+          if (ok) out[i].shifts[key] = q;
+        } else {
+          let avg = false;
+          for (let k = Math.max(0, (b.dateC >= 0 ? b.dateC : b.shiftC - 1)); k < b.c; k++) if (/average|tot\s*\/?\s*avg/i.test(txt(row[k]))) { avg = true; break; }
+          if (avg) { out[i].dtons[cur] = Math.max(0, q.t || 0); if (ok) out[i].daily[cur] = q; }
+        }
+      });
+    }
+    return out;
+  }
+
+  function parseFlexSheet(aoa, fileName) {
+    const warn = [], info = [];
+    const blocks = parseBlocksFlex(aoa);
+    if (!blocks) throw new Error('no Fe/SiO2/Al2O3 blocks found');
+    const prod = {};
+    for (const k of PKEYS) { const b = blocks.find(x => PRODUCTS[k].title.test(x.title)); if (b) prod[k] = b; }
+    for (const k of MB_P) if (!prod[k]) { if (k === 'CLO') prod[k] = { shifts: {}, daily: {}, tons: {}, dtons: {} }; else warn.push(`${PRODUCTS[k].name} block not found`); }
+    // C&S: Combined Fines = Crushed + Screen Fines; rebuild it where the sheet's combined row is blank
+    let nRebuilt = 0;
+    if (prod.FN && prod.CF && prod.SF) {
+      const blend = (qa, ta, qb, tb) => { const T = ta + tb; if (!(T > 0)) return null; const o = { t: T }; for (const e of EL) o[e] = ((ta > 0 ? ta * qa[e] : 0) + (tb > 0 ? tb * qb[e] : 0)) / T; return o; };
+      const keys = new Set([...Object.keys(prod.CF.tons), ...Object.keys(prod.SF.tons)]);
+      for (const key of keys) {
+        const ta = prod.CF.tons[key] || 0, tb = prod.SF.tons[key] || 0;
+        if (!(prod.FN.tons[key] > 0)) prod.FN.tons[key] = ta + tb;
+        if (!prod.FN.shifts[key] && (ta + tb) > 0 && (!(ta > 0) || prod.CF.shifts[key]) && (!(tb > 0) || prod.SF.shifts[key])) {
+          const q = blend(prod.CF.shifts[key], ta, prod.SF.shifts[key], tb); if (q) { prod.FN.shifts[key] = q; nRebuilt++; } }
+      }
+      for (let d = 1; d <= 31; d++) {
+        if (prod.FN.daily[d]) continue;
+        const a2 = prod.CF.daily[d], b2 = prod.SF.daily[d], ta = (prod.CF.dtons[d] || 0), tb = (prod.SF.dtons[d] || 0);
+        if ((ta + tb) > 0 && (!(ta > 0) || a2) && (!(tb > 0) || b2)) { const q = blend(a2, ta, b2, tb); if (q) prod.FN.daily[d] = q; }
+      }
+    }
+    const crB = blocks.find(x => /combined\s*rom/i.test(x.title));
+    const shifts = [], excluded = [];
+    for (let d = 1; d <= 31; d++) for (const s of ['A', 'B', 'C']) {
+      const key = d + '|' + s;
+      const t = {}; for (const k of CFG.tKeys) t[k] = (prod[k] && prod[k].tons[key]) || 0;
+      const p = {}; for (const k of PKEYS) if (prod[k] && prod[k].shifts[key]) p[k] = prod[k].shifts[key];
+      const tot = MB_P.reduce((a, k) => a + (t[k] || 0), 0);
+      if (tot <= 0 && !Object.keys(p).length) continue;
+      const q = {}, imputed = [];
+      for (const k of MB_P) { if (p[k]) q[k] = p[k]; else if (t[k] > 0 && prod[k] && prod[k].daily[d]) { q[k] = prod[k].daily[d]; imputed.push(k); } }
+      const miss = MB_P.filter(k => t[k] > 0 && !q[k]);
+      let rom = null;
+      if (tot <= 0) excluded.push({ key, reason: 'no tonnage' });
+      else if (miss.length) excluded.push({ key, reason: 'no analysis: ' + miss.map(k => PRODUCTS[k].name).join(', ') });
+      else { rom = { t: tot }; for (const e of EL) rom[e] = MB_P.reduce((a, k) => a + (t[k] > 0 ? t[k] * q[k][e] : 0), 0) / tot; if (imputed.length) rom.imputed = imputed; }
+      shifts.push({ key, day: d, shift: s, label: `D${d}-${s}`, rom, p, t, jig: false });
+    }
+    const days = [];
+    for (let d = 1; d <= 31; d++) {
+      const sh = shifts.filter(x => x.day === d); if (!sh.length) continue;
+      const t = {}; for (const k of CFG.tKeys) t[k] = sh.reduce((a, x) => a + (x.t[k] || 0), 0);
+      const p = {}; for (const k of PKEYS) if (prod[k] && prod[k].daily[d]) p[k] = prod[k].daily[d];
+      const tot = MB_P.reduce((a, k) => a + (t[k] || 0), 0);
+      let rom = null;
+      if (tot > 0 && MB_P.every(k => !(t[k] > 0) || p[k])) { rom = { t: tot }; for (const e of EL) rom[e] = MB_P.reduce((a, k) => a + (t[k] > 0 ? t[k] * p[k][e] : 0), 0) / tot; }
+      else if (tot > 0) { const sr = sh.filter(x => x.rom); const T = sr.reduce((a, x) => a + x.rom.t, 0); if (T > 0) { rom = { t: T }; for (const e of EL) rom[e] = sr.reduce((a, x) => a + x.rom.t * x.rom[e], 0) / T; } }
+      days.push({ key: String(d), day: d, shift: '', label: `Day ${d}`, rom, romPred: null, p, t, jig: false });
+    }
+    if (crB) { // check: back-calculated ROM vs the sheet's own Combined ROM
+      const diffs = []; for (const dd of days) { const c = crB.daily[dd.day]; if (c && dd.rom) diffs.push(Math.abs(c.Al2O3 - dd.rom.Al2O3)); }
+      if (diffs.length) info.push(`Back-calculated ROM (CLO + Combined Fines) matches the sheet's Combined ROM within ${mean(diffs).toFixed(3)}% Al₂O₃ on average (${diffs.length} days).`);
+    }
+    if (MB_P.length === 1) info.push(`${CFG.name}: no beneficiation — ROM quality = ${PRODUCTS[MB_P[0]].name} quality.`);
+    if (nRebuilt) info.push(`${nRebuilt} shift(s): Combined Fines assay was blank in the sheet and was rebuilt from Crushed + Screen Fines (tonnage-weighted).`);
+    const nImp = shifts.filter(s => s.rom && s.rom.imputed).length;
+    if (nImp) info.push(`${nImp} shift(s) used the day's average for a stream with tonnage but no shift assay (ROM only).`);
+    info.push(`${shifts.filter(s => s.rom).length} shifts with valid ${CFG.romName}; ${excluded.length} excluded.`);
+    return { fileName, month: monthLabel(fileName), shifts, days, excluded, warn, info, parsedAt: new Date().toISOString() };
+  }
+
+  const MONIDX = { jan: 1, feb: 2, mar: 3, apr: 4, may: 5, jun: 6, jul: 7, aug: 8, sep: 9, oct: 10, nov: 11, dec: 12 };
+  function excelYear(v) { if (v instanceof Date) return v.getFullYear(); const n = num(v); if (n != null && n > 30000 && n < 80000) return new Date(Math.round((n - 25569) * 86400000)).getUTCFullYear(); return null; }
+  function detect(wb) {
+    if (CFG.source === 'cs' || CFG.source === 'opr-flex') return wb.SheetNames.some(n => CFG.sheetRe.test(n.trim()));
+    return wb.SheetNames.some(n => /^plant\s*production/i.test(n.trim())) && PKEYS.some(k => wb.SheetNames.some(n => PRODUCTS[k].sheet.test(n.trim())));
+  }
+  // returns [{ym, ds}] — C&S reports hold several months in one workbook
+  function parseMonths(wb, fileName, askMonth) {
+    const aoaOf = n => global.XLSX.utils.sheet_to_json(wb.Sheets[n], { header: 1, raw: true, defval: null });
+    if (CFG.source === 'cs') {
+      const out = [];
+      const fym = ymFromName(fileName);
+      for (const n of wb.SheetNames) {
+        const m = CFG.sheetRe.exec(n.trim()); if (!m) continue;
+        const mi = MONIDX[m[1].slice(0, 3).toLowerCase()]; if (!mi) continue;
+        let year = null;
+        const qn = wb.SheetNames.find(x => new RegExp('^quality\\s*balance\\s*\\(\\s*' + m[1].slice(0, 3), 'i').test(x.trim()));
+        if (qn) { const a = aoaOf(qn); for (let r = 3; r < Math.min(40, a.length) && !year; r++) year = excelYear((a[r] || [])[0]); }
+        if (!year && fym) { const fy = +fym.slice(0, 4), fm = +fym.slice(5); const fyStart = fm >= 4 ? fy : fy - 1; year = mi >= 4 ? fyStart : fyStart + 1; }
+        if (!year) continue;
+        try { out.push({ ym: `${year}-${String(mi).padStart(2, '0')}`, ds: parseFlexSheet(aoaOf(n), `${fileName} · ${n.trim()}`) }); } catch (e) { /* sheet without data */ }
+      }
+      return out;
+    }
+    let ym = ymFromName(fileName) || (askMonth ? askMonth(fileName) : null);
+    if (!ym) return [];
+    if (CFG.source === 'opr-flex') { const n = wb.SheetNames.find(x => CFG.sheetRe.test(x.trim())); return n ? [{ ym, ds: parseFlexSheet(aoaOf(n), fileName) }] : []; }
+    return [{ ym, ds: parseWorkbook(wb, fileName) }];
+  }
+
   function parseWorkbook(wb, fileName, opt) {
     opt = opt || {};
     const minShiftT = opt.minShiftT != null ? opt.minShiftT : 0;
@@ -691,6 +894,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     yields.WF_on = jw.length ? sumT(jw, 'WF') / MB_P.reduce((a, k) => a + sumT(jw, k), 0) : null;
     yields.WF_off = wfRows.off.length ? sumT(wfRows.off, 'WF') / MB_P.reduce((a, k) => a + sumT(wfRows.off, k), 0) : null;
     yields.jigShare = win.length ? jw.length / win.length : 0;
+    for (const k of CFG.tKeys) if (k !== 'ROM' && yields[k] == null) yields[k] = romT > 0 ? sumT(tRows, k) / romT : 0;
     yields.jigData = !!(cells.JC && cells.JF);
     // Wet Fines anchor: one model for all jig-feed %; slider effect added mechanistically
     const wfOn = cells.WF_on, wfOff = cells.WF_off;
@@ -780,6 +984,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     if (input.t > 0) {
       const t = {};
       for (const k of MB_P) t[k] = input.t * Y[k];
+      if (!CFG.wf) for (const k of CFG.tKeys) if (k !== 'ROM' && t[k] == null && Y[k] != null) t[k] = input.t * Y[k];
       if (CFG.wf) {
         t.JF = t.CF * jf; t.JC = t.JF * Y.JC_of_JF; t.JR = t.JF - t.JC;
         if (!jig) { delete t.JF; delete t.JC; delete t.JR; }
@@ -859,11 +1064,12 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     return out;
   }
 
-  return { CFG, plant: CFG.id, rowW, romTons, wMean, SHRINK, DEF_BANDS, BLIM, MON, ymFromName, fmtOrd, mergeDatasets, solveLimitNum, cellDelta, bandOf, EL, PRODUCTS, PKEYS, MB_P, parseWorkbook, train, predict, solveLimit, backtest, cellFor };
+  return { CFG, plant: CFG.id, detect, parseMonths, parseFlexSheet, rowW, romTons, wMean, SHRINK, DEF_BANDS, BLIM, MON, ymFromName, fmtOrd, mergeDatasets, solveLimitNum, cellDelta, bandOf, EL, PRODUCTS, PKEYS, MB_P, parseWorkbook, train, predict, solveLimit, backtest, cellFor };
   } // end makeEngine
 
   const api = makeEngine(PLANT_CFG.wet);           // default export = Wet Plant (back-compatible)
-  api.plants = { wet: api, iopp: makeEngine(PLANT_CFG.iopp) };
+  api.plants = { wet: api };
+  for (const k of Object.keys(PLANT_CFG)) if (k !== 'wet') api.plants[k] = makeEngine(PLANT_CFG[k]);
   api.PLANT_CFG = PLANT_CFG;
   if (typeof module !== 'undefined' && module.exports) module.exports = api; else global.VCEngine = api;
 })(typeof window !== 'undefined' ? window : globalThis);
@@ -883,20 +1089,24 @@ const fs = (v,e) => (v>0?'+':'')+f(v,e);
 const S = { plant:'wet', inputs:{}, selBy:{}, bandSelBy:{}, ds:null, model:null, pred:null, sel:'WF', tab:'ledger',
   set:{ basis:'shift', nDays:9999, endDay:null, focus:'Al2O3', method:'band', bands:{Fe:0.5,SiO2:0.2,Al2O3:0.2,P:0.002} },
   input:{ Al2O3:null, Fe:'', SiO2:'', P:'', t:'', jf:33 }, theme:'amber',
-  limits:{ 'WF|Al2O3':{max:4.5} }, bt:{p:'WF',e:'Al2O3'}, batch:'' };
+  limits:{ 'WF|Al2O3':{max:4.5} }, bt:{p:'WF',e:'Al2O3'}, batch:'',
+  page:'wet', mode:'predict', dryPlant:'ndcmp', range:{kind:'last'}, vtab:'sum', act:null };
 
 function bandsSet(){ const b=Object.assign({},E.DEF_BANDS,S.set.bands||{}); if(S.set.band&&!S.set.bands) b.Al2O3=+S.set.band; return b; }
 const PUI = {
-  wet: { id:'wet', label:'Wet Plant', eyebrow:'WET PLANT', rom:'Wet ROM', jig:true,
+  wet: { id:'wet', label:'Wet Plant', eyebrow:'WET PLANT', rom:'Wet ROM', jig:true, site:'Noamundi', src:'opr', romNote:'Wet ROM = tonnage-weighted SO + CF + HC Conc + LRP Slime (OPR mass balance).',
+    dataNote:'ROM = tonnage-weighted SO + CF + HC Conc + Slime (same as OPR Quality Balance “LRP ROM Actual”). * = a stream had tonnage but no shift assay — day average used for ROM.',
     ORDER:['ROM','SO','CF','JF','JC','HCF','HCU','HCO','HCC','WF','SL','JR'],
-    SHORTN:{ROM:'${PU.rom} feed',SO:'Sized Ore (CLO)',CF:'Classifier Fines',JF:'Jig Feed',JC:'Jig Concentrate',JR:'Jig Reject',HCF:'Cyclone Feed',HCU:'Cyclone Underflow',HCO:'Cyclone Overflow',HCC:'HC Concentrate',WF:'Wet Fines (W-6)',SL:'LRP Slime'},
+    SHORTN:{ROM:'Wet ROM feed',SO:'Sized Ore (CLO)',CF:'Classifier Fines',JF:'Jig Feed',JC:'Jig Concentrate',JR:'Jig Reject',HCF:'Cyclone Feed',HCU:'Cyclone Underflow',HCO:'Cyclone Overflow',HCC:'HC Concentrate',WF:'Wet Fines (W-6)',SL:'LRP Slime'},
     heads:[['SO','SIZED ORE'],['WF','WET FINES'],['SL','SLIME']], sensAl:['SO','WF','SL'], sensFe:['SO','WF'], bandIns:['WF','SO','CF','SL'],
     drift:['SO','CF','WF','SL','HCC'], BSER:['SO','WF','SL','CF','HCC','JC','JR'], bandDefault:['WF','SO','SL'], densP:'WF',
     modelCols:['SO','CF','JC','HCC','WF','SL','JR'], limitP:['SO','WF','CF','JC','HCC'], batchCols:['SO','CF','JC','HCC','WF','SL'], dataCols:['SO','CF','JC','HCC','WF','SL'],
     defSel:'WF', reject:'SL', noTons:['HCF','HCU','HCO'], short:{SO:'Sized Ore',WF:'Wet Fines',SL:'Slime',CF:'Class. Fines',HCC:'HC Conc',JC:'Jig Conc',JR:'Jig Reject'},
     colHeads:['FEED','CLASSIFY','SEPARATE','CONCENTRATE','PRODUCTS & WASTE'],
     ledgerNote:'Mass split from trained Plant Production yields. Wet ROM = SO + CF + HC Conc + Slime (OPR mass balance). Wet Fines = CF (not jigged) + Jig Conc + HC Conc. Jig Reject and LRP Slime are separate waste streams.' },
-  iopp: { id:'iopp', label:'IOPP', eyebrow:'IOPP', rom:'IOPP ROM', jig:false,
+  iopp: { id:'iopp', label:'IOPP', eyebrow:'IOPP', rom:'IOPP ROM', jig:false, site:'Noamundi', src:'opr', romNote:'IOPP ROM = tonnage-weighted IOPP Fines (18TC001) + IOPP Slime.',
+    flow:Y=>({mass:{ROM:1,IF:Y.IF,IS:Y.IS}, links:[['ROM','IF',Y.IF],['ROM','IS',Y.IS]], cols:[['ROM'],['IF','IS']]}),
+    dataNote:'ROM = tonnage-weighted IOPP Fines (18TC001) + IOPP Slime (same as OPR Quality Balance “IOPP ROM Actual”). * = slime (or fines) tonnage with no shift assay — the day\'s OPR average used for that shift\'s ROM; — = no measured assay, so not used to train that product.',
     ORDER:['ROM','IF','IS'],
     SHORTN:{ROM:'IOPP ROM feed',IF:'IOPP Fines (18TC001)',IS:'IOPP Slime'},
     heads:[['IF','IOPP FINES'],['IS','IOPP SLIME']], sensAl:['IF','IS'], sensFe:['IF','IS'], bandIns:['IF','IS'],
@@ -906,28 +1116,58 @@ const PUI = {
     colHeads:['FEED','PRODUCTS'],
     ledgerNote:'Mass split from trained Plant Production yields. IOPP ROM = IOPP Fines (18TC001) + IOPP Slime — the OPR Quality Balance mass balance. Where a shift has slime tonnage but no slime assay (usually shift C), the day\'s OPR slime average is used for that shift\'s ROM only.' }
 };
+function csUI(id,label,site,clo){
+  const mid=clo?['CLO','CF','SF']:['CF','SF'], mc=[...mid,'FN'];
+  return { id, label, eyebrow:label.toUpperCase(), rom:label+' ROM', jig:false, site, src:'cs', dry:true,
+    ORDER:['ROM',...mc], SHORTN:{ROM:label+' ROM feed',CLO:'CLO (sized ore)',CF:'Crushed Fines',SF:'Screen Fines',FN:'Combined Fines'},
+    heads:clo?[['FN','FINES'],['CLO','CLO']]:[['FN','FINES'],['CF','CRUSHED FINES'],['SF','SCREEN FINES']],
+    sensAl:clo?['FN','CLO']:['CF','SF'], sensFe:clo?['FN','CLO']:['CF','SF'], bandIns:clo?['FN','CLO','CF','SF']:['CF','SF'],
+    drift:clo?['FN','CLO','CF','SF']:['CF','SF'], BSER:clo?['FN','CLO','CF','SF']:['FN','CF','SF'], bandDefault:clo?['FN','CLO']:['CF','SF'], densP:'FN',
+    modelCols:mc, limitP:clo?['FN','CLO']:['FN'], batchCols:mc, dataCols:mc, defSel:'FN', reject:null, noTons:[], slot:{FN:0,CLO:1,CF:2,SF:3},
+    short:{CLO:'CLO',CF:'Crushed F.',SF:'Screen F.',FN:'Fines'}, colHeads:['FEED','CRUSH & SCREEN','PRODUCT'], flowK:290,
+    flow:Y=>({mass:{ROM:1,CLO:Y.CLO||0,CF:Y.CF||0,SF:Y.SF||0,FN:(Y.CF||0)+(Y.SF||0)}, links:[...mid.map(k=>['ROM',k,Y[k]||0]),['CF','FN',Y.CF||0],['SF','FN',Y.SF||0]], cols:[['ROM'],mid,['FN']]}),
+    romNote: clo?`${label} ROM = tonnage-weighted CLO + Combined Fines (Combined Fines = Crushed + Screen Fines).`:`${label} makes fines only, so ${label} ROM = Combined Fines (Crushed + Screen Fines).`,
+    ledgerNote: (clo?`Mass split from trained yields. ${label} ROM = CLO + Combined Fines (C&S report mass balance); Combined Fines = Crushed + Screen Fines.`:`${label} is a Noamundi C&S plant making fines only: ROM = Combined Fines, so Combined Fines carries no delta — the model predicts how ROM splits into Crushed vs Screen Fines quality.`)+' Where the report left Combined Fines blank, it is rebuilt from Crushed + Screen Fines (tonnage-weighted).',
+    dataNote: clo?'ROM = tonnage-weighted CLO + Combined Fines. * = day average used for a stream with tonnage but no shift assay.':'ROM = Combined Fines (fines-only plant). * = day average used for a stream with tonnage but no shift assay.' };
+}
+Object.assign(PUI,{
+  ndcmp:{ id:'ndcmp', label:'NDCMP', eyebrow:'NDCMP', rom:'NDCMP ROM', jig:false, site:'Noamundi', src:'opr', dry:true,
+    ORDER:['ROM','DF'], SHORTN:{ROM:'NDCMP ROM feed',DF:'NDCMP Fines (NDC-20)'}, heads:[['DF','NDCMP FINES']], sensAl:['DF'], sensFe:['DF'], bandIns:[],
+    drift:['DF'], BSER:['DF'], bandDefault:['DF'], densP:'DF', modelCols:['DF'], limitP:['DF'], batchCols:['DF'], dataCols:['DF'], defSel:'DF', reject:null, noTons:[], slot:{DF:0},
+    short:{DF:'NDCMP Fines'}, flowK:170, colHeads:['FEED','PRODUCT'], flow:Y=>({mass:{ROM:1,DF:1},links:[['ROM','DF',1]],cols:[['ROM'],['DF']]}),
+    romNote:'NDCMP has no beneficiation: NDCMP ROM = NDCMP Fines (OPR sheet NDC-20 (BD)).',
+    ledgerNote:'NDCMP is a departmental crushing–screening plant with no beneficiation: NDCMP ROM quality = NDCMP Fines quality (OPR sheet NDC-20 (BD)). The prediction is therefore the ROM itself (Δ = 0) — use Visualise to track what the plant processed.',
+    dataNote:'NDCMP ROM = NDCMP Fines (no beneficiation) · from OPR sheet NDC-20 (BD).' },
+  iss: csUI('iss','ISS','Noamundi',false), mnim: csUI('mnim','Metso (NIM)','Noamundi',false),
+  sandvik: csUI('sandvik','Sandvik','Katamati',true), mktm: csUI('mktm','Metso (KTM)','Katamati',true)
+});
 let PU = PUI.wet;
 let ORDER = PU.ORDER, SHORTN = PU.SHORTN;
 
 // ---------- persistence ----------
-function save(){ S.inputs[S.plant]=S.input; S.selBy[S.plant]=S.sel; try{ localStorage.setItem(LS, JSON.stringify({set:S.set,plant:S.plant,inputs:S.inputs,selBy:S.selBy,bandSelBy:S.bandSelBy,limits:S.limits})); }catch(e){} }
+function save(){ S.inputs[S.plant]=S.input; S.selBy[S.plant]=S.sel; try{ localStorage.setItem(LS, JSON.stringify({set:S.set,plant:S.plant,inputs:S.inputs,selBy:S.selBy,bandSelBy:S.bandSelBy,limits:S.limits,page:S.page,mode:S.mode,dryPlant:S.dryPlant,range:S.range,vtab:S.vtab})); }catch(e){} }
 // ---------- OPR library (each month stored separately, merged for training) ----------
 const LIBK='wpvc.lib', OPRK='wpvc.opr.';
 function libGet(){ try{ return JSON.parse(localStorage.getItem(LIBK)||'[]'); }catch(e){ return []; } }
 function libPut(lib){ localStorage.setItem(LIBK, JSON.stringify(lib)); }
 const okey=(pl,ym)=>pl==='wet'?OPRK+ym:OPRK+pl+'.'+ym;      // wet keeps the original key (back-compatible)
+const DSC={};   // merged-dataset cache per plant
+const compact=(k,v)=>typeof v==='number'&&!Number.isInteger(v)?Math.round(v*1e5)/1e5:v;
+const srcOf=pl=>V.PLANT_CFG[pl].source==='cs'?'cs':'opr';
 function libAdd(ym,name,byPlant){
-  try{ for(const pl in byPlant) if(byPlant[pl]) localStorage.setItem(okey(pl,ym), JSON.stringify(byPlant[pl])); }
+  for(const k in DSC) delete DSC[k];
+  try{ for(const pl in byPlant) if(byPlant[pl]) localStorage.setItem(okey(pl,ym), JSON.stringify(byPlant[pl],compact)); }
   catch(e){ toast('Browser storage is full — remove some older OPRs from the library first.',6000); return false; }
   const n={}; for(const pl in byPlant) if(byPlant[pl]) n[pl]=byPlant[pl].shifts.filter(r=>r.rom).length;
   const old=libGet().find(x=>x.ym===ym)||{};
-  const lib=libGet().filter(x=>x.ym!==ym); lib.push({ym,name,n:n.wet!=null?n.wet:old.n,np:Object.assign({},old.np||{},n),addedAt:new Date().toISOString()}); lib.sort((a,b)=>a.ym.localeCompare(b.ym)); libPut(lib); return true;
+  const src=Object.assign({},old.src||(old.name?{opr:old.name}:{})); for(const pl in byPlant) if(byPlant[pl]) src[srcOf(pl)]=name;
+  const lib=libGet().filter(x=>x.ym!==ym); lib.push({ym,name,src,n:n.wet!=null?n.wet:old.n,np:Object.assign({},old.np||{},n),addedAt:new Date().toISOString()}); lib.sort((a,b)=>a.ym.localeCompare(b.ym)); libPut(lib); return true;
 }
 function libCount(x,pl){ if(x.np&&x.np[pl]!=null) return x.np[pl]; if(pl==='wet') return x.n; return localStorage.getItem(okey(pl,x.ym))?'?':null; }
-function libRemove(ym){ Object.keys(PUI).forEach(pl=>localStorage.removeItem(okey(pl,ym))); libPut(libGet().filter(x=>x.ym!==ym)); }
+function libRemove(ym){ for(const k in DSC) delete DSC[k]; Object.keys(PUI).forEach(pl=>localStorage.removeItem(okey(pl,ym))); libPut(libGet().filter(x=>x.ym!==ym)); }
 function libMerged(pl){
-  pl=pl||S.plant; const items=[]; for(const it of libGet()){ try{ const ds=JSON.parse(localStorage.getItem(okey(pl,it.ym))||'null'); if(ds) items.push({ym:it.ym,name:it.name,ds}); }catch(e){} }
-  return items.length?V.plants[pl].mergeDatasets(items):null;
+  pl=pl||S.plant; if(DSC[pl]!==undefined) return DSC[pl]; const items=[]; for(const it of libGet()){ try{ const ds=JSON.parse(localStorage.getItem(okey(pl,it.ym))||'null'); if(ds) items.push({ym:it.ym,name:it.name,ds}); }catch(e){} }
+  return (DSC[pl]=items.length?V.plants[pl].mergeDatasets(items):null);
 }
 function load(){
   let o=null; try{ o=JSON.parse(localStorage.getItem(LS)||'null'); }catch(e){}
@@ -938,6 +1178,8 @@ function load(){
     if(o.selBy) S.selBy=o.selBy; else if(o.sel) S.selBy.wet=o.sel;
     if(o.bandSelBy) S.bandSelBy=o.bandSelBy;
     if(o.plant&&PUI[o.plant]) S.plant=o.plant;
+    ['page','mode','dryPlant','range','vtab'].forEach(k=>{ if(o[k]!=null) S[k]=o[k]; });
+    if(!['wet','iopp','dry','flow'].includes(S.page)) S.page='wet';
     if(o.ds){ delete o.ds; try{ localStorage.setItem(LS,JSON.stringify(o)); }catch(e){} }
   }
   usePlant(S.plant); S.ds=libMerged(); return !!S.ds;
@@ -947,15 +1189,19 @@ function usePlant(pl){
   S.input=Object.assign({ Al2O3:null, Fe:'', SiO2:'', P:'', t:'', jf:pl==='wet'?33:0 }, S.inputs[pl]||{}); S.inputs[pl]=S.input;
   S.sel=S.selBy[pl]||PU.defSel; if(!PU.ORDER.includes(S.sel)) S.sel=PU.defSel;
   if(!PU.BSER.includes(S.bt.p)) S.bt.p=PU.defSel;
-  const eb=document.getElementById('plantEyebrow'); if(eb) eb.textContent='NOAMUNDI · NRD · '+PU.eyebrow;
-  document.querySelectorAll('#plantSeg button').forEach(b=>b.classList.toggle('on',b.dataset.v===pl));
+  const eb=document.getElementById('plantEyebrow'); if(eb) eb.textContent=S.page==='flow'?'NOAMUNDI · KATAMATI · NRD · MATERIAL FLOW':(PU.site||'Noamundi').toUpperCase()+' · NRD · '+PU.eyebrow;
+  if(DRY.includes(pl)) S.dryPlant=pl; markNav();
 }
-function switchPlant(pl){
-  if(pl===S.plant) return; save(); usePlant(pl); S.ds=libMerged(pl); S.set.endDay=null; S.model=null; S.pred=null;
+function switchPlant(pl,force){
+  if(DRY.includes(pl)) S.page='dry'; else if(pl==='wet'||pl==='iopp') S.page=pl;
+  if(pl===S.plant&&!force) return; const same=pl===S.plant&&S.model; save(); usePlant(pl);
+  if(same){ save(); renderAll(); return; }
+  S.ds=libMerged(pl); S.set.endDay=null; S.model=null; S.pred=null;
   if(S.ds) retrain(S.input.Al2O3==null); else { save(); renderAll(); }
-  const miss=libGet().filter(x=>libCount(x,pl)==null).map(x=>E.MON[+x.ym.slice(5)-1]+' '+x.ym.slice(0,4));
-  if(miss.length) toast(`${PU.label}: ${miss.join(', ')} ${miss.length>1?'were':'was'} uploaded before ${PU.label} support — re-upload ${miss.length>1?'them':'it'} to include ${PU.label}.`,7000);
+  if(PU.src==='opr'){ const miss=libGet().filter(x=>hasOpr(x)&&libCount(x,pl)==null).map(x=>E.MON[+x.ym.slice(5)-1]+' '+x.ym.slice(0,4));
+    if(miss.length) toast(`${PU.label}: the OPR for ${miss.join(', ')} ${miss.length>1?'were':'was'} uploaded before ${PU.label} support — re-upload ${miss.length>1?'them':'it'} to include ${PU.label}.`,7000); }
 }
+const hasOpr=x=>!!((x.src&&x.src.opr)||(!x.src&&x.name)||(x.np&&(x.np.wet!=null||x.np.iopp!=null)));
 function toast(msg,ms){ const d=document.createElement('div'); d.className='toast'; d.innerHTML=msg; document.body.appendChild(d); setTimeout(()=>d.remove(),ms||3200); }
 
 // ---------- file handling ----------
@@ -966,22 +1212,28 @@ async function handleFiles(files){
     try{
       toast(`Reading <b>${esc(file.name)}</b>…`,1500);
       const wb = XLSX.read(await file.arrayBuffer(),{type:'array',cellDates:true});
-      const byPlant={}; for(const pl of Object.keys(PUI)){ try{ byPlant[pl]=V.plants[pl].parseWorkbook(wb, file.name); }catch(err){ console.warn(pl,err); byPlant[pl]=null; } }
-      if(!byPlant.wet&&!byPlant.iopp) throw new Error('no plant data recognised');
-      let ym = E.ymFromName(file.name);
-      if(!ym){ const ans=prompt(`Which month is "${file.name}"? Enter as YYYY-MM (e.g. 2026-04)`,''); if(!ans||!/^\d{4}-\d{2}$/.test(ans.trim())){ bad.push(file.name+' (month unknown)'); continue; } ym=ans.trim(); }
-      if(libAdd(ym,file.name,byPlant)) ok.push(`${E.MON[+ym.slice(5)-1]} ${ym.slice(0,4)}`);
+      let asked; const ask=()=>{ if(asked!==undefined) return asked; const ans=prompt(`Which month is "${file.name}"? Enter as YYYY-MM (e.g. 2026-04)`,''); asked=ans&&/^\d{4}-\d{2}$/.test(ans.trim())?ans.trim():null; return asked; };
+      const byYm={}, kinds=new Set();
+      for(const pl of Object.keys(PUI)){ const Ep=V.plants[pl]; let res=[];
+        try{ if(!Ep.detect(wb)) continue; res=Ep.parseMonths(wb,file.name,ask)||[]; }catch(err){ console.warn(pl,err); continue; }
+        for(const r of res){ if(!r||!r.ym||!r.ds||!r.ds.days.some(d=>d.rom)) continue; (byYm[r.ym]=byYm[r.ym]||{})[pl]=r.ds; kinds.add(srcOf(pl)); } }
+      const yms=Object.keys(byYm).sort();
+      if(!yms.length){ bad.push(file.name+(asked===null?' (month unknown)':' (no OPR or C&S plant sheets recognised)')); continue; }
+      let added=0; for(const ym of yms) if(libAdd(ym,file.name,byYm[ym])) added++;
+      const ml=yms.map(ym=>E.MON[+ym.slice(5)-1]).join(', ');
+      if(added) ok.push(`${[...kinds].map(k=>k==='cs'?'C&amp;S report':'OPR').join(' + ')} · ${ml} ${yms[yms.length-1].slice(0,4)} (${[...new Set(yms.flatMap(ym=>Object.keys(byYm[ym])))].map(pl=>PUI[pl].label).join(', ')})`);
     }catch(err){ console.error(err); bad.push(file.name+': '+(err.message||err)); }
   }
   S.ds=libMerged(S.plant); S.set.endDay=null; S.input.Al2O3=null;
   if(libGet().length>1 && before<=1) S.set.nDays=9999;
   retrain(true);
-  if(ok.length) toast(`Added <b>${ok.join(', ')}</b> · library now ${libGet().length} OPR(s)`,4500);
+  if(ok.length) toast(`Added <b>${ok.join('</b><br><b>')}</b><br>library now ${libGet().length} month(s)`,6000);
   if(bad.length) toast('Could not read: '+esc(bad.join('; ')),7000);
 }
 const handleFile=fl=>handleFiles([fl]);
 $('uploadBtn').onclick = () => $('file').click();
-document.querySelectorAll('#plantSeg button').forEach(b=>b.onclick=()=>{ if(!b.disabled) switchPlant(b.dataset.v); });
+document.querySelectorAll('#plantSeg button').forEach(b=>b.onclick=()=>{ if(!b.disabled) switchPage(b.dataset.v); });
+document.querySelectorAll('#modeSeg button').forEach(b=>b.onclick=()=>{ if(b.disabled||S.mode===b.dataset.v) return; S.mode=b.dataset.v; save(); renderAll(); });
 // ---------- colour themes ----------
 const THEMES=[['amber','Amber','#f2b33d','#0f1317'],['blue','Blue','#4c8dff','#0b111c'],['violet','Violet','#a582ff','#100d1a'],['sky','Light blue','#54c6f2','#0b1519'],
   ['emerald','Emerald','#34c38f','#0b1411'],['copper','Copper','#e5814f','#131010'],['grey','Grey','#c3ccd5','#121315'],['white','White','#2563eb','#f3f5f8'],['lavender','Lavender','#7c4dff','#f5f3fb']];
@@ -1025,11 +1277,11 @@ document.addEventListener('drop',e=>{ const fl=e.dataTransfer&&e.dataTransfer.fi
 
 // ---------- training ----------
 function retrain(resetInput){
-  if(!S.ds) return;
+  if(!S.ds){ S.model=null; S.pred=null; save(); renderAll(); return; }
   if(!S.ds.days.some(d=>d.romPred) && S.set.basis==='dayPred') S.set.basis='shift';
   if(!S.ds){ S.model=null; S.pred=null; save(); renderAll(); return; }
   try{ S.model = E.train(S.ds,{basis:S.set.basis,nDays:+S.set.nDays,endDay:S.set.endDay,method:S.set.method||'band',bands:bandsSet()}); }
-  catch(err){ toast(esc(err.message),5000); if(S.set.basis!=='shift'){ S.set.basis='shift'; return retrain(resetInput);} return; }
+  catch(err){ console.warn(err); if(S.set.basis!=='shift'){ S.set.basis='shift'; return retrain(resetInput);} S.model=null; S.pred=null; if(S.mode==='predict') toast(`${esc(PU.label)}: not enough data to train — ${esc(err.message)}`,5000); save(); renderAll(); return; }
   if(resetInput || S.input.Al2O3==null || S.input.Al2O3===''){
     const last = S.model.romStats.last; S.input.Al2O3 = +last.X.Al2O3.toFixed(2); S.input.jf = defaultJf(last);
   }
@@ -1048,7 +1300,7 @@ function runPredict(){
 }
 function limitFor(p,e){ const l=S.limits[p+'|'+e]; return l&&l.max!==''&&l.max!=null&&isFinite(l.max)?+l.max:null; }
 function statusCls(p,e,v,sd){ const L=limitFor(p,e); if(L==null) return ''; return v>L?'bad':(v>L-(sd||0)?'warn':'ok'); }
-function val(p,e){ const pr=S.pred; if(!pr) return null; if(p==='ROM') return pr.rom[e]; return pr.p[p]?pr.p[p].v[e]:null; }
+function val(p,e){ const pr=CUR(); if(!pr) return null; if(p==='ROM') return pr.rom[e]; return pr.p[p]?pr.p[p].v[e]:null; }
 
 // ---------- grade colour scale ----------
 const STOPS=[[70,194,157],[242,179,61],[239,91,76]]; // mint → amber → red
@@ -1065,19 +1317,22 @@ function gradeCol(e,v){
 // ---------- rail ----------
 function libraryHTML(){
   const lib=libGet();
-  return `<div class="sec"><h5><span>OPR library</span><span>${lib.length} file${lib.length===1?'':'s'}</span></h5>
-    <div class="lib">${lib.map(x=>`<div class="libit"><b>${E.MON[+x.ym.slice(5)-1]} ${x.ym.slice(0,4)}</b><span title="${esc(x.name)}">${libCount(x,S.plant)==null?`<em style="color:var(--amber);font-style:normal">re-upload for ${PU.label}</em>`:libCount(x,S.plant)+' shifts'}</span><button data-ym="${x.ym}" title="Remove ${esc(x.name)}">✕</button></div>`).join('')||'<div class="modelstate">Empty — upload one or more monthly OPRs.</div>'}</div>
-    <div class="duo"><button class="btn" id="libAdd" style="padding:7px 8px">+ Add OPRs</button><button class="btn sec" id="libClear" style="padding:7px 8px" ${lib.length?'':'disabled'}>Clear all</button></div>
-    <div class="hint">Each upload is read for every plant (Wet Plant, IOPP) and stored in this browser. Re-uploading a month replaces it.</div></div>`;
+  const pl=S.page==='flow'?null:S.plant;
+  const cnt=x=>{ if(!pl) return ''; const c=libCount(x,pl); if(c!=null) return c+' shifts'; if(PU.src==='opr') return hasOpr(x)?`<em style="color:var(--amber);font-style:normal">re-upload OPR</em>`:'<span style="color:var(--dim)">no OPR</span>'; return '<span style="color:var(--dim)">no C&amp;S data</span>'; };
+  const bad=x=>{ const s=x.src||(x.name?{opr:x.name}:{}); return (s.opr?`<span class="src" title="${esc(s.opr)}">OPR</span>`:'')+(s.cs?`<span class="src" title="${esc(s.cs)}">C&amp;S</span>`:''); };
+  return `<div class="sec"><h5><span>Report library</span><span>${lib.length} month${lib.length===1?'':'s'}</span></h5>
+    <div class="lib">${lib.map(x=>`<div class="libit"><b>${E.MON[+x.ym.slice(5)-1]} ${x.ym.slice(0,4)}${bad(x)}</b><span>${cnt(x)}</span><button data-ym="${x.ym}" title="Remove this month (all plants)">✕</button></div>`).join('')||'<div class="modelstate">Empty — upload OPRs and/or the C&amp;S plant report.</div>'}</div>
+    <div class="duo"><button class="btn" id="libAdd" style="padding:7px 8px">+ Add reports</button><button class="btn sec" id="libClear" style="padding:7px 8px" ${lib.length?'':'disabled'}>Clear all</button></div>
+    <div class="hint">One upload for both: an <b>OPR</b> fills Wet Plant, IOPP and NDCMP; the <b>Noa C&amp;S Plant Report</b> fills ISS, Metso (NIM), Sandvik and Metso (KTM) for every month it holds. Stored in this browser; re-uploading a month replaces that report's plants only.</div></div>`;
 }
 function bindLibrary(){
   $('libAdd').onclick=()=>$('file').click();
-  $('libClear').onclick=()=>{ if(!confirm('Remove all stored OPRs and the trained model from this browser?')) return; libGet().forEach(x=>libRemove(x.ym)); libPut([]); S.ds=null; retrain(true); };
-  document.querySelectorAll('.libit button').forEach(b=>b.onclick=()=>{ const ym=b.dataset.ym; if(!confirm(`Remove ${E.MON[+ym.slice(5)-1]} ${ym.slice(0,4)} from the library?`)) return; libRemove(ym); S.ds=libMerged(); S.set.endDay=null; retrain(true); });
+  $('libClear').onclick=()=>{ if(!confirm('Remove all stored reports and trained models from this browser?')) return; libGet().forEach(x=>libRemove(x.ym)); libPut([]); S.ds=null; retrain(true); };
+  document.querySelectorAll('.libit button').forEach(b=>b.onclick=()=>{ const ym=b.dataset.ym; if(!confirm(`Remove ${E.MON[+ym.slice(5)-1]} ${ym.slice(0,4)} from the library?`)) return; libRemove(ym); S.ds=S.page==='flow'?null:libMerged(); S.set.endDay=null; if(S.page==='flow') renderAll(); else retrain(true); });
 }
 function renderRail(){
   const r=$('rail'), i=S.input, m=S.model, pr=S.pred, e=S.set.focus;
-  if(!m){ r.innerHTML=libraryHTML()+`<div class="sec"><h5>Status</h5><div class="modelstate">No model yet.<br>Upload monthly OPRs (several at once is fine) to train.</div></div>`; bindLibrary(); return; }
+  if(!m){ r.innerHTML=libraryHTML()+`<div class="sec"><h5>Status</h5><div class="modelstate">No ${esc(PU.label)} model yet.<br>${PU.src==='cs'?'Upload the Noa C&amp;S Plant Report':'Upload monthly OPRs (several at once is fine)'} to train.</div></div>`; bindLibrary(); return; }
   const ph=k=>pr&&pr.romSrc[k]==='est'?f(pr.rom[k],k):'';
   const hasPred=S.ds.days.some(d=>d.romPred);
   const days=[...new Set(S.ds.shifts.filter(s=>s.rom).map(s=>s.day))];
@@ -1159,11 +1414,11 @@ ${PU.jig?`    <div class="duo">
 }
 
 // ---------- mass-proportional grade flow (sankey) ----------
-function flowGraph(){
-  if(S.plant==='iopp'){ const Y=S.model.yields;
-    return {mass:{ROM:1,IF:Y.IF,IS:Y.IS}, links:[['ROM','IF',Y.IF],['ROM','IS',Y.IS]], cols:[['ROM'],['IF','IS']]}; }
-  const Y=S.model.yields, jig=S.pred.jig;
-  const jf = jig ? Y.CF*S.pred.jf : 0, jc=jf*Y.JC_of_JF, jr=jf-jc;
+function flowGraph(ctx){
+  ctx=ctx||flowCtx(); const Y=ctx.Y;
+  if(PU.flow) return PU.flow(Y);
+  const jig=ctx.jig;
+  const jf = jig ? Y.CF*ctx.jf : 0, jc=jf*(Y.JC_of_JF||0), jr=jf-jc;
   const mass={ROM:1, SO:Y.SO, CF:Y.CF, HCF:Y.HCC+Y.SL, JF:jf, JC:jc, JR:jr, HCU:Y.HCC, HCO:Y.SL, HCC:Y.HCC, WF:Y.CF-jr+Y.HCC, SL:Y.SL};
   const links=[['ROM','SO',Y.SO],['ROM','CF',Y.CF],['ROM','HCF',Y.HCC+Y.SL],
     ['CF','JF',jf],['CF','WF',Y.CF-jf],['JF','JC',jc],['JF','JR',jr],
@@ -1174,7 +1429,7 @@ function flowGraph(){
 }
 function renderFlow(){
   const e=S.set.focus, g=flowGraph();
-  const W=1100, NW=14, K=330, MINH=8, SLOT=62, GAP=16, top=34;
+  ORDER.forEach(p=>{ if(!g.cols.flat().includes(p)) return; }); const W=1100, NW=14, K=PU.flowK||330, MINH=8, SLOT=62, GAP=16, top=34;
   const NC=g.cols.length, X=NC<=2?[150,720]:g.cols.map((_,i)=>20+i*(860/(NC-1)));
   const pos={};
   let maxY=0;
@@ -1213,8 +1468,9 @@ function renderFlow(){
     nodes+=`<g class="nd" data-p="${p}"><rect x="${n.x}" y="${n.y}" width="${NW}" height="${n.h}" rx="2" style="fill:${idle?'var(--idle)':col}" ${idle?'stroke="var(--idles)" stroke-dasharray="3 3"':''} ${sel?'stroke="#fff" stroke-width="2"':''}/>`;
     const lx=n.x+NW+8, cy=n.y+n.h/2;
     const ms = p==='ROM'?'100% mass': (g.mass[p]>0?(g.mass[p]*100).toFixed(1)+'% mass':'idle');
-    const tn = S.pred.t&&S.pred.t[p]!=null&&!PU.noTons.includes(p) ? ' · '+Math.round(S.pred.t[p]).toLocaleString('en-IN')+' t' : (p==='ROM'&&S.input.t?' · '+Math.round(+S.input.t).toLocaleString('en-IN')+' t':'');
-    const dl = p!=='ROM'&&v!=null ? v-S.pred.rom[e] : null;
+    const C=CUR(), romT=S.mode==='vis'?C.romT:+S.input.t;
+    const tn = p!=='ROM'&&C.t&&C.t[p]!=null&&!PU.noTons.includes(p) ? ' · '+Math.round(C.t[p]).toLocaleString('en-IN')+' t' : (p==='ROM'&&romT?' · '+Math.round(romT).toLocaleString('en-IN')+' t':'');
+    const dl = p!=='ROM'&&v!=null ? v-C.rom[e] : null;
     const bad = e==='Fe' ? dl<0 : dl>0;
     nodes+=`<text class="nl" x="${lx}" y="${cy-12}" font-family="Barlow Semi Condensed,Bahnschrift,Arial Narrow,sans-serif" font-size="12.5" font-weight="600" style="fill:${sel?'var(--amber)':'var(--svgtxt)'}" letter-spacing=".6">${SHORTN[p].toUpperCase()}</text>`;
     nodes+=`<text class="nl" x="${lx}" y="${cy+9}" font-family="Barlow Semi Condensed,Bahnschrift,Arial Narrow,sans-serif" font-size="21" font-weight="600" style="fill:${idle?'var(--svgdim)':'var(--svgval)'}">${idle?'—':f(v,e)}<tspan font-size="11" style="fill:var(--muted)">%</tspan>${dl!=null?`<tspan dx="7" font-size="12" font-family="JetBrains Mono,Consolas,monospace" style="fill:${Math.abs(dl)<0.005?'var(--muted)':(bad?'var(--rust)':'var(--mint)')}">${dl>0?'+':''}${f(dl,e)}</tspan>`:''}</text>`;
@@ -1247,7 +1503,7 @@ function inspector(){
   return h+'</div></div>';
 }
 function bindFlow(){
-  document.querySelectorAll('#flowSvg .nd, #flowSvg .lnk').forEach(n=>n.onclick=()=>{ S.sel=n.dataset.p; S.bt.p=n.dataset.p==='ROM'?S.bt.p:n.dataset.p; save(); renderMain(); });
+  document.querySelectorAll('#flowSvg .nd, #flowSvg .lnk').forEach(n=>n.onclick=()=>{ S.sel=n.dataset.p; S.bt.p=n.dataset.p==='ROM'?S.bt.p:n.dataset.p; save(); if(S.mode==='vis') renderVisMain(); else renderMain(); });
 }
 
 // ---------- ledger ----------
@@ -1341,7 +1597,7 @@ function insights(){
     if(Math.abs(bias)>0.5*sd && Math.abs(bias)>0.25) drift.push(`${P[p].name} ${bias>0?'+':''}${bias.toFixed(2)}`);
   }
   card('Pattern · last 3 days vs model', drift.length?'warn':'good', drift.length?`Actual Al₂O₃ has drifted from the model over ${last3.map(d=>E.fmtOrd(d)).join(', ')}: <b>${drift.join(' · ')}</b> (actual − predicted).`:`No material drift: actual Al₂O₃ over ${last3.map(d=>E.fmtOrd(d)).join(', ')} sits within half a standard error of the model for all main streams.`,
-    drift.length?`Shorten the training window or check plant changes (${S.plant==='iopp'?'scrubbing, screens, cyclone/thickener':'classifier, cyclone, jig settings'})`:'');
+    drift.length?`Shorten the training window or check plant changes (${S.plant==='iopp'?'scrubbing, screens, cyclone/thickener':(PU.dry?'crusher gap, screen decks, feed blend':'classifier, cyclone, jig settings')})`:'');
   // predicted ROM bias
   const W=new Set(m.winDays), dd=S.ds.days.filter(d=>W.has(d.day)&&d.rom&&d.romPred);
   if(dd.length>=3){
@@ -1557,25 +1813,327 @@ function dataTab(){
   h+=`<h4 style="margin-top:12px">${S.set.basis==='shift'?'Shift':'Daily'} data · ${ELN[e]} %</h4><div style="overflow:auto;max-height:520px"><table class="t"><tr><th>Row</th>${PU.jig?'<th>J</th>':''}<th>ROM t</th><th>ROM</th>${S.set.basis==='dayPred'?'<th>Pred</th>':''}${PU.dataCols.map(p=>`<th>${SHORT[p]}</th>`).join('')}</tr>`;
   for(const r of rows){ const rom=r.rom; if(!rom) continue;
     h+=`<tr class="${W.has(r.day)?'win':''}"><td>${r.label}${rom.imputed?'<span class="sd" title="a stream had tonnage but no shift assay — day average used for ROM">*</span>':''}</td>${PU.jig?`<td>${r.jig?'●':''}</td>`:''}<td>${Math.round(rom.t||0).toLocaleString('en-IN')}</td><td><b>${f(rom[e],e)}</b></td>${S.set.basis==='dayPred'?`<td>${r.romPred?f(r.romPred[e],e):'—'}</td>`:''}${PU.dataCols.map(p=>`<td>${r.p[p]?f(r.p[p][e],e):'<span class="muted">—</span>'}</td>`).join('')}</tr>`; }
-  h+=`</table></div><p class="small muted">Shaded = training window. ${S.plant==='iopp'?'ROM = tonnage-weighted IOPP Fines (18TC001) + IOPP Slime (same as OPR Quality Balance “IOPP ROM Actual”). * = slime (or fines) tonnage with no shift assay — the day\'s OPR average used for that shift\'s ROM; — = no measured assay, so not used to train that product.':'ROM = tonnage-weighted SO + CF + HC Conc + Slime (same as OPR Quality Balance “LRP ROM Actual”). * = a stream had tonnage but no shift assay — day average used for ROM.'}</p>
-  <div style="margin-top:10px"><button class="btn sec" id="clearBtn">Clear stored data</button></div>`;
+  h+=`</table></div><p class="small muted">Shaded = training window. ${esc(PU.dataNote||'')}</p>
+  <div style="margin-top:10px"><button class="btn sec" id="clearBtn">Clear stored settings</button></div>`;
   return h;
 }
 
 
 
+// ================= v1.5: dry plants · visualise mode · material flow =================
+const DRY=['ndcmp','iss','mnim','sandvik','mktm'];
+function CUR(){ return S.mode==='vis' ? S.act : S.pred; }
+function flowCtx(){ const c=CUR(); if(!c) return null; return S.mode==='vis' ? {Y:c.Y,jig:c.jig,jf:c.jf} : {Y:S.model.yields,jig:c.jig,jf:c.jf}; }
+// ---- dates (day ordinal = yyyymmdd) ----
+const ord2date=o=>new Date(Date.UTC(Math.floor(o/10000),Math.floor(o/100)%100-1,o%100));
+const date2ord=d=>d.getUTCFullYear()*10000+(d.getUTCMonth()+1)*100+d.getUTCDate();
+const ord2iso=o=>ord2date(o).toISOString().slice(0,10);
+const iso2ord=s=>+String(s).replace(/-/g,'');
+const addDays=(o,n)=>{ const d=ord2date(o); d.setUTCDate(d.getUTCDate()+n); return date2ord(d); };
+const RANGES=[['last','Last day'],['7','7 days'],['30','30 days'],['mtd','Month'],['all','All']];
+function rangeFor(ds){
+  if(!ds) return null; const days=ds.days.filter(d=>d.rom&&d.rom.t>0).map(d=>d.day); if(!days.length) return null;
+  const last=Math.max(...days), first=Math.min(...days), R=S.range||{kind:'last'}; let a=first,b=last;
+  if(R.kind==='last') a=b=last; else if(R.kind==='7') a=addDays(last,-6); else if(R.kind==='30') a=addDays(last,-29);
+  else if(R.kind==='mtd') a=Math.floor(last/100)*100+1;
+  else if(R.kind==='custom'){ a=R.from?iso2ord(R.from):first; b=R.to?iso2ord(R.to):last; if(a>b){ const z=a; a=b; b=z; } }
+  return {a,b,first,last};
+}
+const rangeLabel=r=>!r?'—':(r.a===r.b?E.fmtOrd(r.a,true):`${E.fmtOrd(r.a,true)} – ${E.fmtOrd(r.b,true)}`);
+// ---- tonnage-weighted aggregation of what a plant processed / produced ----
+function wavg(rows,gv,gw){ let W=0,s=0; for(const r of rows){ const v=gv(r), w=gw(r); if(v==null||!isFinite(v)||!(w>0)) continue; W+=w; s+=w*v; } return W>0?s/W:null; }
+function wsd(rows,gv,gw,m){ if(m==null) return null; let W=0,s=0,n=0; for(const r of rows){ const v=gv(r), w=gw(r); if(v==null||!isFinite(v)||!(w>0)) continue; W+=w; s+=w*(v-m)*(v-m); n++; } return n>1&&W>0?Math.sqrt(s/W):0; }
+function aggregate(pl,ds,r){
+  if(!ds||!r) return null; const Ep=V.plants[pl];
+  const D=ds.days.filter(d=>d.day>=r.a&&d.day<=r.b&&d.rom&&d.rom.t>0); if(!D.length) return null;
+  const romT=D.reduce((s,d)=>s+d.rom.t,0), rom={}, romSd={};
+  EL.forEach(e=>{ rom[e]=wavg(D,d=>d.rom[e],d=>d.rom.t); romSd[e]=wsd(D,d=>d.rom[e],d=>d.rom.t,rom[e]); });
+  const t={}; for(const k of Ep.CFG.tKeys) t[k]=D.reduce((s,d)=>s+((d.t&&d.t[k])||0),0);
+  const p={};
+  for(const k of Ep.PKEYS){ const rows=D.filter(d=>d.p&&d.p[k]&&d.p[k].Fe>1); if(!rows.length) continue;
+    let w=d=>Ep.rowW(d,k)||0; if(!rows.some(d=>w(d)>0)) w=d=>d.rom.t;
+    const v={},sd={},dl={}; EL.forEach(e=>{ v[e]=wavg(rows,d=>d.p[k][e],w); sd[e]=wsd(rows,d=>d.p[k][e],w,v[e]); dl[e]=v[e]!=null&&rom[e]!=null?v[e]-rom[e]:null; });
+    if(v.Fe==null) continue; p[k]={v,sd,dl,n:rows.length}; }
+  const Y={}; for(const k in t) Y[k]=romT>0?t[k]/romT:0; Y.JC_of_JF=t.JF>0?(t.JC||0)/t.JF:0;
+  const jf=t.CF>0?(t.JF||0)/t.CF:0;
+  const shifts=ds.shifts.filter(s=>s.day>=r.a&&s.day<=r.b&&s.rom);
+  return {pl,rom,romSd,romT,t,p,Y,jf,jig:jf>0,days:D,shifts,nDays:D.length,r};
+}
+function combineAgg(list,key){ // tonnage-weighted blend of one product across plants
+  const L=list.filter(a=>a&&a.p[key]); if(!L.length) return null; const T=L.reduce((s,a)=>s+(a.t[key]||0),0); const o={t:T};
+  EL.forEach(e=>{ o[e]=wavg(L,a=>a.p[key].v[e],a=>a.t[key]||0); }); return o; }
+function combineRom(list){ const L=list.filter(Boolean); if(!L.length) return null; const o={t:L.reduce((s,a)=>s+a.romT,0)}; EL.forEach(e=>{ o[e]=wavg(L,a=>a.rom[e],a=>a.romT); }); return o; }
+// ---- per-plant product used as "the product" for overviews ----
+const MAINP={wet:'WF',iopp:'IF',ndcmp:'DF',iss:'FN',mnim:'FN',sandvik:'FN',mktm:'FN'};
+function aggFor(pl){ const ds=libMerged(pl); return aggregate(pl,ds,rangeFor(ds)); }
+
+// ---- rail (visualise / material flow) ----
+function rangeRail(ds){
+  const R=S.range||{kind:'last'}, r=rangeFor(ds);
+  return `<div class="sec"><h5><span>Period</span><span>tonnage-weighted</span></h5>
+    <div class="pills" id="rangeP">${RANGES.map(([k,l])=>`<button data-v="${k}" class="${R.kind===k?'on':''}">${l}</button>`).join('')}</div>
+    <div class="duo"><div class="f"><label>From</label><input type="date" id="rFrom" value="${r?ord2iso(r.a):''}" ${r?`min="${ord2iso(r.first)}" max="${ord2iso(r.last)}"`:''}></div>
+      <div class="f"><label>To</label><input type="date" id="rTo" value="${r?ord2iso(r.b):''}" ${r?`min="${ord2iso(r.first)}" max="${ord2iso(r.last)}"`:''}></div></div>
+    <div class="hint">${r?`Data available ${E.fmtOrd(r.first,true)} – ${E.fmtOrd(r.last,true)}. “Last day” = latest day with data for each plant. The period applies to every plant page.`:'No data for this plant yet.'}</div></div>`;
+}
+function bindRange(){
+  document.querySelectorAll('#rangeP button').forEach(b=>b.onclick=()=>{ S.range={kind:b.dataset.v}; save(); renderAll(); });
+  const cust=()=>{ S.range={kind:'custom',from:$('rFrom').value,to:$('rTo').value}; save(); renderAll(); };
+  if($('rFrom')) $('rFrom').onchange=cust; if($('rTo')) $('rTo').onchange=cust;
+}
+function focusRail(){ return `<div class="sec"><h5>Colour &amp; focus element</h5><div class="pills" id="focusP">${EL.map(x=>`<button data-v="${x}" class="${x===S.set.focus?'on':''}">${ELN[x]}</button>`).join('')}</div></div>`; }
+function bindFocus(){ const fp=$('focusP'); if(fp) fp.querySelectorAll('button').forEach(b=>b.onclick=()=>{ S.set.focus=b.dataset.v; save(); renderAll(); }); }
+function renderVisRail(){
+  const r=$('rail'), A=S.act;
+  let heads='';
+  if(A){ heads=PU.heads.map(([k,l])=>{ const x=A.p[k]; const e=S.set.focus; return x?`<div class="hd"><div><small>${l} ${ELN[e]}</small><br><b>${f(x.v[e],e)}<i>%</i></b></div><div class="s">${A.t[k]!=null?Math.round(A.t[k]).toLocaleString('en-IN')+' t':''}<br>Δ ${fs(x.dl[e],e)}</div></div>`:`<div class="hd"><div><small>${l}</small><br><b>—</b></div><div class="s">no assay</div></div>`; }).join(''); }
+  r.innerHTML=rangeRail(S.ds)+focusRail()+(A?`<div class="sec"><h5>Actual products · ${A.r.a===A.r.b?'day':'period'}</h5><div class="heads">${heads}</div></div>`:'')+libraryHTML();
+  bindRange(); bindFocus(); bindLibrary();
+}
+
+// ---- dry-plants sub navigation ----
+function drySubnav(){
+  const b=pl=>`<button data-pl="${pl}" class="${S.plant===pl?'on':''}">${PUI[pl].label}</button>`;
+  return `<div class="subnav"><span class="grp">Noamundi</span>${['ndcmp','iss','mnim'].map(b).join('')}<span class="grp">Katamati</span>${['sandvik','mktm'].map(b).join('')}
+    <span class="subnote">NDCMP = departmental crushing &amp; screening (OPR · NDC-20) · C&amp;S plants from the Noa C&amp;S Plant Report</span></div>`;
+}
+function bindSubnav(){ document.querySelectorAll('.subnav button').forEach(b=>b.onclick=()=>{ S.dryPlant=b.dataset.pl; switchPlant(b.dataset.pl,true); }); }
+function dryOverview(){
+  const rows=DRY.map(pl=>({pl,A:aggFor(pl)}));
+  const fx=(x,e)=>x&&x[e]!=null?f(x[e],e):'—', tt=v=>v>0?Math.round(v).toLocaleString('en-IN'):'—';
+  const line=(lab,site,period,rom,fin,clo,pl)=>`<tr class="${pl?'click':''} ${pl===S.plant?'sel':''}" ${pl?`data-pl="${pl}"`:''}><td>${lab}</td><td class="muted small">${site}</td><td class="small">${period}</td>
+    <td class="num">${tt(rom&&rom.t)}</td>${EL.map(e=>`<td class="num ${e===S.set.focus?'fc':''}">${fx(rom,e)}</td>`).join('')}
+    <td class="num">${tt(fin&&fin.t)}</td>${EL.map(e=>`<td class="num ${e===S.set.focus?'fc':''}">${fx(fin,e)}</td>`).join('')}
+    <td class="num">${clo&&clo.t>0?tt(clo.t)+`<span class="sd">${f(clo[S.set.focus],S.set.focus)}</span>`:'—'}</td></tr>`;
+  let h=`<div class="card"><div class="cardh"><h2>Dry plants · overview</h2><span class="sub">what each crushing &amp; screening plant processed and produced · tonnage-weighted · click a row to open the plant</span></div><div class="pane" style="overflow:auto"><table class="t">
+    <tr><th>Plant</th><th>Site</th><th>Period</th><th>ROM t</th>${EL.map(e=>`<th>ROM ${ELN[e]}</th>`).join('')}<th>Fines t</th>${EL.map(e=>`<th>Fines ${ELN[e]}</th>`).join('')}<th>CLO t · ${ELN[S.set.focus]}</th></tr>`;
+  for(const {pl,A} of rows){ const k=MAINP[pl];
+    h+=line(`<span class="dot" style="background:${PAL_D[DRY.indexOf(pl)]}"></span><b>${PUI[pl].label}</b>`,PUI[pl].site,A?rangeLabel(A.r):'<span class="muted">no data</span>',A&&Object.assign({t:A.romT},A.rom),A&&A.p[k]&&Object.assign({t:A.t[k]},A.p[k].v),A&&A.p.CLO&&Object.assign({t:A.t.CLO},A.p.CLO.v),pl); }
+  for(const [site,pls] of [['Noamundi',['ndcmp','iss','mnim']],['Katamati',['sandvik','mktm']]]){
+    const L=rows.filter(x=>pls.includes(x.pl)).map(x=>x.A).filter(Boolean); if(!L.length) continue;
+    const fin={t:0}; const FL=L.map(a=>({t:a.t[MAINP[a.pl]]||0,v:a.p[MAINP[a.pl]]&&a.p[MAINP[a.pl]].v})).filter(x=>x.v&&x.t>0);
+    fin.t=FL.reduce((s,x)=>s+x.t,0); EL.forEach(e=>fin[e]=wavg(FL,x=>x.v[e],x=>x.t));
+    h+=line(`<span class="muted">${site} dry total</span>`,'','',combineRom(L),fin,combineAgg(L,'CLO'),null);
+  }
+  return h+`</table><p class="small muted" style="margin-top:8px">Each plant uses its own latest day for “Last day”, because the OPR and the C&amp;S report are not always updated to the same date. Noamundi C&amp;S plants make fines only (ROM = combined fines); Katamati plants make CLO + fines.</p></div></div>`;
+}
+
+// ---- visualise main ----
+const VTABS=[['sum','Summary'],['trend','Trend'],['daily','Daily'],['shifts','Shifts']];
+function visEmpty(){
+  const src=PU.src==='cs'?'the <b>Noa C&amp;S Plant Report</b> (.xlsx — all monthly sheets are read at once)':'monthly <b>OPR</b> workbooks (.xlsx)';
+  return `<div class="card empty"><div class="dropz"><div class="big">No ${esc(PU.label)} data yet</div><p>Upload ${src}. One upload button takes both OPRs and C&amp;S reports — each file is recognised automatically and filed under every plant it contains.</p>
+    <button class="btn" style="margin-top:12px" onclick="document.getElementById('file').click()">Choose files</button></div></div>`;
+}
+function renderVisMain(){
+  const mn=$('main'), A=S.act, e=S.set.focus;
+  let pre=S.page==='dry'?drySubnav()+dryOverview():'';
+  if(!A){ mn.innerHTML=pre+visEmpty(); bindSubnav(); bindOverview(); return; }
+  const main=MAINP[S.plant], mp=A.p[main];
+  const kpi=(lab,val,sub)=>`<div class="kpi"><small>${lab}</small><b>${val}</b><span>${sub||''}</span></div>`;
+  const lo=e==='Fe'?'high Fe':'low '+ELN[e], hi=e==='Fe'?'low Fe':'high '+ELN[e];
+  mn.innerHTML=pre+`<div class="card"><div class="cardh"><h2>Processed &amp; output</h2><span class="sub">${rangeLabel(A.r)} · ${A.nDays} operating day${A.nDays===1?'':'s'} · ${A.shifts.length} shift${A.shifts.length===1?'':'s'} · actual, tonnage-weighted · band width = share of ROM mass</span>
+      <div class="scale"><span>${lo}</span><span class="bar" style="background:linear-gradient(90deg,#46c29d,#f2b33d,#ef5b4c)"></span><span>${hi}</span></div></div>
+    <div class="kpis">${kpi(PU.rom+' processed',Math.round(A.romT).toLocaleString('en-IN')+'<i> t</i>',A.nDays>1?Math.round(A.romT/A.nDays).toLocaleString('en-IN')+' t/day':'')}
+      ${EL.map(x=>kpi(PU.rom+' '+ELN[x],f(A.rom[x],x)+'<i>%</i>',A.romSd[x]?'day spread ±'+f(A.romSd[x],x):'')).join('')}
+      ${mp?kpi(P[main].name+' '+ELN[e],f(mp.v[e],e)+'<i>%</i>',`${Math.round(A.t[main]||0).toLocaleString('en-IN')} t · Δ ${fs(mp.dl[e],e)}`):''}</div>
+    <div class="flowwrap">${renderFlow()}</div></div>
+    <div class="card"><div class="tabbar" id="tabbar">${VTABS.map(([k,l])=>`<button data-t="${k}" class="${S.vtab===k?'on':''}">${l}</button>`).join('')}</div><div class="pane" id="pane"></div></div>`;
+  bindSubnav(); bindOverview(); bindFlow();
+  $('tabbar').querySelectorAll('button').forEach(b=>b.onclick=()=>{ S.vtab=b.dataset.t; save(); $('tabbar').querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b)); renderVisPane(); });
+  renderVisPane();
+}
+function bindOverview(){ document.querySelectorAll('tr[data-pl]').forEach(tr=>tr.onclick=()=>{ S.dryPlant=tr.dataset.pl; switchPlant(tr.dataset.pl,true); }); }
+function renderVisPane(){
+  const pane=$('pane'); if(!pane) return; const A=S.act, e=S.set.focus;
+  if(!VTABS.some(t=>t[0]===S.vtab)) S.vtab='sum';
+  if(S.vtab==='sum'){
+    const g=flowGraph(flowCtx());
+    let h=`<h4><span>Assay ledger · actual</span><span>± = day-to-day spread (tonnage-weighted sd)</span></h4><div style="overflow:auto"><table class="t"><tr><th>Stream</th><th>Mass</th><th>Tonnes</th>${EL.map(x=>`<th style="${x===e?'color:var(--amber)':''}">${ELN[x]}</th>`).join('')}<th>Δ${ELN[e]} vs ROM</th><th>Days assayed</th></tr>`;
+    for(const p of ORDER){ const x=p==='ROM'?null:A.p[p]; const v=el=>p==='ROM'?A.rom[el]:(x?x.v[el]:null), s=el=>p==='ROM'?A.romSd[el]:(x?x.sd[el]:null);
+      const tn=p==='ROM'?A.romT:(A.t[p]!=null&&!PU.noTons.includes(p)?A.t[p]:null), ms=p==='ROM'?1:(g.mass[p]!=null?g.mass[p]:null);
+      const dl=x?x.dl[e]:null, bad=e==='Fe'?dl<0:dl>0;
+      h+=`<tr class="click ${S.sel===p?'sel':''}" data-p="${p}" style="${p!=='ROM'&&!x?'opacity:.45':''}"><td><span class="dot" style="background:${gradeCol(e,v(e))}"></span>${SHORTN[p]}</td>
+        <td class="num">${ms!=null&&ms>0?(ms*100).toFixed(1)+'<span class="sd">%</span>':'—'}</td><td class="num">${tn!=null?Math.round(tn).toLocaleString('en-IN'):'—'}</td>
+        ${EL.map(el=>`<td class="num ${el===e?'fc':''}">${f(v(el),el)}${s(el)?`<span class="sd">±${f(s(el),el)}</span>`:''}</td>`).join('')}
+        <td class="num" style="color:${dl==null||Math.abs(dl)<0.005?'var(--muted)':(bad?'var(--rust)':'var(--mint)')}">${dl==null?'':fs(dl,e)}</td><td class="small muted">${p==='ROM'?A.nDays:(x?x.n:'no assay')}</td></tr>`; }
+    h+=`</table></div><p class="small muted" style="margin-top:10px">Grades are tonnage-weighted over the period from the report's daily rows (each day weighted by that stream's tonnes; streams without tonnage are weighted by ROM tonnes). ${esc(PU.romNote||'')}</p>
+      <div style="margin-top:10px"><button class="btn sec" id="csvRange">Download period CSV</button></div>`;
+    pane.innerHTML=h; pane.querySelectorAll('tr.click').forEach(tr=>tr.onclick=()=>{ S.sel=tr.dataset.p; save(); renderVisMain(); }); $('csvRange').onclick=()=>downloadRange('days');
+  }
+  if(S.vtab==='trend'){ pane.innerHTML=trendTab(); bindTip(); }
+  if(S.vtab==='daily'||S.vtab==='shifts'){ pane.innerHTML=rowsTab(S.vtab); $('csvRange').onclick=()=>downloadRange(S.vtab==='daily'?'days':'shifts'); }
+}
+function trendKeys(){ return PU.BSER.filter(k=>S.act.p[k]).slice(0,4); }
+function trendTab(){
+  const A=S.act, e=S.set.focus, byShift=A.nDays<3;
+  const pts=(byShift?A.shifts:A.days).map(r=>({lab:byShift?r.label:E.fmtOrd(r.day),r}));
+  const keys=trendKeys(); const ser=[{k:'ROM',name:PU.rom,c:'var(--text)',get:r=>r.rom&&r.rom[e]},...keys.map(k=>({k,name:SHORT[k],c:serCol(k),get:r=>r.p&&r.p[k]&&r.p[k].Fe>1?r.p[k][e]:null}))];
+  if(pts.length<1) return '<p class="muted">No rows in this period.</p>';
+  const W=900,H=300,pl=48,pr=96,pt=18,ph=196,sy=pt+ph+14,sh=34;
+  const vals=pts.flatMap(q=>ser.map(s=>s.get(q.r))).filter(v=>v!=null&&isFinite(v)); let y0=Math.min(...vals), y1=Math.max(...vals); const pd=(y1-y0)*0.1||0.1; y0-=pd; y1+=pd;
+  const n=pts.length, X=i=>n===1?(pl+(W-pl-pr)/2):pl+i/(n-1)*(W-pl-pr), Yv=v=>pt+(1-(v-y0)/(y1-y0))*ph;
+  let g='';
+  const raw=(y1-y0)/5, mag=Math.pow(10,Math.floor(Math.log10(raw))), st=[1,2,2.5,5,10].map(z=>z*mag).find(z=>z>=raw)||raw, dec=Math.max(0,-Math.floor(Math.log10(st))+(st/mag===2.5?1:0));
+  for(let v=Math.ceil(y0/st)*st; v<=y1+1e-12; v+=st) g+=`<line x1="${pl}" x2="${W-pr}" y1="${Yv(v)}" y2="${Yv(v)}" style="stroke:var(--line)"/><text x="${pl-6}" y="${Yv(v)+3.5}" text-anchor="end" font-size="10" style="fill:var(--muted)" font-family="JetBrains Mono,Consolas,monospace">${v.toFixed(dec)}</text>`;
+  const tmax=Math.max(1,...pts.map(q=>q.r.rom?q.r.rom.t:0)), bw_=Math.max(2,Math.min(26,(W-pl-pr)/Math.max(1,n)-3));
+  g+=`<text x="${pl-6}" y="${sy+sh/2+3}" text-anchor="end" font-size="9" style="fill:var(--dim)" font-family="JetBrains Mono,Consolas,monospace">ROM t</text>`;
+  pts.forEach((q,i)=>{ const hh=Math.max(1.5,(q.r.rom?q.r.rom.t:0)/tmax*sh); g+=`<rect x="${X(i)-bw_/2}" y="${sy+sh-hh}" width="${bw_}" height="${hh}" rx="2" style="fill:var(--trackr)"/>`; });
+  const step=Math.max(1,Math.ceil(n/12)); pts.forEach((q,i)=>{ if(i%step===0||i===n-1) g+=`<text x="${X(i)}" y="${sy+sh+14}" text-anchor="middle" font-size="9.5" style="fill:var(--muted)" font-family="JetBrains Mono,Consolas,monospace">${esc(q.lab)}</text>`; });
+  const ends=[];
+  for(const s of ser){ let seg=[], segs=[]; pts.forEach((q,i)=>{ const v=s.get(q.r); if(v==null||!isFinite(v)){ if(seg.length) segs.push(seg); seg=[]; } else seg.push([X(i),Yv(v)]); }); if(seg.length) segs.push(seg);
+    for(const sg of segs){ if(sg.length>1) g+=`<polyline fill="none" style="stroke:${s.c}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" ${s.k==='ROM'?'stroke-dasharray="5 3"':''} points="${sg.map(z=>z.join(',')).join(' ')}"/>`; }
+    if(n<=45) for(const sg of segs) for(const z of sg) g+=`<circle cx="${z[0]}" cy="${z[1]}" r="${sg.length===1?4.5:3.2}" style="fill:${s.c};stroke:var(--panel)" stroke-width="1.5"/>`;
+    const lastSeg=segs[segs.length-1]; if(lastSeg){ const z=lastSeg[lastSeg.length-1]; ends.push({x:z[0],y:z[1],name:s.name,c:s.c}); } }
+  ends.sort((a,b)=>a.y-b.y); for(let i=1;i<ends.length;i++) if(ends[i].y-ends[i-1].y<12) ends[i].y=ends[i-1].y+12;
+  for(const z of ends) g+=`<text x="${W-pr+8}" y="${z.y+3.5}" font-size="10.5" font-weight="600" style="fill:var(--svgtxt)" font-family="Barlow Semi Condensed,Bahnschrift,Arial Narrow,sans-serif">${esc(z.name)}</text>`;
+  pts.forEach((q,i)=>{ const x0=n===1?pl:(i===0?X(0):(X(i-1)+X(i))/2), x1=n===1?W-pr:(i===n-1?X(i):(X(i)+X(i+1))/2);
+    const tip=`<b>${esc(q.lab)}</b> · ROM ${Math.round(q.r.rom?q.r.rom.t:0).toLocaleString('en-IN')} t<br>`+ser.map(s=>{ const v=s.get(q.r); return `<span style="color:${s.c}">●</span> ${esc(s.name)} ${v==null?'—':f(v,e)}`; }).join('<br>');
+    g+=`<rect class="bhit" x="${x0}" y="${pt}" width="${Math.max(2,x1-x0)}" height="${sy+sh-pt}" fill="transparent" data-t="${esc(tip)}"/>`; });
+  const legend=ser.map(s=>`<span class="lg"><i style="background:${s.c}"></i>${esc(s.name)}${s.k==='ROM'?' (dashed)':''}</span>`).join('');
+  return `<h4><span>${ELN[e]} trend · ${byShift?'shift-wise':'daily'} · ${rangeLabel(A.r)}</span><span>change element with FOCUS</span></h4><div class="legend">${legend}</div>
+    <svg viewBox="0 0 ${W} ${H+20}" class="bchart" style="background:var(--chartbg);border:1px solid var(--line);border-radius:8px">${g}</svg>
+    <p class="small muted">${byShift?'Periods shorter than 3 days are shown shift by shift.':'Daily values from the report\'s daily (average) rows.'} Bars = ${PU.rom} tonnes. Hover for values.</p><div id="bandTip" class="btip" hidden></div>`;
+}
+function rowsTab(kind){
+  const A=S.act, e=S.set.focus, rows=kind==='daily'?A.days:A.shifts, cols=PU.dataCols;
+  let h=`<h4><span>${kind==='daily'?'Daily':'Shift-wise'} · ${rangeLabel(A.r)}</span><span>${ELN[e]} % for products · all elements for ROM</span></h4><div style="overflow:auto;max-height:520px"><table class="t"><tr><th>${kind==='daily'?'Day':'Shift'}</th><th>ROM t</th>${EL.map(x=>`<th>ROM ${ELN[x]}</th>`).join('')}${cols.map(p=>`<th>${SHORT[p]} ${ELN[e]}</th>`).join('')}</tr>`;
+  for(const r of rows){ if(!r.rom) continue;
+    h+=`<tr><td>${kind==='daily'?E.fmtOrd(r.day,true):esc(r.label)}${r.rom.imputed?'<span class="sd">*</span>':''}</td><td class="num">${Math.round(r.rom.t||0).toLocaleString('en-IN')}</td>${EL.map(x=>`<td class="num ${x===e?'fc':''}">${f(r.rom[x],x)}</td>`).join('')}
+      ${cols.map(p=>{ const q=r.p&&r.p[p]&&r.p[p].Fe>1?r.p[p]:null, tn=r.t&&r.t[p]; return `<td class="num">${q?f(q[e],e):'<span class="muted">—</span>'}${tn>0?`<span class="sd">${Math.round(tn).toLocaleString('en-IN')}t</span>`:''}</td>`; }).join('')}</tr>`; }
+  return h+`</table></div><p class="small muted">* = a stream had tonnage but no shift assay; the day's average was used for ROM. — = no assay.</p><div style="margin-top:10px"><button class="btn sec" id="csvRange">Download CSV</button></div>`;
+}
+function downloadRange(kind){
+  const A=S.act; if(!A) return; const rows=kind==='days'?A.days:A.shifts, ks=E.PKEYS;
+  const hd=['Row','ROM_t',...EL.map(x=>'ROM_'+x),...ks.flatMap(k=>[k+'_t',...EL.map(x=>k+'_'+x)])], L=[hd.join(',')];
+  for(const r of rows){ if(!r.rom) continue; L.push([kind==='days'?ord2iso(r.day):r.label, Math.round(r.rom.t||0), ...EL.map(x=>r.rom[x]!=null?r.rom[x].toFixed(DP[x]+1):''),
+    ...ks.flatMap(k=>{ const q=r.p&&r.p[k]&&r.p[k].Fe>1?r.p[k]:null; return [r.t&&r.t[k]!=null?Math.round(r.t[k]):'', ...EL.map(x=>q&&q[x]!=null?q[x].toFixed(DP[x]+1):'')]; })].join(',')); }
+  const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([L.join('\n')],{type:'text/csv'})); a.download=`${PU.label.replace(/[^A-Za-z0-9]+/g,'')}_${kind}_${ord2iso(A.r.a)}_${ord2iso(A.r.b)}.csv`; a.click();
+}
+function bindTip(){
+  const tip=$('bandTip'), pane=$('pane'); if(!tip||!pane) return;
+  pane.querySelectorAll('.bhit').forEach(c=>{
+    c.onmouseenter=()=>{ tip.innerHTML=c.dataset.t; tip.hidden=false; };
+    c.onmousemove=ev=>{ const r=pane.getBoundingClientRect(); let x=ev.clientX-r.left+14, y=ev.clientY-r.top+pane.scrollTop+14; if(x+240>r.width) x-=260; tip.style.left=x+'px'; tip.style.top=y+'px'; };
+    c.onmouseleave=()=>{ tip.hidden=true; };
+    c.ontouchstart=ev=>{ tip.innerHTML=c.dataset.t; tip.hidden=false; const r=pane.getBoundingClientRect(), t=ev.touches[0]; tip.style.left=Math.min(t.clientX-r.left+10,r.width-250)+'px'; tip.style.top=(t.clientY-r.top+pane.scrollTop+14)+'px'; };
+  });
+}
+
+// ---- material flow page (interpretation of "Material Flow Noa–Kata–VPRM" chart) ----
+const MF_ROUTE={ r12:{n:'To RLS 1 & 2 · Noa Wet ROM',slot:1,dash:''}, r3:{n:'To RLS 3 · Noa Dry ROM',slot:6,dash:'7 4'}, bok:{n:'To Bokaro Siding · Kata Wet ROM',slot:2,dash:'2 4'}, kt:{n:'To Katamati truck · Kata Dry ROM',slot:3,dash:'10 3 2 3'} };
+const MF_NODES=[
+  // id, col, y, h, title, sub, chart [SiO2,Al2O3] ROM, chart product, live
+  {id:'nw',c:0,y:36,title:'Noamundi Wet ROM',sub:'≈65% of Noamundi ROM',q:[4.7,6.2],route:'r12'},
+  {id:'kw',c:0,y:160,title:'Katamati Wet ROM',sub:'≈35% of Katamati ROM',q:[2.5,2.5],route:'bok'},
+  {id:'nd',c:0,y:350,title:'Noamundi Dry ROM',sub:'≈35% of Noamundi ROM',q:[3.2,3.2],route:'r3'},
+  {id:'kd',c:0,y:500,title:'Katamati Dry ROM',sub:'≈65% of Katamati ROM',q:[2.8,2.3],route:'kt'},
+  {id:'wet',c:1,y:20,title:'Wet Plant',sub:'feed Noa 61 · Kata 39 · fines 41% · CLO 45% · slime 14%',q:[4.2,5.1],qp:[3.4,5.0],live:['wet'],prod:'WF',page:'wet'},
+  {id:'iopp',c:1,y:134,title:'IOPP',sub:'feed Noa 70 · Kata 30 · slime loss ≈30%',q:[3.4,4.5],qp:[2.5,3.7],live:['iopp'],prod:'IF',page:'iopp'},
+  {id:'ndc',c:1,y:248,title:'Dry Plant · NDCMP',sub:'feed Noa 41 · Kata 59 · ROM = fines',q:[2.3,2.0],qp:[2.3,2.0],live:['ndcmp'],prod:'DF',page:'ndcmp'},
+  {id:'cnim',c:1,y:362,title:'C&S Plant NIM · ISS',sub:'feed Noa 53 · Kata 47 · fines only',qp:[3.5,3.8],live:['iss'],prod:'FN',page:'iss'},
+  {id:'mlt',c:1,y:476,title:'Metso LT Plant · Metso (NIM)',sub:'feed Noa 100 · fines only',qp:[2.6,2.0],live:['mnim'],prod:'FN',page:'mnim'},
+  {id:'cktm',c:1,y:590,title:'C&S KTM · Sandvik + Metso (KTM)',sub:'feed Kata 100 · 55% of ROM → fines · 13% trucked',q:[3.4,2.7],qp:[3.8,3.5],live:['sandvik','mktm'],prod:'FN',page:'sandvik'},
+  {id:'pab',c:2,y:70,title:'Pile A / B',sub:'stockyard → RLS 1 & 2',qp:[2.8,3.2]},
+  {id:'tph',c:2,y:290,title:'500 TPH conveying',sub:'≈40% of RLS fines · 30% RLS 1&2, 70% RLS 3',qp:[3.5,3.4]},
+  {id:'pcd',c:2,y:480,title:'Pile C / D',sub:'stockyard → RLS 3',qp:[3.1,3.4]},
+  {id:'rls12',c:3,y:70,title:'RLS 1 & 2',sub:'≈65% of rake dispatch · BFO bins 1–3',route:'r12'},
+  {id:'rls3',c:3,y:330,title:'RLS 3',sub:'≈28% of rake dispatch · bins 4–5',route:'r3'},
+  {id:'bok',c:3,y:520,title:'Bokaro Siding',sub:'≈7% of rake dispatch',qp:[3.3,3.2],route:'bok'},
+  {id:'kt',c:3,y:630,title:'Katamati truck dispatch',sub:'C&S KTM fines by road',qp:[3.8,3.5],route:'kt'}
+];
+const MF_EDGES=[['nw','wet','r12'],['nw','iopp','r12'],['kw','wet','bok'],['kw','iopp','bok'],
+  ['nd','ndc','r3'],['nd','cnim','r3'],['nd','mlt','r3'],['kd','ndc','kt'],['kd','cnim','kt'],['kd','cktm','kt'],
+  ['wet','pab','r12'],['wet','rls3','r3'],['ndc','pab','r12'],['ndc','pcd','r3'],
+  ['iopp','tph','r12'],['cnim','tph','r12'],['cktm','tph','r12'],['iopp','pcd','r3'],['mlt','pcd','r3'],
+  ['tph','pab','r12'],['tph','pcd','r3'],
+  ['cnim','bok','bok'],['mlt','bok','bok'],['cktm','bok','bok'],['cktm','kt','kt'],
+  ['pab','rls12','r12'],['pcd','rls3','r3'],['rls12','rls3','r3']];
+const MF_NOTES=['Dry Plant / 1000 TPH material can be diverted through the NRSC-01 shuttle conveyor, but the narrow discharge chute causes flowability issues (choking, restricted flow) at the discharge point.',
+  'Wet Fines can be diverted to RLS 3 only when (i) CLO is not being conveyed from the Wet Plant and (ii) the IOPP Product Surge Pile (PSP) is not critical — otherwise IOPP fines get preference to keep IOPP running.',
+  'After the RCN-01 circuit expansion, material reclaimed from Pile-A can only feed BFO Bin-01 and Bin-02; there is no route to BFO Bin-03 while reclaiming from Pile-A.',
+  'So a bypass operation is needed to fill BFO Bin-03 when (a) rakes are placed in RLS 1 & 2 at the same time, or (b) Bins 1 & 2 do not hold enough inventory.',
+  'A diverter exists to send material from Bins 1–3 (RLS 1 & 2) to Bins 4–5 (RLS 3), but it is seldom used because of operational constraints at the diverter gate.'];
+function mfCol(route){ const lt=['white','lavender'].includes(document.documentElement.getAttribute('data-theme')); return (lt?PAL_L:PAL_D)[MF_ROUTE[route].slot]; }
+function mfLive(n){
+  if(!n.live) return null; const L=n.live.map(pl=>aggFor(pl)).filter(Boolean); if(!L.length) return null;
+  const rom=combineRom(L), prod=combineAgg(L,n.prod); const r={a:Math.min(...L.map(a=>a.r.a)),b:Math.max(...L.map(a=>a.r.b))};
+  return {rom,prod,r};
+}
+function renderFlowPage(){
+  const CX=[16,282,636,920], CW=[214,300,232,262], mn=$('main');
+  const nodes={}; MF_NODES.forEach(n=>{ const live=mfLive(n); const lines=2+(n.q||n.qp?1:0)+(live?1:0); nodes[n.id]=Object.assign({},n,{x:CX[n.c],w:CW[n.c],h:20+lines*15,live}); });
+  const inc={}, out={}; MF_EDGES.forEach(([a,b])=>{ (out[a]=out[a]||[]).push(b); (inc[b]=inc[b]||[]).push(a); });
+  const port=(id,other,side)=>{ const n=nodes[id], arr=((side==='out'?out:inc)[id]||[]).filter(o=>nodes[o].c!==n.c); const sorted=arr.slice().sort((p,q)=>nodes[p].y-nodes[q].y); const i=sorted.indexOf(other), k=sorted.length; return n.y+10+(n.h-20)*((i+1)/(k+1)); };
+  let edges='';
+  for(const [a,b,rt] of MF_EDGES){ const A=nodes[a], B=nodes[b]; let x0=A.x+A.w, y0=port(a,b,'out'), x1=B.x, y1=port(b,a,'in');
+    if(A.c===B.c&&a!=='rls12'){ // same column (500 TPH ↔ piles): vertical drop between boxes
+      const off=(a==='tph'?(b==='pab'?-30:30):0), xm=A.x+A.w/2+off, ya=B.y<A.y?A.y:A.y+A.h, yb=B.y<A.y?B.y+B.h:B.y;
+      edges+=`<path d="M${xm},${ya} L${xm},${yb+(B.y<A.y?6:-6)}" fill="none" style="stroke:${mfCol(rt)}" stroke-width="2.2" stroke-dasharray="${MF_ROUTE[rt].dash}" marker-end="url(#ah_${rt})" opacity=".85"><title>${esc(A.title)} → ${esc(B.title)}</title></path>`; continue; }
+    if(A.c===B.c){ // RLS 1&2 → RLS 3 diverter: loop on the right
+      const xr=A.x+A.w+26; edges+=`<path d="M${x0},${y0} C${xr},${y0} ${xr},${y1+0} ${x0},${y1}" fill="none" style="stroke:${mfCol(rt)}" stroke-width="2" stroke-dasharray="${MF_ROUTE[rt].dash||'4 3'}" marker-end="url(#ah_${rt})" opacity=".9"><title>Diverter: Bins 1–3 (RLS 1 & 2) → Bins 4–5 (RLS 3) — rarely used</title></path>`; continue; }
+    const dx=Math.max(40,(x1-x0)*0.5);
+    if(a==='wet'&&b==='rls3'){ const LY=214; edges+=`<path d="M${x0},${y0} C${x0+28},${y0} ${x0+28},${LY} ${x0+56},${LY} L${x1-100},${LY} C${x1-45},${LY} ${x1-45},${y1} ${x1-6},${y1}" fill="none" style="stroke:${mfCol(rt)}" stroke-width="2.2" stroke-dasharray="${MF_ROUTE[rt].dash}" marker-end="url(#ah_${rt})" opacity=".85"><title>Wet Plant fines → RLS 3 (only when CLO is not conveyed and IOPP PSP is not critical)</title></path>`; continue; }
+    edges+=`<path d="M${x0},${y0} C${x0+dx},${y0} ${x1-dx},${y1} ${x1-6},${y1}" fill="none" style="stroke:${mfCol(rt)}" stroke-width="2.2" stroke-dasharray="${MF_ROUTE[rt].dash}" marker-end="url(#ah_${rt})" opacity=".85"><title>${esc(A.title)} → ${esc(B.title)}</title></path>`; }
+  const T=(x,y,s,o)=>`<text x="${x}" y="${y}" ${o||''}>${s}</text>`;
+  const q2=q=>q?`${q[0].toFixed(1)} / ${q[1].toFixed(1)}`:'';
+  const lq=x=>x&&x.SiO2!=null?`${x.SiO2.toFixed(2)} / ${x.Al2O3.toFixed(2)}`:'—';
+  let nd='';
+  for(const n of Object.values(nodes)){
+    const click=n.page?`class="mfn" data-page="${n.page}"`:'', stripe=n.route?mfCol(n.route):'var(--line2)';
+    nd+=`<g ${click}><rect x="${n.x}" y="${n.y}" width="${n.w}" height="${n.h}" rx="7" style="fill:var(--panel2);stroke:var(--line2)"/><rect x="${n.x}" y="${n.y}" width="5" height="${n.h}" rx="2" style="fill:${stripe}"/>`;
+    let y=n.y+19; nd+=T(n.x+14,y,esc(n.title),'class="mft"'); y+=15; nd+=T(n.x+14,y,esc(n.sub),'class="mfs"');
+    if(n.q||n.qp){ y+=15; nd+=T(n.x+14,y,`chart ${n.q?'ROM '+q2(n.q):''}${n.q&&n.qp?' → ':''}${n.qp?(n.c===1?'fines ':'')+q2(n.qp):''}`,'class="mfc"'); }
+    if(n.live){ y+=15; const L=n.live; nd+=T(n.x+14,y,`live ROM ${lq(L.rom)} → ${lq(L.prod)} · ${Math.round((L.prod&&L.prod.t)||L.rom.t).toLocaleString('en-IN')} t`,'class="mfl"'); }
+    if(n.page) nd+=`<title>Open ${esc(n.title)}</title>`; nd+='</g>';
+  }
+  const heads=['ROM SOURCES','PLANTS','CONVEYING & STOCKPILES','DISPATCH'].map((h,i)=>T(CX[i],12,h,'class="mfh"')).join('');
+  const defs=Object.keys(MF_ROUTE).map(k=>`<marker id="ah_${k}" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" style="fill:${mfCol(k)}"/></marker>`).join('');
+  const Hh=Math.max(...Object.values(nodes).map(n=>n.y+n.h))+16;
+  const r0=rangeFor(libMerged('wet'))||rangeFor(libMerged('iss'));
+  const legend=Object.entries(MF_ROUTE).map(([k,v])=>`<span class="lg"><svg width="30" height="10"><line x1="1" y1="5" x2="29" y2="5" style="stroke:${mfCol(k)}" stroke-width="2.4" stroke-dasharray="${v.dash}"/></svg>${esc(v.n)}</span>`).join('');
+  // live table
+  const plRows=MF_NODES.filter(n=>n.live).map(n=>{ const L=nodes[n.id].live;
+    return `<tr class="click" data-page="${n.page}"><td><b>${esc(n.title)}</b></td><td class="small">${L?rangeLabel(L.r):'<span class="muted">no data</span>'}</td><td class="num">${L?Math.round(L.rom.t).toLocaleString('en-IN'):'—'}</td><td class="num">${L?lq(L.rom):'—'}</td><td class="num">${L&&L.prod?Math.round(L.prod.t).toLocaleString('en-IN'):'—'}</td><td class="num">${L?lq(L.prod):'—'}</td><td class="num muted">${n.q?q2(n.q):'—'}</td><td class="num muted">${n.qp?q2(n.qp):'—'}</td></tr>`; }).join('');
+  mn.innerHTML=`<div class="card"><div class="cardh"><h2>Material flow · Noamundi – Katamati</h2><span class="sub">ROM → plants → conveying &amp; stockpiles → dispatch · values SiO₂ / Al₂O₃ %</span><span class="draft">Interpretation of the simplified flow chart — to be corrected</span></div>
+      <div class="legend" style="padding:10px 16px 0">${legend}<span class="lg"><b style="color:var(--muted)">chart</b>&nbsp;= value on the flow chart</span><span class="lg"><b style="color:var(--amber)">live</b>&nbsp;= uploaded reports, ${S.range&&S.range.kind!=='last'?'selected period':'latest day'}</span></div>
+      <div class="flowwrap"><svg viewBox="0 0 1210 ${Hh}" class="mfsvg" style="min-width:1000px"><defs>${defs}</defs>${heads}${edges}${nd}</svg></div></div>
+    <div class="card"><div class="cardh"><h2>Plant quality · live vs chart</h2><span class="sub">tonnage-weighted ROM processed and product · SiO₂ / Al₂O₃ % · click a plant to open it</span></div><div class="pane" style="overflow:auto"><table class="t">
+      <tr><th>Plant</th><th>Period</th><th>ROM t</th><th>ROM SiO₂ / Al₂O₃</th><th>Product t</th><th>Product SiO₂ / Al₂O₃</th><th>Chart ROM</th><th>Chart product</th></tr>${plRows}</table>
+      <p class="small muted" style="margin-top:8px">Product = Wet Fines (Wet Plant), IOPP Fines, NDCMP Fines, Combined Fines (C&amp;S). C&amp;S KTM combines Sandvik and Metso (KTM). Plant-to-pile and pile-to-rake splits are taken from the chart only — they are not in the OPR or C&amp;S report.</p></div></div>
+    <div class="card"><div class="cardh"><h2>Operating constraints (from the chart notes)</h2></div><div class="pane"><ol class="mfnotes">${MF_NOTES.map(x=>`<li>${esc(x)}</li>`).join('')}</ol>
+      <p class="small muted">Plant mapping used here: C&amp;S Plant NIM = ISS · Metso LT Plant = Metso (NIM) · C&amp;S Plant KTM = Sandvik + Metso (KTM) · Dry Plant = NDCMP. Tell me what to correct and I'll update the routes, splits and grades.</p></div></div>`;
+  mn.querySelectorAll('.mfn,[data-page]').forEach(g=>g.onclick=()=>{ const pg=g.dataset.page; if(DRY.includes(pg)){ S.dryPlant=pg; switchPage('dry'); } else switchPage(pg); });
+}
+function renderFlowRail(){
+  const r=$('rail'); const ds=libMerged('wet')||libMerged('iss')||libMerged('ndcmp');
+  r.innerHTML=rangeRail(ds)+`<div class="sec"><h5>How to read</h5><div class="hint" style="margin-top:0">Boxes are plants and stockpiles; arrows are the routes on the simplified chart, coloured by route (legend above the diagram — dash pattern repeats the colour). <b>chart</b> values are copied from the chart; <b>live</b> values come from your uploaded OPRs and C&amp;S report for the selected period. Click a plant to open its page.</div></div>`+libraryHTML();
+  bindRange(); bindLibrary();
+}
+function switchPage(pg){
+  save(); S.page=pg;
+  if(pg==='flow'){ markNav(); save(); renderAll(); return; }
+  const pl=pg==='dry'?(DRY.includes(S.dryPlant)?S.dryPlant:'ndcmp'):pg;
+  switchPlant(pl,true);
+}
+function markNav(){
+  document.querySelectorAll('#plantSeg button').forEach(b=>b.classList.toggle('on',b.dataset.v===S.page));
+  document.querySelectorAll('#modeSeg button').forEach(b=>{ b.classList.toggle('on',b.dataset.v===S.mode); b.disabled=S.page==='flow'; });
+}
+
 // ---------- main ----------
 const TABS=[['ledger','Assay ledger'],['ins','Insights'],['band','Band analysis'],['model','Model & limits'],['bt','Backtest'],['batch','Shift predict'],['data','Data']];
 function renderMain(){
   const mn=$('main');
+  if(!S.model&&(S.ds||PU.src==='cs'||PU.id==='ndcmp')){ mn.innerHTML=visEmpty(); if(S.ds) mn.querySelector('.big').textContent=`Not enough ${PU.label} data to train`; dryNav(); return; }
   if(!S.model){
     mn.innerHTML=`<div class="card empty"><div class="dropz"><svg width="70" height="70" viewBox="0 0 70 70"><polygon points="35,4 64,20 64,50 35,66 6,50 6,20" fill="none" stroke="#f2b33d" stroke-width="2"/><path d="M20 42 L30 30 L38 38 L50 24" stroke="#46c29d" stroke-width="3" fill="none"/></svg>
-      <div class="big">Drop OPR workbooks here</div>
+      <div class="big">Drop OPR / C&amp;S reports here</div>
       <p>One or many monthly <b>Ore Processing Reports (.xlsx)</b> — e.g. April to now, selected together. Sheets used: CLO W7 · Classifier Fines W3 · Hydrocyclone · Jig Fines · Wet Fines W6 · LRP Slime · Plant Production · Quality Balance.</p>
       <p>${PU.rom} → product Δ for Fe, SiO₂, Al₂O₃ and P is learned separately for every ${PU.rom} Al₂O₃ band (0.2% by default — adjustable); then any shift ROM Al₂O₃ is turned into predicted grades for every plant stream. Uploaded OPRs are remembered in this browser.</p>
       <p class="small">Processed locally — nothing is sent anywhere.</p>
-      <button class="btn" style="margin-top:12px" onclick="document.getElementById('file').click()">Choose OPR files</button></div></div>`;
-    return;
+      <button class="btn" style="margin-top:12px" onclick="document.getElementById('file').click()">Choose files</button></div></div>`;
+    dryNav(); return;
   }
   const e=S.set.focus;
   const lo=e==='Fe'?'low Fe':'low '+ELN[e], hi=e==='Fe'?'high Fe':'high '+ELN[e];
@@ -1585,8 +2143,9 @@ function renderMain(){
     <div class="card"><div class="tabbar" id="tabbar">${TABS.map(([k,l])=>`<button data-t="${k}" class="${S.tab===k?'on':''}">${l}</button>`).join('')}</div><div class="pane" id="pane"></div></div>`;
   bindFlow();
   $('tabbar').querySelectorAll('button').forEach(b=>b.onclick=()=>{ S.tab=b.dataset.t; $('tabbar').querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b)); renderPane(); });
-  renderPane();
+  renderPane(); dryNav();
 }
+function dryNav(){ if(S.page!=='dry') return; $('main').insertAdjacentHTML('afterbegin',drySubnav()); bindSubnav(); }
 function renderPane(){
   const pane=$('pane'); if(!pane) return;
   if(S.tab==='ledger'){ pane.innerHTML=ledger(); pane.querySelectorAll('tr.click').forEach(tr=>tr.onclick=()=>{ S.sel=tr.dataset.p; if(tr.dataset.p!=='ROM') S.bt.p=tr.dataset.p; save(); renderMain(); }); }
@@ -1602,10 +2161,18 @@ function renderPane(){
   if(S.tab==='band'){ pane.innerHTML=bandTab(); bindBandTab(); }
   if(S.tab==='data'){ pane.innerHTML=dataTab(); $('clearBtn').onclick=()=>{ if(confirm('Clear stored OPR data and model from this browser?')){ localStorage.removeItem(LS); location.reload(); } }; }
 }
-function renderAll(){ $('fileChip').innerHTML = S.ds?`<i>●</i> ${esc(S.ds.fileName||'OPR')} · ${esc(S.ds.month||'')}`:'no OPR loaded'; renderRail(); renderMain(); }
+function renderAll(){
+  const lib=libGet(), mo=k=>lib.filter(x=>(x.src||(x.name?{opr:x.name}:{}))[k]).map(x=>x.ym), span=a=>a.length?(a.length===1?E.MON[+a[0].slice(5)-1]:E.MON[+a[0].slice(5)-1]+'–'+E.MON[+a[a.length-1].slice(5)-1])+' '+a[a.length-1].slice(2,4):'—';
+  $('fileChip').innerHTML = lib.length?`<i>●</i> OPR ${span(mo('opr'))} · C&amp;S ${span(mo('cs'))}`:'no reports loaded';
+  usePlantLabels(); markNav();
+  if(S.page==='flow'){ renderFlowRail(); renderFlowPage(); return; }
+  if(S.mode==='vis'){ S.act=aggregate(S.plant,S.ds,rangeFor(S.ds)); renderVisRail(); renderVisMain(); return; }
+  renderRail(); renderMain();
+}
+function usePlantLabels(){ const eb=$('plantEyebrow'); if(eb) eb.textContent=S.page==='flow'?'NOAMUNDI · KATAMATI · NRD · MATERIAL FLOW':(PU.site||'Noamundi').toUpperCase()+' · NRD · '+PU.eyebrow+(S.mode==='vis'?' · ACTUALS':''); }
 
 function applyUrl(){ const q=new URLSearchParams(location.search); if(q.has('plant')&&PUI[q.get('plant')]&&q.get('plant')!==S.plant){ usePlant(q.get('plant')); S.ds=libMerged(); } if(q.has('al')){ S.input.Al2O3=+q.get('al'); ['Fe','SiO2','P'].forEach(k=>S.input[k]=q.get(k.toLowerCase())||''); if(q.has('jig')&&q.get('jig')==='0') S.input.jf=0; if(q.has('jf')) S.input.jf=Math.max(0,Math.min(40,+q.get('jf'))); if(q.has('t')) S.input.t=q.get('t'); return true; } return false; }
-if(load()){ applyUrl(); try{ S.model=E.train(S.ds,{basis:S.set.basis,nDays:+S.set.nDays,endDay:S.set.endDay,method:S.set.method||'band',bands:bandsSet()}); if(S.input.Al2O3==null){ const l=S.model.romStats.last; S.input.Al2O3=+l.X.Al2O3.toFixed(2);} runPredict(); }catch(err){ console.error(err); } }
+if(load()&&S.ds){ applyUrl(); try{ S.model=E.train(S.ds,{basis:S.set.basis,nDays:+S.set.nDays,endDay:S.set.endDay,method:S.set.method||'band',bands:bandsSet()}); if(S.input.Al2O3==null){ const l=S.model.romStats.last; S.input.Al2O3=+l.X.Al2O3.toFixed(2);} runPredict(); }catch(err){ console.error(err); } }
 else applyUrl();
 renderAll();
 })();
