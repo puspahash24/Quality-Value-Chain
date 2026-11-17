@@ -272,6 +272,24 @@ input[type=range]:disabled{opacity:.35}
 .eqsvg .nd:hover rect:first-of-type{stroke:var(--amber)}
 .eqanim{animation:eqflow 1.8s linear infinite;opacity:.55}@keyframes eqflow{to{stroke-dashoffset:-48}}
 @media (prefers-reduced-motion:reduce){.eqanim{animation:none}}
+.ver{font:600 11px var(--mono);color:var(--muted);border:1px solid var(--line2);border-radius:4px;padding:1px 5px;vertical-align:4px;margin-left:4px}
+.uc{display:flex;gap:14px;align-items:center;background:color-mix(in srgb,var(--amber) 14%,var(--panel));border:1.5px dashed var(--amber);border-radius:10px;padding:12px 16px;color:var(--text);font-size:14px;line-height:1.4}
+.uc>b{font:700 16px var(--cond);color:var(--amber);white-space:nowrap;letter-spacing:.04em}
+.sumta{width:100%;height:190px;background:var(--panel2);border:1px dashed var(--line2);border-radius:8px;color:var(--text);font:11.5px/1.5 var(--mono);padding:9px;resize:vertical;white-space:pre;overflow:auto}
+.mstate{display:grid;grid-template-columns:1fr auto;gap:4px 10px;font-size:13px}.mstate i{font:11.5px var(--mono);font-style:normal}
+.ok{color:var(--mint)}.warn{color:var(--amber)}
+.sumt input.sumin{width:84px;background:var(--panel2);border:1px solid var(--line2);border-radius:5px;color:var(--text);font:13.5px var(--mono);padding:5px 7px;text-align:right}
+.sumt input.sumin.al{font-weight:700}.sumt tr.idle td{opacity:.55}.sumt td .sd{display:block;margin:0}
+.srcb{font:600 10px var(--mono);padding:2px 6px;border-radius:4px;background:color-mix(in srgb,var(--mint) 20%,transparent);color:var(--mint)}.srcb.ed{background:color-mix(in srgb,var(--amber) 20%,transparent);color:var(--amber)}
+.pgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:12px;padding:14px}
+.pc{background:var(--panel2);border:1px solid var(--line2);border-radius:10px;padding:12px 13px;cursor:pointer}.pc:hover{border-color:var(--amber)}
+.pch{display:flex;align-items:center;gap:8px}.pch b{font:700 17px var(--cond)}.pch span:last-child{margin-left:auto;font:11px var(--mono);color:var(--muted)}
+.pcr{font:12px var(--mono);color:var(--muted);margin:4px 0 6px}
+.prow{border-top:1px solid var(--line);padding:7px 0 6px}.pn{font:600 14px var(--cond)}.pn small{font-weight:500;color:var(--muted);margin-left:6px;font-size:12px}
+.pa{display:flex;align-items:baseline;gap:5px;margin:2px 0}.pa b{font:700 23px var(--cond)}.pa i{font-style:normal;font-size:12px;color:var(--muted)}
+.dd{font:700 11.5px var(--mono);padding:1px 5px;border-radius:4px;margin-left:4px}.dd.dn{background:color-mix(in srgb,var(--mint) 20%,transparent);color:var(--mint)}.dd.up{background:color-mix(in srgb,var(--rust) 20%,transparent);color:var(--rust)}.dd.eq{color:var(--muted);background:var(--line)}
+.lm{margin-left:auto;font:600 11px var(--mono);padding:2px 6px;border-radius:4px}.lm.ok{background:color-mix(in srgb,var(--mint) 18%,transparent)}.lm.bad{background:color-mix(in srgb,var(--rust) 20%,transparent);color:var(--rust)}
+.pq{font:12px var(--mono);color:var(--svgtxt)}
 .flownote{margin:4px 6px 8px;padding:8px 12px;border:1px dashed var(--amber);border-radius:6px;color:var(--amber);font-size:13px}
 .fvseg{display:inline-flex;border:1px solid var(--line2);border-radius:6px;overflow:hidden;margin-left:12px}
 .fvseg button{background:var(--panel2);border:0;padding:5px 11px;font:600 12px var(--cond);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);cursor:pointer}
@@ -282,8 +300,8 @@ input[type=range]:disabled{opacity:.35}
 <body>
 <div class="top">
   <img class="brandimg" src="icon.svg" alt="">
-  <div class="ttl"><small id="plantEyebrow">NOAMUNDI · NRD · WET PLANT</small><b>Quality Value Chain</b></div>
-  <div class="plantseg" id="plantSeg"><button data-v="wet" class="on">Wet Plant</button><button data-v="iopp">IOPP</button><button data-v="dry" title="NDCMP and the four C&amp;S plants">NDCMP · C&amp;S</button><button data-v="flow" title="Downstream material flow">Material flow</button></div>
+  <div class="ttl"><small id="plantEyebrow">NOAMUNDI · NRD · WET PLANT</small><b>Quality Value Chain <span class="ver" id="appVer">v1.8.0</span></b></div>
+  <div class="plantseg" id="plantSeg"><button data-v="wet" class="on">Wet Plant</button><button data-v="iopp">IOPP</button><button data-v="dry" title="NDCMP and the four C&amp;S plants">NDCMP · C&amp;S</button><button data-v="summary" title="All plants: predicted product quality from the ROM Monitoring App shift report">Plant summary</button><button data-v="flow" title="Downstream material flow (under construction)">Material flow</button></div>
   <div class="plantseg modeseg" id="modeSeg" title="Switch between the predictive model and what the plants actually processed"><button data-v="predict" class="on">Predict</button><button data-v="vis">Visualise</button></div>
   <div class="sp"></div>
   <span class="netdot" id="netDot"><i></i><span>online</span></span>
@@ -1198,7 +1216,7 @@ const DSC={};   // merged-dataset cache per plant
 const compact=(k,v)=>typeof v==='number'&&!Number.isInteger(v)?Math.round(v*1e5)/1e5:v;
 const srcOf=pl=>V.PLANT_CFG[pl].source==='cs'?'cs':'opr';
 function libAdd(ym,name,byPlant){
-  for(const k in DSC) delete DSC[k];
+  for(const k in DSC) delete DSC[k]; sumClear();
   try{ for(const pl in byPlant) if(byPlant[pl]) localStorage.setItem(okey(pl,ym), JSON.stringify(byPlant[pl],compact)); }
   catch(e){ toast('Browser storage is full — remove some older OPRs from the library first.',6000); return false; }
   const n={}; for(const pl in byPlant) if(byPlant[pl]) n[pl]=byPlant[pl].shifts.filter(r=>r.rom).length;
@@ -1207,7 +1225,7 @@ function libAdd(ym,name,byPlant){
   const lib=libGet().filter(x=>x.ym!==ym); lib.push({ym,name,src,n:n.wet!=null?n.wet:old.n,np:Object.assign({},old.np||{},n),addedAt:new Date().toISOString()}); lib.sort((a,b)=>a.ym.localeCompare(b.ym)); libPut(lib); return true;
 }
 function libCount(x,pl){ if(x.np&&x.np[pl]!=null) return x.np[pl]; if(pl==='wet') return x.n; return localStorage.getItem(okey(pl,x.ym))?'?':null; }
-function libRemove(ym){ for(const k in DSC) delete DSC[k]; Object.keys(PUI).forEach(pl=>localStorage.removeItem(okey(pl,ym))); libPut(libGet().filter(x=>x.ym!==ym)); }
+function libRemove(ym){ for(const k in DSC) delete DSC[k]; sumClear(); Object.keys(PUI).forEach(pl=>localStorage.removeItem(okey(pl,ym))); libPut(libGet().filter(x=>x.ym!==ym)); }
 function libMerged(pl){
   pl=pl||S.plant; if(DSC[pl]!==undefined) return DSC[pl]; const items=[]; for(const it of libGet()){ try{ const ds=JSON.parse(localStorage.getItem(okey(pl,it.ym))||'null'); if(ds) items.push({ym:it.ym,name:it.name,ds}); }catch(e){} }
   return (DSC[pl]=items.length?V.plants[pl].mergeDatasets(items):null);
@@ -1222,7 +1240,7 @@ function load(){
     if(o.bandSelBy) S.bandSelBy=o.bandSelBy;
     if(o.plant&&PUI[o.plant]) S.plant=o.plant;
     ['page','mode','dryPlant','range','vtab','fview'].forEach(k=>{ if(o[k]!=null) S[k]=o[k]; });
-    if(!['wet','iopp','dry','flow'].includes(S.page)) S.page='wet';
+    if(!['wet','iopp','dry','flow','summary'].includes(S.page)) S.page='wet';
     if(o.ds){ delete o.ds; try{ localStorage.setItem(LS,JSON.stringify(o)); }catch(e){} }
   }
   usePlant(S.plant); S.ds=libMerged(); return !!S.ds;
@@ -1361,7 +1379,7 @@ function gradeCol(e,v){
 // ---------- rail ----------
 function libraryHTML(){
   const lib=libGet();
-  const pl=S.page==='flow'?null:S.plant;
+  const pl=S.page==='flow'||S.page==='summary'?null:S.plant;
   const cnt=x=>{ if(!pl) return ''; const c=libCount(x,pl); if(c!=null) return c+' shifts'; if(PU.src==='opr') return hasOpr(x)?`<em style="color:var(--amber);font-style:normal">re-upload OPR</em>`:'<span style="color:var(--dim)">no OPR</span>'; return '<span style="color:var(--dim)">no C&amp;S data</span>'; };
   const bad=x=>{ const s=x.src||(x.name?{opr:x.name}:{}); return (s.opr?`<span class="src" title="${esc(s.opr)}">OPR</span>`:'')+(s.cs?`<span class="src" title="${esc(s.cs)}">C&amp;S</span>`:''); };
   return `<div class="sec"><h5><span>Report library</span><span>${lib.length} month${lib.length===1?'':'s'}</span></h5>
@@ -2140,7 +2158,7 @@ function renderFlowPage(){
   // live table
   const plRows=MF_NODES.filter(n=>n.live).map(n=>{ const L=nodes[n.id].live;
     return `<tr class="click" data-page="${n.page}"><td><b>${esc(n.title)}</b></td><td class="small">${L?rangeLabel(L.r):'<span class="muted">no data</span>'}</td><td class="num">${L?Math.round(L.rom.t).toLocaleString('en-IN'):'—'}</td><td class="num">${L?lq(L.rom):'—'}</td><td class="num">${L&&L.prod?Math.round(L.prod.t).toLocaleString('en-IN'):'—'}</td><td class="num">${L?lq(L.prod):'—'}</td><td class="num muted">${n.q?q2(n.q):'—'}</td><td class="num muted">${n.qp?q2(n.qp):'—'}</td></tr>`; }).join('');
-  mn.innerHTML=`<div class="card"><div class="cardh"><h2>Material flow · Noamundi – Katamati</h2><span class="sub">ROM → plants → conveying &amp; stockpiles → dispatch · values SiO₂ / Al₂O₃ %</span><span class="draft">Interpretation of the simplified flow chart — to be corrected</span></div>
+  mn.innerHTML=`<div class="uc"><b>🚧 Page under construction</b><span>This material flow is a first draft from the simplified flow chart. It is <b>not yet part of the Quality Value Chain</b> — routes, splits and grades shown here do not feed any prediction. Further development is required before it can be used for decisions.</span></div><div class="card"><div class="cardh"><h2>Material flow · Noamundi – Katamati</h2><span class="sub">ROM → plants → conveying &amp; stockpiles → dispatch · values SiO₂ / Al₂O₃ %</span><span class="draft">Interpretation of the simplified flow chart — to be corrected</span></div>
       <div class="legend" style="padding:10px 16px 0">${legend}<span class="lg"><b style="color:var(--muted)">chart</b>&nbsp;= value on the flow chart</span><span class="lg"><b style="color:var(--amber)">live</b>&nbsp;= uploaded reports, ${S.range&&S.range.kind!=='last'?'selected period':'latest day'}</span></div>
       <div class="flowwrap"><svg viewBox="0 0 1210 ${Hh}" class="mfsvg" style="min-width:1000px"><defs>${defs}</defs>${heads}${edges}${nd}</svg></div></div>
     <div class="card"><div class="cardh"><h2>Plant quality · live vs chart</h2><span class="sub">tonnage-weighted ROM processed and product · SiO₂ / Al₂O₃ % · click a plant to open it</span></div><div class="pane" style="overflow:auto"><table class="t">
@@ -2157,13 +2175,13 @@ function renderFlowRail(){
 }
 function switchPage(pg){
   save(); S.page=pg;
-  if(pg==='flow'){ markNav(); save(); renderAll(); return; }
+  if(pg==='flow'||pg==='summary'){ markNav(); save(); renderAll(); return; }
   const pl=pg==='dry'?(DRY.includes(S.dryPlant)?S.dryPlant:'ndcmp'):pg;
   switchPlant(pl,true);
 }
 function markNav(){
   document.querySelectorAll('#plantSeg button').forEach(b=>b.classList.toggle('on',b.dataset.v===S.page));
-  document.querySelectorAll('#modeSeg button').forEach(b=>{ b.classList.toggle('on',b.dataset.v===S.mode); b.disabled=S.page==='flow'; });
+  document.querySelectorAll('#modeSeg button').forEach(b=>{ b.classList.toggle('on',b.dataset.v===S.mode); b.disabled=S.page==='flow'||S.page==='summary'; });
 }
 
 // ================= v1.7: equipment flowsheet view (Wet Plant · IOPP · NDCMP) =================
@@ -2312,6 +2330,181 @@ function flowView(){
 function fviewSeg(){ if(!FVIEW_PL.includes(S.plant)) return ''; const v=S.fview==='sankey'?'sankey':'equip';
   return `<div class="fvseg" id="fvSeg"><button data-v="equip" class="${v==='equip'?'on':''}">Equipment</button><button data-v="sankey" class="${v==='sankey'?'on':''}">Mass flow</button></div>`; }
 function bindFview(){ document.querySelectorAll('#fvSeg button').forEach(b=>b.onclick=()=>{ S.fview=b.dataset.v; save(); if(S.mode==='vis') renderVisMain(); else renderMain(); }); }
+// ================= v1.8: Plant summary — plant-wise predicted quality from the ROM Monitoring App =================
+const SUM_PL=['wet','iopp','ndcmp','iss','mnim','sandvik','mktm'];
+const QVC_CODE={WET:'wet',IOPP:'iopp',NDCMP:'ndcmp',ISS:'iss',MNIM:'mnim',SAND:'sandvik',MKTM:'mktm'};
+const SUM_KIND={ // product classes: fines → downstream, clo → sized ore, loss → slime / reject, sub → part of fines (shown small)
+  wet:{SO:'clo',WF:'fines',SL:'loss',JR:'loss'}, iopp:{IF:'fines',IS:'loss'}, ndcmp:{DF:'fines'},
+  iss:{FN:'fines',CF:'sub',SF:'sub'}, mnim:{FN:'fines',CF:'sub',SF:'sub'}, sandvik:{CLO:'clo',FN:'fines'}, mktm:{CLO:'clo',FN:'fines'} };
+const SUM_NAME={SO:'Sized Ore (CLO)',WF:'Wet Fines',SL:'LRP Slime',JR:'Jig Reject',IF:'IOPP Fines',IS:'IOPP Slime',DF:'NDCMP Fines',FN:'Combined Fines',CLO:'CLO',CF:'Crushed Fines',SF:'Screen Fines'};
+const SM={}; // trained model per plant (cleared when the library changes)
+function sumState(){
+  if(!S.sum){ let o=null; try{ o=JSON.parse(localStorage.getItem('wpvc.sum')||'null'); }catch(_){}
+    S.sum=Object.assign({date:'',shift:'',rows:{},tpt:{Noamundi:35,Katamati:35},lim:4.5,jf:null,raw:''},o||{}); }
+  return S.sum;
+}
+function sumSave(){ try{ localStorage.setItem('wpvc.sum',JSON.stringify(S.sum)); }catch(_){} }
+function sumModel(pl){
+  if(SM[pl]!==undefined) return SM[pl];
+  const ds=libMerged(pl); if(!ds) return (SM[pl]={err:'no data — upload '+(PUI[pl].src==='cs'?'the C&S plant report':'OPRs')});
+  const Ep=V.plants[pl], o={basis:'shift',nDays:+S.set.nDays||9999,endDay:null,method:S.set.method||'band',bands:Object.assign({},Ep.DEF_BANDS,S.set.bands||{})};
+  try{ const m=Ep.train(ds,o); m._ds=ds; return (SM[pl]=m); }catch(err){ return (SM[pl]={err:'not enough data to train ('+err.message+')'}); }
+}
+function sumClear(){ for(const k in SM) delete SM[k]; }
+// ---------- parsing what the sampler sends ----------
+function plantOf(txt){ const t=String(txt||'').toLowerCase();
+  if(/sandvik/.test(t)) return 'sandvik';
+  if(/metso/.test(t)&&/(ktm|kata)/.test(t)) return 'mktm';
+  if(/metso/.test(t)&&/(nim|noa|lt\b)/.test(t)) return 'mnim';
+  if(/\biss\b|c\s*&\s*s\s*noa|cs\s*noa|c&s\s*plant\s*nim/.test(t)) return 'iss';
+  if(/ndc/.test(t)) return 'ndcmp';
+  if(/iopp/.test(t)) return 'iopp';
+  if(/\bwet\b/.test(t)) return 'wet';
+  return null; }
+function decodeQvc(txt){
+  const out=[]; const re=/QVC1\.([A-Za-z0-9_-]+)\.([0-9A-Z]{4})/g; let m;
+  const chk=t=>{let h=2166136261;for(let i=0;i<t.length;i++){h^=t.charCodeAt(i);h=Math.imul(h,16777619);}return (h>>>0).toString(36).toUpperCase().padStart(4,'0').slice(-4);};
+  while((m=re.exec(txt))){ if(chk(m[1])!==m[2]){ out.push({bad:true}); continue; }
+    try{ let b=m[1].replace(/-/g,'+').replace(/_/g,'/'); while(b.length%4) b+='='; const bin=atob(b), a=new Uint8Array(bin.length); for(let i=0;i<bin.length;i++) a[i]=bin.charCodeAt(i);
+      out.push(JSON.parse(new TextDecoder().decode(a))); }catch(_){ out.push({bad:true}); } }
+  return out; }
+function parsePaste(txt){
+  const res={rows:{},date:'',shift:'',how:'',bad:0,unknown:[]};
+  const codes=decodeQvc(txt);
+  if(codes.length){ for(const c of codes){ if(c.bad||!Array.isArray(c.r)){ res.bad++; continue; } res.date=c.d||res.date; res.shift=c.s||res.shift;
+      for(const r of c.r){ const pl=QVC_CODE[r.p]; if(!pl) continue; const q=r.q||[]; const o=res.rows[pl];
+        if(o&&o.n>0&&r.n>0){ // same plant in two codes (e.g. Noamundi and Katamati samplers): trip-weighted merge
+          const N=o.n+r.n; ['Fe','SiO2','Al2O3','P'].forEach((e,i)=>{ if(q[i]!=null&&o[e]!=null) o[e]=(o[e]*o.n+q[i]*r.n)/N; else if(q[i]!=null) o[e]=q[i]; }); o.n=N; }
+        else res.rows[pl]={n:r.n||0,Fe:q[0],SiO2:q[1],Al2O3:q[2],P:q[3],src:'code'}; } }
+    res.how='code'; return res; }
+  const lines=String(txt||'').split(/\r?\n/).map(l=>l.trim()).filter(Boolean);
+  // table with a header row (copied from Excel / CSV)
+  const hi=lines.findIndex(l=>/al2o3|al₂o₃|\bal\b/i.test(l)&&/plant/i.test(l)&&/[\t,;]/.test(l));
+  if(hi>=0){ const sp=lines[hi].includes('\t')?'\t':(lines[hi].includes(';')?';':','); const H=lines[hi].split(sp).map(h=>h.trim().toLowerCase());
+    const col=re=>H.findIndex(h=>re.test(h));
+    const ci={pl:col(/plant/),n:col(/trip/),t:col(/(^t$|tonn|rom\s*t|\bmt\b|qty)/),Fe:col(/^fe/),SiO2:col(/^si/),Al2O3:col(/^al/),P:col(/^p\b|^p\s*%|^phos/),d:col(/date/),s:col(/shift/)};
+    for(const l of lines.slice(hi+1)){ const c=l.split(sp).map(x=>x.trim()); const pl=plantOf(c[ci.pl]); if(!pl){ if(c[ci.pl]) res.unknown.push(c[ci.pl]); continue; }
+      const num=i=>i>=0&&c[i]!==''&&!isNaN(+c[i])?+c[i]:null;
+      if(num(ci.Al2O3)==null) continue;
+      res.rows[pl]={n:num(ci.n)||0,t:num(ci.t),Fe:num(ci.Fe),SiO2:num(ci.SiO2),Al2O3:num(ci.Al2O3),P:num(ci.P),src:'table'};
+      if(ci.d>=0&&c[ci.d]) res.date=c[ci.d]; if(ci.s>=0&&c[ci.s]) res.shift=c[ci.s]; }
+    res.how='table'; return res; }
+  // free text lines: "Wet Plant: 42 trips | Fe 60.92 | SiO2 3.34 | Al2O3 4.41 | P 0.085"
+  const g=(l,re)=>{ const m=re.exec(l); return m?+m[1]:null; };
+  for(const l of lines){ const pl=plantOf(l.split(/[:|]/)[0]); if(!pl) continue;
+    const al=g(l,/al\s*2?\s*o?\s*3?\s*%?\s*[:=]?\s*(\d+(?:\.\d+)?)/i); if(al==null) continue;
+    res.rows[pl]={n:g(l,/(\d+)\s*trips?/i)||0,t:g(l,/(\d+(?:\.\d+)?)\s*(?:t|mt|tonnes?)\b/i),Fe:g(l,/fe\s*%?\s*[:=]?\s*(\d+(?:\.\d+)?)/i),SiO2:g(l,/si\s*o?\s*2?\s*%?\s*[:=]?\s*(\d+(?:\.\d+)?)/i),Al2O3:al,P:g(l,/\bp\s*%?\s*[:=]?\s*(\d*\.\d+|\d+)/i),src:'text'}; }
+  const dm=/(\d{1,2})[-/.](\d{1,2})[-/.](\d{4})/.exec(txt); if(dm) res.date=`${dm[3]}-${dm[2].padStart(2,'0')}-${dm[1].padStart(2,'0')}`;
+  const sm=/\b([ABC])\s*shift/i.exec(txt); if(sm) res.shift=sm[1].toUpperCase();
+  res.how='text'; return res; }
+// ---------- predictions ----------
+function sumTonnes(pl,r){ if(r.t>0) return r.t; const tp=sumState().tpt[PUI[pl].site]||0; return r.n>0&&tp>0?r.n*tp:0; }
+function sumPredict(){
+  const st=sumState(), out={};
+  for(const pl of SUM_PL){ const r=st.rows[pl]; if(!r||r.Al2O3==null||r.Al2O3==='') continue;
+    const m=sumModel(pl), t=sumTonnes(pl,r);
+    if(m.err){ out[pl]={r,t,err:m.err}; continue; }
+    const jf=pl==='wet'?((st.jf!=null?st.jf:(S.inputs.wet&&S.inputs.wet.jf!=null?S.inputs.wet.jf:33))/100):0;
+    let pr; try{ pr=V.plants[pl].predict(m,{Al2O3:+r.Al2O3,Fe:r.Fe!=null&&r.Fe!==''?+r.Fe:'',SiO2:r.SiO2!=null&&r.SiO2!==''?+r.SiO2:'',P:r.P!=null&&r.P!==''?+r.P:'',t:t||0,jf}); }
+    catch(err){ out[pl]={r,t,err:err.message}; continue; }
+    const prods=[]; for(const [k,kind] of Object.entries(SUM_KIND[pl])){ const x=pr.p[k]; if(!x||x.v==null||x.v.Fe==null) continue;
+      if(pl==='wet'&&(k==='JR')&&!(jf>0)) continue;
+      const y=m.yields[k]!=null?(k==='JR'||k==='JC'?(pr.t&&t>0?pr.t[k]/t:null):m.yields[k]):null;
+      const tt=pr.t&&pr.t[k]!=null?pr.t[k]:(y!=null&&t>0?y*t:null);
+      prods.push({k,kind,v:x.v,sd:x.sd,dl:x.dl,y:tt!=null&&t>0?tt/t:y,t:tt}); }
+    out[pl]={r,t,m,pr,prods,jf}; }
+  return out; }
+function blendOf(list){ const L=list.filter(x=>x.w>0&&x.v); if(!L.length) return null; const W=L.reduce((a,x)=>a+x.w,0), o={w:W};
+  EL.forEach(e=>{ o[e]=L.reduce((a,x)=>a+x.w*x.v[e],0)/W; }); return o; }
+// ---------- rail ----------
+function renderSumRail(){
+  const st=sumState(), r=$('rail');
+  const ms=SUM_PL.map(pl=>{ const m=sumModel(pl); return `<span>${PUI[pl].label}</span><i class="${m.err?'warn':'ok'}">${m.err?esc(m.err.split(' (')[0]):(pl==='ndcmp'?'ROM = fines':m.nRows+' shifts')}</i>`; }).join('');
+  r.innerHTML=`<div class="sec"><h5><span>1 · Paste from ROM Monitoring App</span><span>Ctrl+V</span></h5>
+      <textarea id="sumPaste" class="sumta" wrap="off" placeholder="Paste the “Plant quality” message (with its QVC1 code), or a table copied from Excel with columns Plant, Trips (or ROM t), Fe, SiO2, Al2O3, P">${esc(st.raw||'')}</textarea>
+      <div class="duo"><button class="btn" id="sumRead">Read pasted text</button><button class="btn sec" id="sumClr">Clear all</button></div>
+      <div class="hint" id="sumMsg">${st.date?`Loaded: ${esc(st.date)}${st.shift?' · '+esc(st.shift)+' shift':''}`:'Two samplers? Paste both messages together — trips to the same plant are merged.'}</div></div>
+    <div class="sec"><h5><span>2 · Settings</span></h5>
+      <div class="duo" style="margin-top:0"><div class="f"><label>t / trip · Noamundi</label><input type="number" id="tptN" min="0" step="any" value="${st.tpt.Noamundi||''}"></div><div class="f"><label>t / trip · Katamati</label><input type="number" id="tptK" min="0" step="any" value="${st.tpt.Katamati||''}"></div></div>
+      <div class="duo"><div class="f"><label>Wet Plant jig feed % of CF</label><input type="number" id="sumJf" min="0" max="40" step="1" value="${st.jf!=null?st.jf:(S.inputs.wet&&S.inputs.wet.jf!=null?S.inputs.wet.jf:33)}"></div><div class="f"><label>Fines Al₂O₃ limit %</label><input type="number" id="sumLim" min="0" step="0.05" value="${st.lim}"></div></div>
+      <div class="hint">Trips are turned into tonnes with t/trip; type ROM t in the table to override. Jig 0 = jig off.</div></div>
+    <div class="sec"><h5><span>3 · Models</span><span>trained on library</span></h5><div class="mstate">${ms}</div>
+      <div class="hint">Each plant uses its own band model, trained on every shift in the report library (band widths from the Model settings).</div></div>
+    <div class="sec"><h5><span>4 · Export</span></h5><div class="duo" style="margin-top:0"><button class="btn sec" id="sumCopy">Copy results (Excel)</button><button class="btn sec" id="sumCsv">Download CSV</button></div><div class="hint" id="sumMsg2"></div></div>`
+    +libraryHTML();
+  $('sumRead').onclick=()=>{ const txt=$('sumPaste').value; const p=parsePaste(txt); const n=Object.keys(p.rows).length;
+    if(!n){ $('sumMsg').innerHTML=`<span class="warn">No plant rows found.</span> Paste the message with its QVC1 code, or a table with Plant and Al2O3 columns.${p.bad?' The code looks cut off or changed — copy the whole message again.':''}`; return; }
+    st.rows=p.rows; st.date=p.date||''; st.shift=p.shift||''; st.raw=txt; sumSave(); renderAll();
+    toast(`${n} plant${n>1?'s':''} read from ${p.how==='code'?'the QVC code':p.how==='table'?'the table':'the text'}${p.bad?` · ${p.bad} code(s) unreadable`:''}${p.unknown.length?' · not recognised: '+esc(p.unknown.join(', ')):''}`,5000); };
+  $('sumClr').onclick=()=>{ st.rows={}; st.date=''; st.shift=''; st.raw=''; sumSave(); renderAll(); };
+  const num=(id,fn)=>{ $(id).onchange=()=>{ fn($(id).value===''?null:+$(id).value); sumSave(); renderSumMain(); }; };
+  num('tptN',v=>st.tpt.Noamundi=v); num('tptK',v=>st.tpt.Katamati=v); num('sumJf',v=>st.jf=v==null?null:Math.max(0,Math.min(40,v))); num('sumLim',v=>st.lim=v||4.5);
+  $('sumCopy').onclick=async()=>{ const t=sumTable('\t'); try{ await navigator.clipboard.writeText(t); $('sumMsg2').textContent='Copied — paste into Excel.'; }catch(_){ $('sumMsg2').textContent='Copy blocked by the browser — use Download CSV.'; } };
+  $('sumCsv').onclick=()=>{ const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob(['﻿'+sumTable(',')],{type:'text/csv'})); a.download=`Plant_summary_${st.date||'today'}${st.shift?'_'+st.shift:''}.csv`; a.click(); };
+  bindLibrary();
+}
+function sumTable(sep){
+  const st=sumState(), R=sumPredict(), L=[['Date','Shift','Plant','Stream','Kind','Tonnes','Mass %','Fe %','SiO2 %','Al2O3 %','P %','± Al2O3','Δ Al2O3 vs ROM'].join(sep)];
+  const q=v=>/[",\n]/.test(String(v))?'"'+String(v).replace(/"/g,'""')+'"':v;
+  for(const pl of SUM_PL){ const x=R[pl]; if(!x) continue; const r=x.r;
+    L.push([st.date,st.shift,PUI[pl].label,'ROM feed','feed',x.t?Math.round(x.t):'',100,...EL.map(e=>r[e]!=null&&r[e]!==''?(+r[e]).toFixed(DP[e]):''),'',''].map(q).join(sep));
+    for(const p of (x.prods||[])) L.push([st.date,st.shift,PUI[pl].label,SUM_NAME[p.k]||p.k,p.kind,p.t!=null?Math.round(p.t):'',p.y!=null?(p.y*100).toFixed(1):'',...EL.map(e=>p.v[e].toFixed(DP[e])),p.sd&&p.sd.Al2O3!=null?p.sd.Al2O3.toFixed(2):'',p.dl&&p.dl.Al2O3!=null?p.dl.Al2O3.toFixed(2):''].map(q).join(sep)); }
+  for(const c of sumCombined(R)) if(c.b) L.push([st.date,st.shift,'COMBINED',c.n,c.kind,Math.round(c.b.w),'',...EL.map(e=>c.b[e].toFixed(DP[e])),'',''].map(q).join(sep));
+  return L.join('\r\n'); }
+function sumCombined(R){
+  const pick=(pls,kind)=>pls.flatMap(pl=>R[pl]&&R[pl].prods?R[pl].prods.filter(p=>p.kind===kind).map(p=>({w:p.t!=null&&p.t>0?p.t:(R[pl].t>0?R[pl].t:1)*(p.y||0),v:p.v})):[]);
+  const NOA=['wet','iopp','ndcmp','iss','mnim'], KAT=['sandvik','mktm'];
+  return [{n:'Noamundi fines',f:'Wet Fines + IOPP Fines + NDCMP + ISS + Metso (NIM)',kind:'fines',b:blendOf(pick(NOA,'fines')),col:'var(--mint)'},
+    {n:'Katamati fines',f:'Sandvik + Metso (KTM) combined fines',kind:'fines',b:blendOf(pick(KAT,'fines')),col:'var(--mint)'},
+    {n:'All fines',f:'Noamundi + Katamati',kind:'fines',b:blendOf(pick([...NOA,...KAT],'fines')),col:'var(--mint)'},
+    {n:'CLO (sized ore)',f:'Wet Plant + Katamati C&S',kind:'clo',b:blendOf(pick([...NOA,...KAT],'clo')),col:'var(--steel)'},
+    {n:'Slime & reject',f:'losses — not in any product',kind:'loss',b:blendOf(pick([...NOA,...KAT],'loss')),col:'var(--rust)'}]; }
+// ---------- main ----------
+function renderSumMain(){
+  const st=sumState(), mn=$('main'), R=sumPredict(), e=S.set.focus, lim=+st.lim||4.5;
+  const cell=(pl,k,dp)=>{ const r=st.rows[pl]||{}; const v=r[k]; return `<td class="num"><input class="sumin${k==='Al2O3'?' al':''}" data-pl="${pl}" data-k="${k}" type="number" step="any" value="${v==null?'':(+v).toFixed(dp)}" ${k==='Al2O3'&&v!=null&&v!==''?`style="color:${gradeCol('Al2O3',+v)}"`:''}></td>`; };
+  let inT=`<tr><th>Plant</th><th>Source</th><th>Trips</th><th>ROM t</th><th>Fe %</th><th>SiO₂ %</th><th>Al₂O₃ %</th><th>P %</th><th>Model</th></tr>`;
+  for(const pl of SUM_PL){ const r=st.rows[pl], x=R[pl], m=sumModel(pl);
+    inT+=`<tr class="${r?'':'idle'}"><td><b>${PUI[pl].label}</b><span class="sd">${PUI[pl].site}${PUI[pl].src==='cs'?' · C&amp;S':pl==='ndcmp'?' · dry':' · wet'}</span></td>
+      <td>${r?`<span class="srcb ${r.src==='edit'?'ed':''}">${r.src==='edit'?'EDITED':r.src==='code'?'CODE':r.src==='table'?'TABLE':'TEXT'}</span>`:'<span class="muted small">not running</span>'}</td>
+      ${cell(pl,'n',0)}<td class="num"><input class="sumin" data-pl="${pl}" data-k="t" type="number" step="any" placeholder="${r&&r.n>0&&!(r.t>0)?Math.round(sumTonnes(pl,r)):''}" value="${r&&r.t>0?Math.round(r.t):''}"></td>${cell(pl,'Fe',2)}${cell(pl,'SiO2',2)}${cell(pl,'Al2O3',2)}${cell(pl,'P',3)}
+      <td class="small ${m.err?'warn':'ok'}">${m.err?'⚠ '+esc(m.err.split(' (')[0]):(x?'✓ predicted':'✓ ready')}</td></tr>`; }
+  let cards='';
+  for(const pl of SUM_PL){ const x=R[pl]; if(!x) continue; const r=x.r;
+    cards+=`<div class="pc" data-pl="${pl}"><div class="pch"><span class="dot" style="background:${gradeCol('Al2O3',+r.Al2O3)}"></span><b>${PUI[pl].label}</b><span>${PUI[pl].site}</span></div>
+      <div class="pcr">ROM ${x.t?Math.round(x.t).toLocaleString('en-IN')+' t · ':''}${r.n?r.n+' trips · ':''}Al ${f(+r.Al2O3,'Al2O3')}${r.SiO2!=null&&r.SiO2!==''?' · SiO₂ '+f(+r.SiO2,'SiO2'):''}</div>`;
+    if(x.err){ cards+=`<div class="pcr warn">⚠ ${esc(x.err)}</div></div>`; continue; }
+    for(const p of x.prods.filter(p=>p.kind!=='sub')){ const d=p.dl[e], bad=e==='Fe'?d<0:d>0, fin=p.kind==='fines';
+      cards+=`<div class="prow"><div class="pn">${SUM_NAME[p.k]||p.k}<small>${p.y!=null?(p.y*100).toFixed(p.y<0.01?2:1)+'%':''}${p.t!=null&&p.t>0?' · '+Math.round(p.t).toLocaleString('en-IN')+' t':''}</small></div>
+        <div class="pa"><b style="color:${gradeCol(e,p.v[e])}">${f(p.v[e],e)}</b><i>% ${ELN[e]}</i>${d==null||Math.abs(d)<0.005?'<span class="dd eq">= ROM</span>':`<span class="dd ${bad?'up':'dn'}">${d>0?'▲':'▼'}${Math.abs(d).toFixed(DP[e])}</span>`}
+          ${fin?(p.v.Al2O3<=lim?`<span class="lm ok">✓ Al ≤ ${lim}</span>`:`<span class="lm bad">✕ Al &gt; ${lim}</span>`):''}</div>
+        <div class="pq">${EL.filter(z=>z!==e).map(z=>`${ELN[z]} ${f(p.v[z],z)}`).join(' · ')}${p.sd&&p.sd[e]!=null?` · ±${f(p.sd[e],e)}`:''}</div></div>`; }
+    const subs=x.prods.filter(p=>p.kind==='sub'); if(subs.length) cards+=`<div class="pcr" style="margin-top:6px">${subs.map(p=>`${SUM_NAME[p.k]} ${f(p.v[e],e)}`).join(' · ')}</div>`;
+    if(pl==='wet') cards+=`<div class="pcr" style="margin-top:6px">Jig ${x.jf>0?'ON · '+Math.round(x.jf*100)+'% of CF':'OFF'}</div>`;
+    cards+='</div>'; }
+  const C=sumCombined(R), TR=SUM_PL.reduce((a,pl)=>a+(R[pl]?R[pl].t||0:0),0);
+  let cT=`<tr><th>Product stream</th><th>Made from</th><th>Tonnes</th><th>Share of ROM</th>${EL.map(z=>`<th>${ELN[z]} %</th>`).join('')}<th>vs limit</th></tr>`;
+  for(const c of C){ const b=c.b; cT+=`<tr><td><span class="dot" style="background:${c.col}"></span><b>${c.n}</b></td><td class="small muted">${esc(c.f)}</td>
+      <td class="num">${b&&b.w>0?Math.round(b.w).toLocaleString('en-IN'):'—'}</td><td class="num">${b&&TR>0?(b.w/TR*100).toFixed(1)+'%':'—'}</td>
+      ${EL.map(z=>`<td class="num ${z===e?'fc':''}" ${b&&z==='Al2O3'?`style="color:${gradeCol('Al2O3',b[z])}"`:''}>${b?f(b[z],z):'—'}</td>`).join('')}
+      <td>${b&&c.kind==='fines'?(b.Al2O3<=lim?`<span class="lm ok">✓ Al ≤ ${lim}</span>`:`<span class="lm bad">✕ Al &gt; ${lim}</span>`):'—'}</td></tr>`; }
+  cT+=`<tr><td class="muted"><b>Total ROM processed</b></td><td></td><td class="num">${TR>0?Math.round(TR).toLocaleString('en-IN'):'—'}</td><td class="num">100%</td><td colspan="5"></td></tr>`;
+  const when=st.date?`${esc(st.date)}${st.shift?' · '+esc(st.shift)+' shift':''}`:'no shift loaded';
+  const any=Object.keys(R).length;
+  mn.innerHTML=`<div class="card"><div class="cardh"><h2>ROM feed by plant</h2><span class="sub">${when} · values are editable · leave a plant blank if it is not running</span></div>
+      <div class="pane" style="overflow:auto"><table class="t sumt">${inT}</table></div></div>
+    <div class="card"><div class="cardh"><h2>Predicted product quality · plant-wise</h2><span class="sub">${when} · colour &amp; Δ = ${ELN[e]} (change with Focus on the plant pages) · ± = model spread · click a card to open the plant</span></div>
+      ${any?`<div class="pgrid">${cards}</div>`:`<div class="pane"><p class="muted">Paste the plant quality message from the ROM Monitoring App on the left, or type ROM grades into the table above.</p></div>`}</div>
+    <div class="card"><div class="cardh"><h2>Combined products</h2><span class="sub">tonnage-weighted blend of the predicted products · what goes downstream</span></div>
+      <div class="pane" style="overflow:auto"><table class="t">${cT}</table><p class="small muted" style="margin-top:8px">Weights are predicted product tonnes (ROM tonnes × predicted yield). If no tonnes or trips are given, a plant's ROM counts as 1 t, so blends are only meaningful once trips or tonnes are entered.</p></div></div>`;
+  mn.querySelectorAll('.sumin').forEach(inp=>inp.onchange=()=>{ const pl=inp.dataset.pl, k=inp.dataset.k; const r=st.rows[pl]||(st.rows[pl]={n:0,src:'edit'});
+    r[k]=inp.value===''?null:+inp.value; r.src='edit'; if(k==='Al2O3'&&r.Al2O3==null&&!r.Fe&&!r.n) delete st.rows[pl]; sumSave(); renderSumMain(); });
+  mn.querySelectorAll('.pc[data-pl]').forEach(c=>c.onclick=()=>{ const pl=c.dataset.pl, r=st.rows[pl]; if(!r) return;
+    const nv=Object.assign({Al2O3:+r.Al2O3,Fe:r.Fe!=null?r.Fe:'',SiO2:r.SiO2!=null?r.SiO2:'',P:r.P!=null?r.P:'',t:sumTonnes(pl,r)||''}, pl==='wet'?{jf:st.jf!=null?st.jf:(S.inputs.wet&&S.inputs.wet.jf!=null?S.inputs.wet.jf:33)}:{});
+    S.inputs[pl]=Object.assign({},S.inputs[pl]||{},nv); if(S.plant===pl&&S.input) Object.assign(S.input,nv);
+    S.mode='predict'; if(DRY.includes(pl)){ S.dryPlant=pl; switchPage('dry'); } else switchPage(pl); if(S.model){ runPredict(); save(); renderAll(); } });
+}
+
 // ---------- main ----------
 const TABS=[['ledger','Assay ledger'],['ins','Insights'],['band','Band analysis'],['model','Model & limits'],['bt','Backtest'],['batch','Shift predict'],['data','Data']];
 function renderMain(){
@@ -2357,10 +2550,11 @@ function renderAll(){
   $('fileChip').innerHTML = lib.length?`<i>●</i> OPR ${span(mo('opr'))} · C&amp;S ${span(mo('cs'))}`:'no reports loaded';
   usePlantLabels(); markNav();
   if(S.page==='flow'){ renderFlowRail(); renderFlowPage(); return; }
+  if(S.page==='summary'){ renderSumRail(); renderSumMain(); return; }
   if(S.mode==='vis'){ S.act=aggregate(S.plant,S.ds,rangeFor(S.ds)); renderVisRail(); renderVisMain(); return; }
   renderRail(); renderMain();
 }
-function usePlantLabels(){ const eb=$('plantEyebrow'); if(eb) eb.textContent=S.page==='flow'?'NOAMUNDI · KATAMATI · NRD · MATERIAL FLOW':(PU.site||'Noamundi').toUpperCase()+' · NRD · '+PU.eyebrow+(S.mode==='vis'?' · ACTUALS':''); }
+function usePlantLabels(){ const eb=$('plantEyebrow'); if(eb) eb.textContent=S.page==='summary'?'NOAMUNDI · KATAMATI · NRD · ALL PLANTS':S.page==='flow'?'NOAMUNDI · KATAMATI · NRD · MATERIAL FLOW':(PU.site||'Noamundi').toUpperCase()+' · NRD · '+PU.eyebrow+(S.mode==='vis'?' · ACTUALS':''); }
 
 function applyUrl(){ const q=new URLSearchParams(location.search); if(q.has('plant')&&PUI[q.get('plant')]&&q.get('plant')!==S.plant){ usePlant(q.get('plant')); S.ds=libMerged(); } if(q.has('al')){ S.input.Al2O3=+q.get('al'); ['Fe','SiO2','P'].forEach(k=>S.input[k]=q.get(k.toLowerCase())||''); if(q.has('jig')&&q.get('jig')==='0') S.input.jf=0; if(q.has('jf')) S.input.jf=Math.max(0,Math.min(40,+q.get('jf'))); if(q.has('t')) S.input.t=q.get('t'); return true; } return false; }
 if(load()&&S.ds){ applyUrl(); try{ S.model=E.train(S.ds,{basis:S.set.basis,nDays:+S.set.nDays,endDay:S.set.endDay,method:S.set.method||'band',bands:bandsSet()}); if(S.input.Al2O3==null){ const l=S.model.romStats.last; S.input.Al2O3=+l.X.Al2O3.toFixed(2);} runPredict(); }catch(err){ console.error(err); } }
