@@ -1,4 +1,4 @@
-# Quality Value Chain — Noamundi & Katamati · v1.8.0
+# Quality Value Chain — Noamundi & Katamati · v1.9.0
 
 Installable web app (PWA). Trains ROM → product quality (Fe, SiO2, Al2O3, P) from the monthly
 Ore Processing Report (Wet Plant, IOPP, NDCMP) and the Noa C&S Plant Report (ISS, Metso (NIM),
@@ -20,6 +20,7 @@ Upload ALL files in this folder to the repo root (replace the old ones):
 Installed copies pick up the update on the next launch (the version in `sw.js` changes with each release).
 
 ## Version history
+- 1.9.0 — Wet Fines = calculated (CF bypass + Jig Conc + HC Conc), W-6 sample shown as a check; import of the multi-year Wet Plant shift sheet (HIST); best band widths as Wet Plant defaults (Fe 1.0 · SiO2 0.1 · Al2O3 0.5 · P 0.01, from a 30-month backtest), editable per plant; band-width finder for any training window; training window as last N calendar days or a date range; report data stored in IndexedDB (room for many years).
 - 1.8.0 — Plant summary page (ROM Monitoring App code / Excel paste); Material flow marked "under construction"; version shown in the header.
 - 1.7.x — Equipment flowsheet view (Wet, IOPP, NDCMP) with toggle; IOPP mass flow fix; larger text.
 - 1.6.0 — IOPP hydrocyclone circuit streams.

@@ -290,6 +290,9 @@ input[type=range]:disabled{opacity:.35}
 .dd{font:700 11.5px var(--mono);padding:1px 5px;border-radius:4px;margin-left:4px}.dd.dn{background:color-mix(in srgb,var(--mint) 20%,transparent);color:var(--mint)}.dd.up{background:color-mix(in srgb,var(--rust) 20%,transparent);color:var(--rust)}.dd.eq{color:var(--muted);background:var(--line)}
 .lm{margin-left:auto;font:600 11px var(--mono);padding:2px 6px;border-radius:4px}.lm.ok{background:color-mix(in srgb,var(--mint) 18%,transparent)}.lm.bad{background:color-mix(in srgb,var(--rust) 20%,transparent);color:var(--rust)}
 .pq{font:12px var(--mono);color:var(--svgtxt)}
+.bfbox{border:1px solid var(--line2);border-radius:8px;padding:10px 12px;margin-bottom:14px;background:var(--panel2)}
+.bft td{font:12px var(--mono);text-align:right}.bft td .bw{display:block;font-size:10.5px;color:var(--muted)}.bft td.best{background:color-mix(in srgb,var(--mint) 22%,transparent);font-weight:700}.bft td.curw{outline:1.5px solid var(--amber);outline-offset:-2px}
+.pills.sm button{padding:4px 0;font-size:12.5px}
 .flownote{margin:4px 6px 8px;padding:8px 12px;border:1px dashed var(--amber);border-radius:6px;color:var(--amber);font-size:13px}
 .fvseg{display:inline-flex;border:1px solid var(--line2);border-radius:6px;overflow:hidden;margin-left:12px}
 .fvseg button{background:var(--panel2);border:0;padding:5px 11px;font:600 12px var(--cond);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);cursor:pointer}
@@ -300,7 +303,7 @@ input[type=range]:disabled{opacity:.35}
 <body>
 <div class="top">
   <img class="brandimg" src="icon.svg" alt="">
-  <div class="ttl"><small id="plantEyebrow">NOAMUNDI · NRD · WET PLANT</small><b>Quality Value Chain <span class="ver" id="appVer">v1.8.0</span></b></div>
+  <div class="ttl"><small id="plantEyebrow">NOAMUNDI · NRD · WET PLANT</small><b>Quality Value Chain <span class="ver" id="appVer">v1.9.0</span></b></div>
   <div class="plantseg" id="plantSeg"><button data-v="wet" class="on">Wet Plant</button><button data-v="iopp">IOPP</button><button data-v="dry" title="NDCMP and the four C&amp;S plants">NDCMP · C&amp;S</button><button data-v="summary" title="All plants: predicted product quality from the ROM Monitoring App shift report">Plant summary</button><button data-v="flow" title="Downstream material flow (under construction)">Material flow</button></div>
   <div class="plantseg modeseg" id="modeSeg" title="Switch between the predictive model and what the plants actually processed"><button data-v="predict" class="on">Predict</button><button data-v="vis">Visualise</button></div>
   <div class="sp"></div>
@@ -358,16 +361,25 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
         HCU: { name: 'HC Underflow',       sub: 'Cyclone U/F',                sheet: /^hydro\s*-?\s*cyclone$/i, block: 3 },
         HCO: { name: 'HC Overflow',        sub: 'Cyclone O/F → thickener',    sheet: /^hydro\s*-?\s*cyclone$/i, block: 2 },
         HCC: { name: 'HC Concentrate',     sub: 'FC-14 · HF dewatering scr.', sheet: /^hydro\s*-?\s*cyclone$/i, block: 0 },
-        WF:  { name: 'Wet Fines',          sub: 'W-6 belt · CFO + JC + HC',   sheet: /^wet\s*fines/i,           block: 0 },
+        WF:  { name: 'Wet Fines',          sub: 'calculated · CF bypass + JC + HC Conc', derived: true },
+        W6:  { name: 'Wet Fines W6 sample', sub: 'W-6 belt sample · check',   sheet: /^wet\s*fines/i,           block: 0 },
         SL:  { name: 'Slime',              sub: 'LRP slime · reject',         sheet: /^lrp\s*slime/i,           block: 0 }
       },
       MB_P: ['SO', 'CF', 'HCC', 'SL'],         // Wet ROM = Σ these (OPR mass balance)
       JIG_P: ['JF', 'JC', 'JR'],
-      tKeys: ['SO', 'CF', 'HCC', 'SL', 'JF', 'JC', 'JR', 'WF', 'ROM'],
-      ppPats: { ROM: /total rom processed/i, SO: /^sized ore/i, CF: /^classifier fines/i, WF: /^wet fines/i,
+      tKeys: ['SO', 'CF', 'HCC', 'SL', 'JF', 'JC', 'JR', 'WF', 'W6', 'ROM'],
+      ppPats: { ROM: /total rom processed/i, SO: /^sized ore/i, CF: /^classifier fines/i, W6: /^wet fines/i,
         SL: /slime loss\s*\(\s*wet/i, JF: /^jig feed/i, JC: /^jig concentrate/i, JR: /^jig reject/i,
         HCC: /h\.?\s*c\.?\s*rec/i, LRPH: /lrp run hour/i, JIGH: /jig run hour/i },
-      qbRe: /lrp rom/i, jig: true, wf: true
+      qbRe: /lrp rom/i, jig: true, wf: true,
+      // Wet Fines (calculated) = classifier-fines bypass (CF − jig feed) + jig concentrate + HC concentrate, tonnage-weighted
+      derive(p, t) {
+        const jf = t.JF > 0 ? t.JF : 0, byp = Math.max(0, (t.CF || 0) - jf), jc = jf > 0 ? (t.JC || 0) : 0, h = t.HCC || 0;
+        const parts = [[byp, p.CF], [jc, p.JC], [h, p.HCC]].filter(x => x[0] > 0);
+        const T = parts.reduce((a, x) => a + x[0], 0); t.WF = T;
+        if (!(T > 0) || parts.some(x => !x[1])) { delete p.WF; return; }
+        const o = { t: T }; for (const e of EL) o[e] = parts.reduce((a, x) => a + x[0] * x[1][e], 0) / T; p.WF = o;
+      }
     },
     iopp: {
       id: 'iopp', name: 'IOPP', romName: 'IOPP ROM',
@@ -778,6 +790,8 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       }
       if (diffs.length) info.push(`Shift mass-balance ROM reproduces OPR daily ${CFG.romName} Al₂O₃ within ${mean(diffs).toFixed(3)}% on average (${diffs.length} full days).`);
     }
+    if (PRODUCTS.W6 && PRODUCTS.WF) { const dd = days.filter(x => x.p.W6 && x.p.WF).map(x => x.p.W6.Al2O3 - x.p.WF.Al2O3);
+      if (dd.length) info.push(`Wet Fines check: W6 belt sample Al₂O₃ minus calculated Wet Fines (CF bypass + JC + HC Conc) averages ${(mean(dd) >= 0 ? '+' : '') + mean(dd).toFixed(2)}% over ${dd.length} days.`); }
     if (PRODUCTS.HCF && PRODUCTS.HCC && PRODUCTS.IS) { // cyclone circuit closure: measured HC feed vs HC conc + slime
       const dd = days.filter(x => x.p.HCF && x.p.HCC && x.p.IS && x.t.HCC > 0 && x.t.IS > 0).map(x => { const T = x.t.HCC + x.t.IS; return x.p.HCF.Al2O3 - (x.t.HCC * x.p.HCC.Al2O3 + x.t.IS * x.p.IS.Al2O3) / T; });
       if (dd.length) info.push(`Cyclone check: measured HC Feed Al₂O₃ minus (HC Conc + Slime, tonnage-weighted) averages ${(mean(dd) >= 0 ? '+' : '') + mean(dd).toFixed(2)}% over ${dd.length} days.`);
@@ -892,8 +906,10 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     const all = basisRows(ds, opt.basis);
     if (!all.length) throw new Error('No rows with valid Wet ROM quality for this basis.');
     let opDays = [...new Set(all.map(r => r.day))].sort((a, b) => a - b);
-    const endDay = opt.endDay && opDays.includes(+opt.endDay) ? +opt.endDay : opDays[opDays.length - 1];
-    const winDays = opDays.filter(d => d <= endDay).slice(-opt.nDays);
+    const upTo = opt.endDay ? opDays.filter(d => d <= +opt.endDay) : opDays;
+    const endDay = upTo.length ? upTo[upTo.length - 1] : opDays[opDays.length - 1];
+    const winDays = opDays.filter(d => d <= endDay && (!opt.startDay || d >= +opt.startDay)).slice(-(opt.nDays || 99999));
+    if (!winDays.length) throw new Error('No operating days in the selected training window.');
     const inWin = r => winDays.includes(r.day);
     const win = all.filter(inWin);
     const minN = opt.basis === 'shift' ? 6 : 4;
@@ -1113,6 +1129,8 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       out.info.push(`${mon} ${y} · ${it.name}: ${ds.shifts.filter(s => s.rom).length} valid shifts. ${ds.info.filter(t => /reproduces|Jig operated/.test(t)).join(' ')}`);
       out.files.push({ ym: it.ym, name: it.name });
     }
+    if (PRODUCTS.W6 && PRODUCTS.WF) { const dd = out.days.filter(x => x.p && x.p.W6 && x.p.WF).map(x => x.p.W6.Al2O3 - x.p.WF.Al2O3);
+      if (dd.length) out.info.push(`Wet Fines check (all months): W-6 belt sample Al₂O₃ minus calculated Wet Fines averages ${(mean(dd) >= 0 ? '+' : '') + mean(dd).toFixed(2)}% over ${dd.length} days.`); }
     const f = items[0], l = items[items.length - 1];
     const lab = ym => { const [y, m] = ym.split('-').map(Number); return `${MON[m - 1]} ${y}`; };
     out.month = items.length ? (items.length === 1 ? lab(f.ym) : `${lab(f.ym)} – ${lab(l.ym)}`) : '';
@@ -1120,7 +1138,63 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     return out;
   }
 
-  return { CFG, plant: CFG.id, detect, parseMonths, parseFlexSheet, rowW, romTons, wMean, SHRINK, DEF_BANDS, BLIM, MON, ymFromName, fmtOrd, mergeDatasets, solveLimitNum, cellDelta, bandOf, EL, PRODUCTS, PKEYS, MB_P, parseWorkbook, train, predict, solveLimit, backtest, cellFor };
+  // ---------- multi-year shift-wise Wet Plant sheet (FY data: SO, CLF, Jig, WF(W6), Slime, HCC, WROM) ----------
+  function histLayout(aoa) {
+    for (let h = 0; h < Math.min(15, aoa.length); h++) {
+      const row = (aoa[h] || []).map(x => txt(x).toLowerCase().replace(/\s+/g, ' '));
+      const at = re => row.findIndex(x => re.test(x));
+      const c = { SO: at(/^sized ore qty/), CF: at(/^classifier fines qty/), JF: at(/^jig feed fines qty/), JC: at(/^jig conc fines qty/), JR: at(/^jig reject fines qty/),
+        W6: at(/^wf \(qty\)/), SL: at(/^slime qty/), HCC: at(/^hcc qn?ty/), ROM: at(/^wrom quan/) };
+      if (c.SO >= 0 && c.CF >= 0 && c.HCC >= 0 && c.SL >= 0 && c.ROM >= 0) return { h, c, mon: Math.max(0, at(/^month/)) };
+    }
+    return null;
+  }
+  function detectHist(wb) { if (!CFG.wf) return false; return wb.SheetNames.some(n => histLayout(XLSX.utils.sheet_to_json(wb.Sheets[n], { header: 1, defval: null, raw: true, range: 0 }).slice(0, 15))); }
+  function parseHist(wb, fileName) {
+    const MONK = { JAN: 1, FEB: 2, MAR: 3, APR: 4, MAY: 5, JUN: 6, JUL: 7, AUG: 8, SEP: 9, OCT: 10, NOV: 11, DEC: 12 };
+    const out = {};
+    for (const n of wb.SheetNames) {
+      const aoa = XLSX.utils.sheet_to_json(wb.Sheets[n], { header: 1, defval: null, raw: true });
+      const L = histLayout(aoa); if (!L) continue;
+      for (const r of aoa.slice(L.h + 1)) {
+        const mm = /^([A-Z]{3})[A-Z]*\W*(\d{2,4})/.exec(txt(r[L.mon]).toUpperCase()); if (!mm) continue;
+        const mo = MONK[mm[1]], yr = mm[2].length === 2 ? 2000 + +mm[2] : +mm[2], d = num(r[L.mon + 1]), sh = txt(r[L.mon + 2]).toUpperCase();
+        if (!mo || !(d >= 1 && d <= 31) || !['A', 'B', 'C'].includes(sh)) continue;
+        const ym = `${yr}-${String(mo).padStart(2, '0')}`; const M = out[ym] = out[ym] || { shifts: [] };
+        const t = {}, p = {};
+        for (const k of ['SO', 'CF', 'JF', 'JC', 'JR', 'W6', 'SL', 'HCC']) { const i = L.c[k]; if (i == null || i < 0) continue;
+          t[k] = Math.max(0, num(r[i]) || 0); const q = { t: t[k], Fe: num(r[i + 1]), SiO2: num(r[i + 2]), Al2O3: num(r[i + 3]), P: num(r[i + 4]) };
+          if (t[k] > 0 && q.Fe > 1 && q.SiO2 > 0 && q.Al2O3 > 0 && q.P > 0) p[k] = q; }
+        if (CFG.derive) CFG.derive(p, t);
+        const tot = MB_P.reduce((a, k) => a + (t[k] || 0), 0);
+        let rom = null;
+        if (tot > 0 && MB_P.every(k => !(t[k] > 0) || p[k])) { rom = { t: tot }; for (const e of EL) rom[e] = MB_P.reduce((a, k) => a + (t[k] > 0 ? t[k] * p[k][e] : 0), 0) / tot; }
+        M.shifts.push({ key: d + '|' + sh, day: d, shift: sh, label: `D${d}-${sh}`, rom, p, t, jig: (t.JF || 0) > 0 || (t.JC || 0) > 0 });
+      }
+    }
+    const res = [];
+    for (const ym of Object.keys(out).sort()) {
+      const shifts = out[ym].shifts; if (!shifts.some(s => s.rom)) continue;
+      const days = [];
+      for (const d of [...new Set(shifts.map(s => s.day))].sort((a, b) => a - b)) {
+        const S = shifts.filter(s => s.day === d), t = {}, p = {};
+        for (const k of ['SO', 'CF', 'JF', 'JC', 'JR', 'W6', 'SL', 'HCC']) {
+          t[k] = S.reduce((a, s) => a + (s.t[k] || 0), 0);
+          const ok = S.filter(s => s.p[k] && s.t[k] > 0); const W = ok.reduce((a, s) => a + s.t[k], 0);
+          if (W > 0) { p[k] = { t: W }; for (const e of EL) p[k][e] = ok.reduce((a, s) => a + s.t[k] * s.p[k][e], 0) / W; } }
+        if (CFG.derive) CFG.derive(p, t);
+        const R = S.filter(s => s.rom), RT = R.reduce((a, s) => a + s.rom.t, 0);
+        let rom = null; if (RT > 0) { rom = { t: RT }; for (const e of EL) rom[e] = R.reduce((a, s) => a + s.rom.t * s.rom[e], 0) / RT; }
+        days.push({ key: String(d), day: d, shift: '', label: `Day ${d}`, rom, romPred: null, p, t, jig: (t.JF || 0) > 0 });
+      }
+      const [y, m] = ym.split('-').map(Number), nOk = shifts.filter(s => s.rom).length;
+      res.push({ ym, ds: { month: `${MON[m - 1]} ${y}`, fileName, shifts, days, excluded: shifts.filter(s => !s.rom).map(s => ({ key: s.key, reason: 'missing quantity or assay for a mass-balance stream' })),
+        warn: [], info: [`Historic shift sheet: ${nOk} shifts with Wet ROM by mass balance (SO + CF + HC Conc + Slime). Wet Fines = calculated (CF bypass + JC + HC Conc); W6 sample kept as a check.`], src: 'hist' } });
+    }
+    return res;
+  }
+
+  return { CFG, plant: CFG.id, detect, parseMonths, detectHist, parseHist, parseFlexSheet, rowW, romTons, wMean, SHRINK, DEF_BANDS, BLIM, MON, ymFromName, fmtOrd, mergeDatasets, solveLimitNum, cellDelta, bandOf, EL, PRODUCTS, PKEYS, MB_P, parseWorkbook, train, predict, solveLimit, backtest, cellFor };
   } // end makeEngine
 
   const api = makeEngine(PLANT_CFG.wet);           // default export = Wet Plant (back-compatible)
@@ -1148,19 +1222,29 @@ const S = { plant:'wet', inputs:{}, selBy:{}, bandSelBy:{}, ds:null, model:null,
   limits:{ 'WF|Al2O3':{max:4.5} }, bt:{p:'WF',e:'Al2O3'}, batch:'',
   page:'wet', mode:'predict', dryPlant:'ndcmp', range:{kind:'last'}, vtab:'sum', act:null, fview:'equip' };
 
-function bandsSet(){ const b=Object.assign({},E.DEF_BANDS,S.set.bands||{}); if(S.set.band&&!S.set.bands) b.Al2O3=+S.set.band; return b; }
+// best widths from the Apr'24–Sep'26 month-by-month backtest on the FY24–FY27 shift sheet (calculated Wet Fines + CLO)
+const PDEF_BANDS={wet:{Fe:1,SiO2:0.1,Al2O3:0.5,P:0.01}};
+function bandsFor(pl){ return Object.assign({},V.plants[pl].DEF_BANDS,PDEF_BANDS[pl]||{},(S.set.bandsBy||{})[pl]||{}); }
+function bandsSet(){ return bandsFor(S.plant); }
+function winSet(){ const w=S.set.win||(S.set.win={mode:'last',n:+S.set.nDays||9999,from:'',to:''}); return w; }
+function opDaysOf(ds){ return ds?[...new Set(ds.shifts.filter(r=>r.rom).map(r=>r.day))].sort((a,b)=>a-b):[]; }
+function trainOpt(pl,ds){ pl=pl||S.plant; ds=ds||S.ds; const w=winSet(), od=opDaysOf(ds), last=od.length?od[od.length-1]:null;
+  const o={basis:pl===S.plant?S.set.basis:'shift',nDays:99999,method:S.set.method||'band',bands:bandsFor(pl)};
+  if(w.mode==='range'){ if(w.to) o.endDay=iso2ord(w.to); if(w.from) o.startDay=iso2ord(w.from); }
+  else { const end=pl===S.plant&&S.set.endDay?+S.set.endDay:last; if(end) o.endDay=end; if(end&&+w.n>0&&+w.n<9999) o.startDay=addDays(end,-(+w.n-1)); }
+  return o; }
 const PUI = {
   wet: { id:'wet', label:'Wet Plant', eyebrow:'WET PLANT', rom:'Wet ROM', jig:true, site:'Noamundi', src:'opr', romNote:'Wet ROM = tonnage-weighted SO + CF + HC Conc + LRP Slime (OPR mass balance).',
-    dataNote:'ROM = tonnage-weighted SO + CF + HC Conc + Slime (same as OPR Quality Balance “LRP ROM Actual”). * = a stream had tonnage but no shift assay — day average used for ROM.',
-    ORDER:['ROM','SO','CF','JF','JC','HCF','HCU','HCO','HCC','WF','SL','JR'],
-    SHORTN:{ROM:'Wet ROM feed',SO:'Sized Ore (CLO)',CF:'Classifier Fines',JF:'Jig Feed',JC:'Jig Concentrate',JR:'Jig Reject',HCF:'Cyclone Feed',HCU:'Cyclone Underflow',HCO:'Cyclone Overflow',HCC:'HC Concentrate',WF:'Wet Fines (W-6)',SL:'LRP Slime'},
-    heads:[['SO','SIZED ORE'],['WF','WET FINES'],['SL','SLIME']], sensAl:['SO','WF','SL'], sensFe:['SO','WF'], bandIns:['WF','SO','CF','SL'],
-    drift:['SO','CF','WF','SL','HCC'], BSER:['SO','WF','SL','CF','HCC','JC','JR'], bandDefault:['WF','SO','SL'], densP:'WF',
-    modelCols:['SO','CF','JC','HCC','WF','SL','JR'], limitP:['SO','WF','CF','JC','HCC'], batchCols:['SO','CF','JC','HCC','WF','SL'], dataCols:['SO','CF','JC','HCC','WF','SL'],
-    defSel:'WF', reject:'SL', noTons:['HCF','HCU','HCO'], short:{SO:'Sized Ore',WF:'Wet Fines',SL:'Slime',CF:'Class. Fines',HCC:'HC Conc',JC:'Jig Conc',JR:'Jig Reject'},
+    dataNote:'ROM = tonnage-weighted SO + CF + HC Conc + Slime (same as OPR Quality Balance “LRP ROM Actual”). Wet Fines = calculated (CF bypass + Jig Conc + HC Conc); W-6 = belt sample. * = a stream had tonnage but no shift assay — day average used for ROM.',
+    ORDER:['ROM','SO','CF','JF','JC','HCF','HCU','HCO','HCC','WF','SL','JR','W6'],
+    SHORTN:{ROM:'Wet ROM feed',SO:'Sized Ore (CLO)',CF:'Classifier Fines',JF:'Jig Feed',JC:'Jig Concentrate',JR:'Jig Reject',HCF:'Cyclone Feed',HCU:'Cyclone Underflow',HCO:'Cyclone Overflow',HCC:'HC Concentrate',WF:'Wet Fines (calculated)',SL:'LRP Slime',W6:'W-6 sample (check)'},
+    heads:[['SO','SIZED ORE'],['WF','WET FINES · CALC'],['W6','W-6 SAMPLE · CHECK'],['SL','SLIME']], tuneP:['WF','SO'], slot:{SO:0,WF:1,SL:2,CF:3,HCC:4,JC:5,JR:6,W6:6}, sensAl:['SO','WF','SL'], sensFe:['SO','WF'], bandIns:['WF','SO','CF','SL'],
+    drift:['SO','CF','WF','W6','SL','HCC'], BSER:['SO','WF','SL','CF','HCC','JC','JR','W6'], bandDefault:['WF','SO','SL'], densP:'WF',
+    modelCols:['SO','CF','JC','HCC','WF','W6','SL','JR'], limitP:['SO','WF','W6','CF','JC','HCC'], batchCols:['SO','CF','JC','HCC','WF','W6','SL'], dataCols:['SO','CF','JC','HCC','WF','W6','SL'],
+    defSel:'WF', reject:'SL', noTons:['HCF','HCU','HCO'], short:{SO:'Sized Ore',WF:'Wet Fines',SL:'Slime',CF:'Class. Fines',HCC:'HC Conc',JC:'Jig Conc',JR:'Jig Reject',W6:'W-6 sample'},
     colHeads:['FEED','CLASSIFY','SEPARATE','CONCENTRATE','PRODUCTS & WASTE'],
-    ledgerNote:'Mass split from trained Plant Production yields. Wet ROM = SO + CF + HC Conc + Slime (OPR mass balance). Wet Fines = CF (not jigged) + Jig Conc + HC Conc. Jig Reject and LRP Slime are separate waste streams.' },
-  iopp: { id:'iopp', label:'IOPP', eyebrow:'IOPP', rom:'IOPP ROM', jig:false, site:'Noamundi', src:'opr', romNote:'IOPP ROM = tonnage-weighted IOPP Fines (18TC001) + IOPP Slime. Screen & Crushed Fines = IOPP Fines − HC Concentrate (13CV001), by difference.',
+    ledgerNote:'Mass split from trained Plant Production yields. Wet ROM = SO + CF + HC Conc + Slime (OPR mass balance). Wet Fines (calculated) = Classifier Fines not jigged + Jig Conc + HC Conc, tonnage-weighted — the main Wet Fines result. The W-6 belt sample is predicted separately as a check (it reads about 0.2–0.4 Al₂O₃ lower on average). Jig Reject and LRP Slime are separate waste streams.' },
+  iopp: { id:'iopp', label:'IOPP', eyebrow:'IOPP', rom:'IOPP ROM', jig:false, tuneP:['IF','IS'], site:'Noamundi', src:'opr', romNote:'IOPP ROM = tonnage-weighted IOPP Fines (18TC001) + IOPP Slime. Screen & Crushed Fines = IOPP Fines − HC Concentrate (13CV001), by difference.',
     flow:Y=>{ const F=Y.IF||0, sl=Y.IS||0, T=F+sl||1, fi=F/T, s2=sl/T, h=Math.min(fi,Math.max(0,Y.HCC||0)), c=Math.max(0,fi-h);
       // IOPP Fines = Screen & Crushed Fines + HC Conc ; cyclone feed = HC Conc + cyclone O/F (= slime)
       return {mass:{ROM:1,CSF:c,HCF:h+s2,HCU:h,HCO:s2,DWU:h,HCC:h,IF:fi,IS:s2},
@@ -1179,7 +1263,7 @@ const PUI = {
 };
 function csUI(id,label,site,clo){
   const mid=clo?['CLO','CF','SF']:['CF','SF'], mc=[...mid,'FN'];
-  return { id, label, eyebrow:label.toUpperCase(), rom:label+' ROM', jig:false, site, src:'cs', dry:true,
+  return { id, label, eyebrow:label.toUpperCase(), rom:label+' ROM', jig:false, site, src:'cs', dry:true, tuneP:clo?['FN','CLO']:['CF','SF'],
     ORDER:['ROM',...mc], SHORTN:{ROM:label+' ROM feed',CLO:'CLO (sized ore)',CF:'Crushed Fines',SF:'Screen Fines',FN:'Combined Fines'},
     heads:clo?[['FN','FINES'],['CLO','CLO']]:[['FN','FINES'],['CF','CRUSHED FINES'],['SF','SCREEN FINES']],
     sensAl:clo?['FN','CLO']:['CF','SF'], sensFe:clo?['FN','CLO']:['CF','SF'], bandIns:clo?['FN','CLO','CF','SF']:['CF','SF'],
@@ -1209,25 +1293,41 @@ let ORDER = PU.ORDER, SHORTN = PU.SHORTN;
 function save(){ S.inputs[S.plant]=S.input; S.selBy[S.plant]=S.sel; try{ localStorage.setItem(LS, JSON.stringify({set:S.set,plant:S.plant,inputs:S.inputs,selBy:S.selBy,bandSelBy:S.bandSelBy,limits:S.limits,page:S.page,mode:S.mode,dryPlant:S.dryPlant,range:S.range,vtab:S.vtab,fview:S.fview})); }catch(e){} }
 // ---------- OPR library (each month stored separately, merged for training) ----------
 const LIBK='wpvc.lib', OPRK='wpvc.opr.';
+const DSTORE=new Map(); let IDB=null;
+function idbOpen(){ return new Promise(res=>{ try{ const rq=indexedDB.open('wpvc',1); rq.onupgradeneeded=()=>rq.result.createObjectStore('ds'); rq.onsuccess=()=>res(rq.result); rq.onerror=()=>res(null); }catch(e){ res(null); } }); }
+function idbPut(k,v){ try{ IDB.transaction('ds','readwrite').objectStore('ds').put(v,k); }catch(e){ console.warn(e); } }
+function idbDel(k){ try{ IDB.transaction('ds','readwrite').objectStore('ds').delete(k); }catch(e){} }
+async function dsInit(){
+  IDB=await idbOpen();
+  if(IDB) await new Promise(res=>{ try{ const rq=IDB.transaction('ds','readonly').objectStore('ds').openCursor(); rq.onsuccess=()=>{ const c=rq.result; if(c){ DSTORE.set(c.key,c.value); c.continue(); } else res(); }; rq.onerror=()=>res(); }catch(e){ res(); } });
+  const mv=[]; for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if(k&&k.startsWith(OPRK)) mv.push(k); }
+  for(const k of mv){ const v=localStorage.getItem(k); if(!DSTORE.has(k)) DSTORE.set(k,v); if(IDB){ idbPut(k,v); } }
+  if(IDB) mv.forEach(k=>localStorage.removeItem(k));   // migrated: free the small localStorage
+}
+const dsGet=k=>DSTORE.has(k)?DSTORE.get(k):null;
+function dsSet(k,v){ DSTORE.set(k,v); if(IDB) idbPut(k,v); else localStorage.setItem(k,v); }
+function dsDel(k){ DSTORE.delete(k); if(IDB) idbDel(k); else localStorage.removeItem(k); }
 function libGet(){ try{ return JSON.parse(localStorage.getItem(LIBK)||'[]'); }catch(e){ return []; } }
 function libPut(lib){ localStorage.setItem(LIBK, JSON.stringify(lib)); }
 const okey=(pl,ym)=>pl==='wet'?OPRK+ym:OPRK+pl+'.'+ym;      // wet keeps the original key (back-compatible)
 const DSC={};   // merged-dataset cache per plant
 const compact=(k,v)=>typeof v==='number'&&!Number.isInteger(v)?Math.round(v*1e5)/1e5:v;
 const srcOf=pl=>V.PLANT_CFG[pl].source==='cs'?'cs':'opr';
-function libAdd(ym,name,byPlant){
+function libAdd(ym,name,byPlant,kind){
   for(const k in DSC) delete DSC[k]; sumClear();
-  try{ for(const pl in byPlant) if(byPlant[pl]) localStorage.setItem(okey(pl,ym), JSON.stringify(byPlant[pl],compact)); }
+  try{ for(const pl in byPlant) if(byPlant[pl]) dsSet(okey(pl,ym), JSON.stringify(byPlant[pl],compact)); }
   catch(e){ toast('Browser storage is full — remove some older OPRs from the library first.',6000); return false; }
   const n={}; for(const pl in byPlant) if(byPlant[pl]) n[pl]=byPlant[pl].shifts.filter(r=>r.rom).length;
   const old=libGet().find(x=>x.ym===ym)||{};
-  const src=Object.assign({},old.src||(old.name?{opr:old.name}:{})); for(const pl in byPlant) if(byPlant[pl]) src[srcOf(pl)]=name;
+  const src=Object.assign({},old.src||(old.name?{opr:old.name}:{})); for(const pl in byPlant) if(byPlant[pl]) src[kind||srcOf(pl)]=name; if(kind!=='hist'&&byPlant.wet) delete src.hist;
   const lib=libGet().filter(x=>x.ym!==ym); lib.push({ym,name,src,n:n.wet!=null?n.wet:old.n,np:Object.assign({},old.np||{},n),addedAt:new Date().toISOString()}); lib.sort((a,b)=>a.ym.localeCompare(b.ym)); libPut(lib); return true;
 }
-function libCount(x,pl){ if(x.np&&x.np[pl]!=null) return x.np[pl]; if(pl==='wet') return x.n; return localStorage.getItem(okey(pl,x.ym))?'?':null; }
-function libRemove(ym){ for(const k in DSC) delete DSC[k]; sumClear(); Object.keys(PUI).forEach(pl=>localStorage.removeItem(okey(pl,ym))); libPut(libGet().filter(x=>x.ym!==ym)); }
+function libCount(x,pl){ if(x.np&&x.np[pl]!=null) return x.np[pl]; if(pl==='wet') return x.n; return dsGet(okey(pl,x.ym))?'?':null; }
+function libRemove(ym){ for(const k in DSC) delete DSC[k]; sumClear(); Object.keys(PUI).forEach(pl=>dsDel(okey(pl,ym))); libPut(libGet().filter(x=>x.ym!==ym)); }
+// months stored before v1.9 kept the W-6 sample as "WF": move it to W6 and rebuild calculated Wet Fines
+function wetUpgrade(ds){ const D=V.plants.wet.CFG.derive; if(!D) return; for(const r of [...ds.shifts,...ds.days]){ if(!r.t||r.t.W6!==undefined) continue; if(r.p&&r.p.WF){ r.p.W6=r.p.WF; delete r.p.WF; } r.t.W6=r.t.WF||0; D(r.p||(r.p={}),r.t); } }
 function libMerged(pl){
-  pl=pl||S.plant; if(DSC[pl]!==undefined) return DSC[pl]; const items=[]; for(const it of libGet()){ try{ const ds=JSON.parse(localStorage.getItem(okey(pl,it.ym))||'null'); if(ds) items.push({ym:it.ym,name:it.name,ds}); }catch(e){} }
+  pl=pl||S.plant; if(DSC[pl]!==undefined) return DSC[pl]; const items=[]; for(const it of libGet()){ try{ const ds=JSON.parse(dsGet(okey(pl,it.ym))||'null'); if(ds){ if(pl==='wet') wetUpgrade(ds); items.push({ym:it.ym,name:it.name,ds}); } }catch(e){} }
   return (DSC[pl]=items.length?V.plants[pl].mergeDatasets(items):null);
 }
 function load(){
@@ -1276,6 +1376,11 @@ async function handleFiles(files){
       const wb = XLSX.read(await file.arrayBuffer(),{type:'array',cellDates:true});
       let asked; const ask=()=>{ if(asked!==undefined) return asked; const ans=prompt(`Which month is "${file.name}"? Enter as YYYY-MM (e.g. 2026-04)`,''); asked=ans&&/^\d{4}-\d{2}$/.test(ans.trim())?ans.trim():null; return asked; };
       const byYm={}, kinds=new Set();
+      if(V.plants.wet.detectHist(wb)){ const hr=V.plants.wet.parseHist(wb,file.name); const lib0=libGet(); let added=0, skipped=[];
+        for(const r of hr){ const ex=lib0.find(x=>x.ym===r.ym); if(ex&&hasOpr(ex)&&libCount(ex,'wet')!=null){ skipped.push(r.ym); continue; } if(libAdd(r.ym,file.name,{wet:r.ds},'hist')) added++; else break; }
+        if(added) ok.push(`Wet Plant shift history · ${added} month${added>1?'s':''} (${hr[0].ym} → ${hr[hr.length-1].ym})${skipped.length?` · ${skipped.length} month(s) kept from OPR`:''}`);
+        else bad.push(file.name+' (no new months — all already loaded from OPRs)');
+        continue; }
       for(const pl of Object.keys(PUI)){ const Ep=V.plants[pl]; let res=[];
         try{ if(!Ep.detect(wb)) continue; res=Ep.parseMonths(wb,file.name,ask)||[]; }catch(err){ console.warn(pl,err); continue; }
         for(const r of res){ if(!r||!r.ym||!r.ds||!r.ds.days.some(d=>d.rom)) continue; (byYm[r.ym]=byYm[r.ym]||{})[pl]=r.ds; kinds.add(srcOf(pl)); } }
@@ -1287,7 +1392,7 @@ async function handleFiles(files){
     }catch(err){ console.error(err); bad.push(file.name+': '+(err.message||err)); }
   }
   S.ds=libMerged(S.plant); S.set.endDay=null; S.input.Al2O3=null;
-  if(libGet().length>1 && before<=1) S.set.nDays=9999;
+  if(libGet().length>1 && before<=1) winSet().n=9999;
   retrain(true);
   if(ok.length) toast(`Added <b>${ok.join('</b><br><b>')}</b><br>library now ${libGet().length} month(s)`,6000);
   if(bad.length) toast('Could not read: '+esc(bad.join('; ')),7000);
@@ -1342,7 +1447,7 @@ function retrain(resetInput){
   if(!S.ds){ S.model=null; S.pred=null; save(); renderAll(); return; }
   if(!S.ds.days.some(d=>d.romPred) && S.set.basis==='dayPred') S.set.basis='shift';
   if(!S.ds){ S.model=null; S.pred=null; save(); renderAll(); return; }
-  try{ S.model = E.train(S.ds,{basis:S.set.basis,nDays:+S.set.nDays,endDay:S.set.endDay,method:S.set.method||'band',bands:bandsSet()}); }
+  try{ S.model = E.train(S.ds,trainOpt()); }
   catch(err){ console.warn(err); if(S.set.basis!=='shift'){ S.set.basis='shift'; return retrain(resetInput);} S.model=null; S.pred=null; if(S.mode==='predict') toast(`${esc(PU.label)}: not enough data to train — ${esc(err.message)}`,5000); save(); renderAll(); return; }
   if(resetInput || S.input.Al2O3==null || S.input.Al2O3===''){
     const last = S.model.romStats.last; S.input.Al2O3 = +last.X.Al2O3.toFixed(2); S.input.jf = defaultJf(last);
@@ -1381,11 +1486,11 @@ function libraryHTML(){
   const lib=libGet();
   const pl=S.page==='flow'||S.page==='summary'?null:S.plant;
   const cnt=x=>{ if(!pl) return ''; const c=libCount(x,pl); if(c!=null) return c+' shifts'; if(PU.src==='opr') return hasOpr(x)?`<em style="color:var(--amber);font-style:normal">re-upload OPR</em>`:'<span style="color:var(--dim)">no OPR</span>'; return '<span style="color:var(--dim)">no C&amp;S data</span>'; };
-  const bad=x=>{ const s=x.src||(x.name?{opr:x.name}:{}); return (s.opr?`<span class="src" title="${esc(s.opr)}">OPR</span>`:'')+(s.cs?`<span class="src" title="${esc(s.cs)}">C&amp;S</span>`:''); };
+  const bad=x=>{ const s=x.src||(x.name?{opr:x.name}:{}); return (s.opr?`<span class="src" title="${esc(s.opr)}">OPR</span>`:'')+(s.hist?`<span class="src" title="${esc(s.hist)}">HIST</span>`:'')+(s.cs?`<span class="src" title="${esc(s.cs)}">C&amp;S</span>`:''); };
   return `<div class="sec"><h5><span>Report library</span><span>${lib.length} month${lib.length===1?'':'s'}</span></h5>
     <div class="lib">${lib.map(x=>`<div class="libit"><b>${E.MON[+x.ym.slice(5)-1]} ${x.ym.slice(0,4)}${bad(x)}</b><span>${cnt(x)}</span><button data-ym="${x.ym}" title="Remove this month (all plants)">✕</button></div>`).join('')||'<div class="modelstate">Empty — upload OPRs and/or the C&amp;S plant report.</div>'}</div>
     <div class="duo"><button class="btn" id="libAdd" style="padding:7px 8px">+ Add reports</button><button class="btn sec" id="libClear" style="padding:7px 8px" ${lib.length?'':'disabled'}>Clear all</button></div>
-    <div class="hint">One upload for both: an <b>OPR</b> fills Wet Plant, IOPP and NDCMP; the <b>Noa C&amp;S Plant Report</b> fills ISS, Metso (NIM), Sandvik and Metso (KTM) for every month it holds. Stored in this browser; re-uploading a month replaces that report's plants only.</div></div>`;
+    <div class="hint">One upload for all: an <b>OPR</b> fills Wet Plant, IOPP and NDCMP; the <b>Noa C&amp;S Plant Report</b> fills ISS, Metso (NIM), Sandvik and Metso (KTM) for every month it holds; the multi-year <b>Wet Plant shift sheet</b> (HIST) adds Wet Plant history for months without an OPR. Stored in this browser; re-uploading a month replaces that report's plants only.</div></div>`;
 }
 function bindLibrary(){
   $('libAdd').onclick=()=>$('file').click();
@@ -1434,9 +1539,15 @@ ${PU.jig?`    <div class="duo">
       <button data-v="day" class="${S.set.basis==='day'?'on':''}" title="Daily OPR ${PU.rom}">Daily</button>
       <button data-v="dayPred" class="${S.set.basis==='dayPred'?'on':''}" ${hasPred?'':'disabled'} title="Mine-predicted ROM → actual products">Pred ROM</button></div>
     <div class="duo">
-      <div class="f"><label>Window</label><select id="nDays">${[[10,'last 10 days'],[30,'last 30 days'],[60,'last 60 days'],[90,'last 90 days'],[180,'last 180 days'],[9999,'all uploaded']].map(([n,l])=>`<option value="${n}" ${+S.set.nDays===n?'selected':''}>${l}</option>`).join('')}</select></div>
-      <div class="f"><label>Ending</label><select id="endDay">${days.slice().reverse().map(d=>`<option value="${d}" ${d===m.endDay?'selected':''}>${E.fmtOrd(d,true)}</option>`).join('')}</select></div>
-    </div>
+</div>
+    <div class="f" style="margin-top:8px"><label>Training window</label></div>
+    <div class="pills" id="winMode"><button data-v="last" class="${winSet().mode!=='range'?'on':''}">Last N days</button><button data-v="range" class="${winSet().mode==='range'?'on':''}">Date range</button></div>
+    ${winSet().mode!=='range'?`<div class="duo"><div class="f"><label>Days (calendar)</label><input type="number" id="winN" min="1" step="1" value="${+winSet().n>=9999?'':winSet().n}" placeholder="all"></div>
+      <div class="f"><label>Ending</label><select id="endDay">${days.slice().reverse().map(d=>`<option value="${d}" ${d===m.endDay?'selected':''}>${E.fmtOrd(d,true)}</option>`).join('')}</select></div></div>
+      <div class="pills sm" id="winQ">${[[10,'10'],[30,'30'],[90,'90'],[180,'180'],[365,'365'],[9999,'All']].map(([n,l])=>`<button data-n="${n}" class="${+winSet().n===n?'on':''}">${l}</button>`).join('')}</div>`
+    :`<div class="duo"><div class="f"><label>From</label><input type="date" id="winFrom" value="${winSet().from||ord2iso(m.winDays[0])}" min="${ord2iso(days[0])}" max="${ord2iso(days[days.length-1])}"></div>
+      <div class="f"><label>To</label><input type="date" id="winTo" value="${winSet().to||ord2iso(m.winDays[m.winDays.length-1])}" min="${ord2iso(days[0])}" max="${ord2iso(days[days.length-1])}"></div></div>`}
+    <button class="btn sec" id="bfGo" style="margin-top:8px;width:100%;padding:7px 8px" ${PU.tuneP&&PU.tuneP.length?'':'disabled'}>Find best band widths for this window</button>
     <div class="f" style="margin-top:8px"><label>Δ model</label></div>
     <div class="pills" id="methP"><button data-v="band" class="${(S.set.method||'band')==='band'?'on':''}" title="Each element's delta looked up in bands of ${PU.rom} grade of that element">ROM grade bands</button><button data-v="linear" class="${S.set.method==='linear'?'on':''}" title="Single delta, optionally sloped with ROM grade">Linear</button></div>
     <div class="bwrow ${(S.set.method||'band')==='band'?'':'off'}"><label>Band width · ${PU.rom} grade %</label>
@@ -1463,12 +1574,18 @@ ${PU.jig?`    <div class="duo">
   $('qMean').onclick=()=>{ $('inAl').value=m.romStats.mean.toFixed(2); ['inFe','inSiO2','inP'].forEach(k=>$(k).value=''); apply(true); };
   $('focusP').querySelectorAll('button').forEach(b=>b.onclick=()=>{ S.set.focus=b.dataset.v; save(); renderAll(); });
   $('basisP').querySelectorAll('button').forEach(b=>b.onclick=()=>{ if(b.disabled) return; S.set.basis=b.dataset.v; retrain(true); });
-  $('nDays').onchange=ev=>{ S.set.nDays=+ev.target.value; retrain(false); };
-  $('endDay').onchange=ev=>{ S.set.endDay=+ev.target.value; retrain(false); };
+  document.querySelectorAll('#winMode button').forEach(b=>b.onclick=()=>{ const w=winSet(); if(w.mode===b.dataset.v) return; w.mode=b.dataset.v;
+    if(w.mode==='range'&&!w.from){ w.from=ord2iso(m.winDays[0]); w.to=ord2iso(m.winDays[m.winDays.length-1]); } sumClear(); retrain(false); });
+  if($('winN')) $('winN').onchange=ev=>{ const v=parseInt(ev.target.value,10); winSet().n=v>0?v:9999; sumClear(); retrain(false); };
+  document.querySelectorAll('#winQ button').forEach(b=>b.onclick=()=>{ winSet().n=+b.dataset.n; sumClear(); retrain(false); });
+  if($('endDay')) $('endDay').onchange=ev=>{ S.set.endDay=+ev.target.value; retrain(false); };
+  const rg=()=>{ const w=winSet(); w.from=$('winFrom').value; w.to=$('winTo').value; if(w.from&&w.to&&w.from>w.to){ const z=w.from; w.from=w.to; w.to=z; } sumClear(); retrain(false); };
+  if($('winFrom')){ $('winFrom').onchange=rg; $('winTo').onchange=rg; }
+  if($('bfGo')) $('bfGo').onclick=()=>{ S.tab='model'; renderMain(); setTimeout(()=>{ const b=$('bfRun'); if(b) b.click(); },50); };
   $('methP').querySelectorAll('button').forEach(b=>b.onclick=()=>{ S.set.method=b.dataset.v; retrain(false); });
   const setBw=(el,v)=>{ v=+v; const [lo,hi]=E.BLIM[el]; const inp=document.querySelector(`.bwIn[data-e="${el}"]`);
     if(!isFinite(v)||v<lo||v>hi){ toast(`${ELN[el]} band width must be between ${lo} and ${hi}`); if(inp) inp.value=fb(bw(el),el); return; }
-    S.set.bands=Object.assign(bandsSet(),{[el]:el==='P'?Math.round(v*10000)/10000:Math.round(v*100)/100}); delete S.set.band; S.set.method='band'; retrain(false);
+    S.set.bandsBy=S.set.bandsBy||{}; S.set.bandsBy[S.plant]=Object.assign({},(S.set.bandsBy[S.plant]||{}),{[el]:el==='P'?Math.round(v*10000)/10000:Math.round(v*100)/100}); S.set.method='band'; sumClear(); retrain(false);
     toast(`Retrained · ${ELN[el]} bands now ${fb(S.set.bands[el],el)}% wide`); };
   document.querySelectorAll('.bwel .pills button').forEach(b=>b.onclick=()=>setBw(b.dataset.e,b.dataset.v));
   document.querySelectorAll('.bwIn').forEach(inp=>{ inp.onchange=()=>setBw(inp.dataset.e,inp.value); inp.onkeydown=ev=>{ if(ev.key==='Enter'){ ev.preventDefault(); setBw(inp.dataset.e,inp.value);} }; });
@@ -1594,7 +1711,7 @@ function ledger(){
 
 function fb(v,e){ return e==='P' ? (+v).toFixed(4).replace(/0$/,'') : (+v).toFixed(2).replace(/0$/,''); }
 function bw(e){ e=e||'Al2O3'; return (S.model&&S.model.bands&&S.model.bands[e]) || (bandsSet()[e]); }
-const BPRE={Fe:[0.25,0.5,1],SiO2:[0.1,0.2,0.5],Al2O3:[0.1,0.2,0.25,0.5],P:[0.001,0.002,0.005]};
+const BPRE={Fe:[0.5,1,2],SiO2:[0.1,0.2,0.5],Al2O3:[0.2,0.25,0.5,0.75],P:[0.002,0.005,0.01]};
 function bandTxt(x,el,cell){
   const b=x.band&&x.band[el]; if(!b) return '';
   if(b.how==='band') return `ROM ${ELN[el]} band ${fb(b.lo,el)}–${fb(b.lo+bw(el),el)} · n${b.n}`;
@@ -1745,6 +1862,52 @@ function bindBandTab(){
   });
 }
 // ---------- model tab ----------
+const BCAND={Fe:[0.2,0.3,0.4,0.5,0.75,1,1.5,2,3],SiO2:[0.1,0.15,0.2,0.25,0.3,0.4,0.5,0.75,1],Al2O3:[0.1,0.15,0.2,0.25,0.3,0.4,0.5,0.75,1],P:[0.001,0.0015,0.002,0.003,0.004,0.005,0.0075,0.01,0.015]};
+function bfKey(){ const m=S.model; return [S.plant,S.set.basis,m.winDays[0],m.winDays[m.winDays.length-1],m.nRows].join('|'); }
+function finderHTML(){
+  const R=S.bf&&S.bf.key===bfKey()?S.bf:null, cur=bandsSet(), tp=(PU.tuneP||[]).filter(k=>P[k]);
+  let h=`<div class="bfbox"><h4><span>Band-width finder · ${E.fmtOrd(S.model.winDays[0],true)} – ${E.fmtOrd(S.model.winDays[S.model.winDays.length-1],true)}</span><span>scored on ${tp.map(k=>SHORTN[k]||k).join(' + ')||'—'}</span></h4>`;
+  if(!tp.length) return h+`<p class="small muted">${esc(PU.label)} has no beneficiation step to tune (product = ROM).</p></div>`;
+  h+=`<p class="small muted" style="margin:0 0 8px">Splits the training window into 5 blocks of consecutive days; each block is predicted by a model trained on the other four, for every candidate width. Lowest tonnage-weighted error wins. Each element is tuned on its own.</p>
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><button class="btn" id="bfRun" style="padding:6px 12px">${R?'Run again':'Find best band widths'}</button>${R&&R.best?`<button class="btn sec" id="bfApply" style="padding:6px 12px">Apply best widths</button>`:''}<button class="btn sec" id="bfReset" style="padding:6px 12px">Reset to defaults</button><span class="small muted" id="bfMsg">${R?esc(R.msg||''):''}</span></div>`;
+  if(R&&R.err) h+=`<p class="small" style="color:var(--amber)">${esc(R.err)}</p>`;
+  if(R&&R.res){ h+=`<div style="overflow:auto;margin-top:10px"><table class="t bft"><tr><th>Element</th>${BCAND.Fe.map((_,i)=>`<th>#${i+1}</th>`).join('')}<th>Best</th><th>Current</th></tr>`;
+    for(const e of EL){ const sc=R.res[e]; const bi=sc.indexOf(Math.min(...sc.filter(isFinite)));
+      h+=`<tr><td><b>${ELN[e]}</b><span class="sd">RMSE %</span></td>${BCAND[e].map((w,i)=>`<td class="num ${i===bi?'best':''} ${Math.abs(cur[e]-w)<1e-9?'curw':''}"><span class="bw">${fb(w,e)}</span>${isFinite(sc[i])?sc[i].toFixed(e==='P'?4:3):'—'}</td>`).join('')}<td class="num"><b>${fb(BCAND[e][bi],e)}</b></td><td class="num">${fb(cur[e],e)}</td></tr>`; }
+    h+=`</table></div><p class="small muted">Top line in each cell = band width (% of ${PU.rom} grade); bottom = prediction error. Highlighted = best; outlined = width in use. Differences of a few thousandths are within noise.</p>`; }
+  return h+'</div>';
+}
+function bindFinder(){
+  if($('bfRun')) $('bfRun').onclick=()=>runFinder();
+  if($('bfApply')) $('bfApply').onclick=()=>{ S.set.bandsBy=S.set.bandsBy||{}; S.set.bandsBy[S.plant]=Object.assign({},S.bf.best); S.set.method='band'; sumClear(); retrain(false); toast('Best band widths applied: '+EL.map(e=>ELN[e]+' '+fb(S.bf.best[e],e)).join(' · '),5000); };
+  if($('bfReset')) $('bfReset').onclick=()=>{ if(S.set.bandsBy) delete S.set.bandsBy[S.plant]; sumClear(); retrain(false); toast('Band widths reset to defaults: '+EL.map(e=>ELN[e]+' '+fb(bandsSet()[e],e)).join(' · '),5000); };
+}
+async function runFinder(){
+  const m=S.model, W=new Set(m.winDays), basis=S.set.basis, key=bfKey(), pl=S.plant, Eng=E;
+  const src=basis==='shift'?S.ds.shifts.filter(r=>r.rom&&W.has(r.day)):S.ds.days.filter(r=>W.has(r.day)&&(basis==='dayPred'?r.romPred&&r.rom:r.rom));
+  const tp=(PU.tuneP||[]).filter(k=>P[k]); const msg=t=>{ const x=$('bfMsg'); if(x) x.textContent=t; };
+  if(src.length<15){ S.bf={key,err:`Only ${src.length} ${basis==='shift'?'shifts':'days'} in this window — widen it to at least ~15 (30+ recommended) to compare band widths.`}; renderPane(); return; }
+  const days=[...new Set(src.map(r=>r.day))].sort((a,b)=>a-b), K=Math.min(5,days.length), fold=d=>Math.min(K-1,Math.floor(days.indexOf(d)*K/days.length));
+  const X=r=>basis==='dayPred'?r.romPred:r.rom, se={}; for(const e of EL) se[e]=BCAND[e].map(()=>({}));
+  const btn=$('bfRun'); if(btn) btn.disabled=true;
+  for(let i=0;i<BCAND.Fe.length;i++){
+    msg(`testing width set ${i+1} of ${BCAND.Fe.length}…`); await new Promise(r=>setTimeout(r,0));
+    const bands={}; for(const e of EL) bands[e]=BCAND[e][i];
+    for(let k=0;k<K;k++){
+      const tr=src.filter(r=>fold(r.day)!==k), te=src.filter(r=>fold(r.day)===k); if(tr.length<6||!te.length) continue;
+      let mk; try{ mk=Eng.train(basis==='shift'?{shifts:tr,days:[]}:{shifts:[],days:tr},{basis,nDays:99999,method:'band',bands}); }catch(_){ continue; }
+      for(const r of te){ const x=X(r); const jf=r.jig&&r.t&&r.t.CF>0?(r.t.JF||0)/r.t.CF:0;
+        const pr=Eng.predict(mk,{Al2O3:x.Al2O3,Fe:x.Fe,SiO2:x.SiO2,P:x.P,jf});
+        for(const p of tp){ const a=r.p[p], q=pr.p[p]; if(!a||!q||!(a.Fe>1)) continue; const w=Eng.rowW(r,p)||1;
+          for(const e of EL){ const z=(se[e][i][p]=se[e][i][p]||{w:0,s:0}); const d=q.v[e]-a[e]; z.w+=w; z.s+=w*d*d; } } } }
+  }
+  const res={}, best={};
+  for(const e of EL){ res[e]=se[e].map(o=>{ const ps=tp.filter(p=>o[p]&&o[p].w>0); return ps.length?Math.sqrt(ps.reduce((a,p)=>a+o[p].s/o[p].w,0)/ps.length):NaN; });
+    const v=res[e].filter(isFinite); best[e]=v.length?BCAND[e][res[e].indexOf(Math.min(...v))]:bandsSet()[e]; }
+  if(S.plant!==pl) return;
+  S.bf={key,res,best,msg:`${src.length} ${basis==='shift'?'shifts':'days'} · ${K} blocks · best: `+EL.map(e=>ELN[e]+' '+fb(best[e],e)).join(' · ')};
+  if(S.tab==='model') renderPane();
+}
 function modelTab(){
   const m=S.model, pr=S.pred; const focusP=S.sel;
   const e=S.set.focus, cols=PU.modelCols.filter(p=>E.cellFor(m,p,true));
@@ -2217,7 +2380,7 @@ const EQIS={}; for(const k in EQI) EQIS[k]=eqStyle(EQI[k]);
 // eq: equipment {x,y centre}; cards: ROM/products {x,y top-left, k stream, icon}; ed: [from,port,to,port,colour,mass(g)->, opts]; tags: sample callouts
 const EQL={
  wet:{ W:1550, H:960,
-  cards:[{k:'ROM',x:4,y:356,icon:'rom'},{k:'SO',x:1306,y:40,icon:'clo',nm:'Sized Ore (CLO)',sub:'W-7 · −40 +10 mm'},{k:'JR',x:1306,y:222,icon:'reject',nm:'Jig Reject',sub:'to loss'},{k:'WF',x:1306,y:396,icon:'fines',nm:'Wet Fines',sub:'W-6 · CF + JC + HC Conc'},{k:'SL',x:1306,y:784,icon:'slime',nm:'LRP Slime',sub:'thickener U/F · loss'}],
+  cards:[{k:'ROM',x:4,y:356,icon:'rom'},{k:'SO',x:1306,y:40,icon:'clo',nm:'Sized Ore (CLO)',sub:'W-7 · −40 +10 mm'},{k:'JR',x:1306,y:222,icon:'reject',nm:'Jig Reject',sub:'to loss'},{k:'WF',x:1306,y:396,icon:'fines',nm:'Wet Fines (calc.)',sub:'CF bypass + JC + HC Conc'},{k:'SL',x:1306,y:784,icon:'slime',nm:'LRP Slime',sub:'thickener U/F · loss'}],
   eq:[{id:'SCR',x:300,y:424,ic:'scrubber',nm:'Scrubber',sub:'washing'},{id:'WS',x:450,y:424,ic:'screen',nm:'Wet Screen',sub:'40 / 10 mm'},
    {id:'W7',x:780,y:108,ic:'conveyor',nm:'W-7 Conveyor',sub:'sized ore'},{id:'CL',x:600,y:424,ic:'classifier',nm:'Screw Classifier',sub:'−10 mm'},
    {id:'SP',x:780,y:424,ic:'splitter',nm:'Jig Splitter',sub:'0–40% of CF'},{id:'JIG',x:980,y:290,ic:'jig',nm:'Jig',sub:'FC-11 → FC-12'},
@@ -2229,7 +2392,7 @@ const EQL={
    ['CL','b','HC','l','G',g=>g.mass.HCF,{lab:'O/F'}],['HC','r','DWS','l','G',g=>g.mass.HCU,{lab:'U/F'}],['DWS','r','W6','b','T',g=>g.mass.HCC],
    ['HC','b','THK','l','O',g=>g.mass.HCO,{lab:'O/F'}],['THK','r','SL','l','O',g=>g.mass.SL],['W6','r','WF','l','T',g=>g.mass.WF]],
   tags:[{k:'CF',x:640,y:322,ax:690,ay:424,sub:'W-3'},{k:'JF',x:826,y:236,ax:860,ay:290,sub:'FC-11'},{k:'JC',x:1062,y:540,ax:980,ay:424,sub:'FC-12'},
-   {k:'HCF',x:470,y:580,ax:600,ay:580},{k:'HCU',x:850,y:586,ax:880,ay:660},{k:'HCC',x:1110,y:776,ax:1090,ay:660,sub:'FC-14'},{k:'HCO',x:640,y:790,ax:780,ay:790}]},
+   {k:'HCF',x:470,y:580,ax:600,ay:580},{k:'HCU',x:850,y:586,ax:880,ay:660},{k:'HCC',x:1110,y:776,ax:1090,ay:660,sub:'FC-14'},{k:'HCO',x:640,y:790,ax:780,ay:790},{k:'W6',x:1195,y:345,ax:1250,ay:424,sub:'check'}]},
  iopp:{ W:1550, H:960,
   cards:[{k:'ROM',x:4,y:356,icon:'rom'},{k:'IF',x:1306,y:82,icon:'fines',nm:'IOPP Fines',sub:'18TC001 · product'},{k:'IS',x:1306,y:792,icon:'slime',nm:'IOPP Slime',sub:'thickener U/F · loss'}],
   eq:[{id:'HS',x:300,y:424,ic:'sizer',nm:'Hopper & Sizers',sub:'−1000 → −150 mm'},{id:'SCR',x:440,y:424,ic:'scrubber',nm:'Scrubber',sub:'washing'},
@@ -2334,9 +2497,9 @@ function bindFview(){ document.querySelectorAll('#fvSeg button').forEach(b=>b.on
 const SUM_PL=['wet','iopp','ndcmp','iss','mnim','sandvik','mktm'];
 const QVC_CODE={WET:'wet',IOPP:'iopp',NDCMP:'ndcmp',ISS:'iss',MNIM:'mnim',SAND:'sandvik',MKTM:'mktm'};
 const SUM_KIND={ // product classes: fines → downstream, clo → sized ore, loss → slime / reject, sub → part of fines (shown small)
-  wet:{SO:'clo',WF:'fines',SL:'loss',JR:'loss'}, iopp:{IF:'fines',IS:'loss'}, ndcmp:{DF:'fines'},
+  wet:{SO:'clo',WF:'fines',SL:'loss',JR:'loss',W6:'sub'}, iopp:{IF:'fines',IS:'loss'}, ndcmp:{DF:'fines'},
   iss:{FN:'fines',CF:'sub',SF:'sub'}, mnim:{FN:'fines',CF:'sub',SF:'sub'}, sandvik:{CLO:'clo',FN:'fines'}, mktm:{CLO:'clo',FN:'fines'} };
-const SUM_NAME={SO:'Sized Ore (CLO)',WF:'Wet Fines',SL:'LRP Slime',JR:'Jig Reject',IF:'IOPP Fines',IS:'IOPP Slime',DF:'NDCMP Fines',FN:'Combined Fines',CLO:'CLO',CF:'Crushed Fines',SF:'Screen Fines'};
+const SUM_NAME={SO:'Sized Ore (CLO)',W6:'W-6 sample (check)',WF:'Wet Fines (calc.)',SL:'LRP Slime',JR:'Jig Reject',IF:'IOPP Fines',IS:'IOPP Slime',DF:'NDCMP Fines',FN:'Combined Fines',CLO:'CLO',CF:'Crushed Fines',SF:'Screen Fines'};
 const SM={}; // trained model per plant (cleared when the library changes)
 function sumState(){
   if(!S.sum){ let o=null; try{ o=JSON.parse(localStorage.getItem('wpvc.sum')||'null'); }catch(_){}
@@ -2347,7 +2510,7 @@ function sumSave(){ try{ localStorage.setItem('wpvc.sum',JSON.stringify(S.sum));
 function sumModel(pl){
   if(SM[pl]!==undefined) return SM[pl];
   const ds=libMerged(pl); if(!ds) return (SM[pl]={err:'no data — upload '+(PUI[pl].src==='cs'?'the C&S plant report':'OPRs')});
-  const Ep=V.plants[pl], o={basis:'shift',nDays:+S.set.nDays||9999,endDay:null,method:S.set.method||'band',bands:Object.assign({},Ep.DEF_BANDS,S.set.bands||{})};
+  const Ep=V.plants[pl], o=trainOpt(pl,ds); o.basis='shift';
   try{ const m=Ep.train(ds,o); m._ds=ds; return (SM[pl]=m); }catch(err){ return (SM[pl]={err:'not enough data to train ('+err.message+')'}); }
 }
 function sumClear(){ for(const k in SM) delete SM[k]; }
@@ -2534,7 +2697,7 @@ function renderPane(){
   const pane=$('pane'); if(!pane) return;
   if(S.tab==='ledger'){ pane.innerHTML=ledger(); pane.querySelectorAll('tr.click').forEach(tr=>tr.onclick=()=>{ S.sel=tr.dataset.p; if(tr.dataset.p!=='ROM') S.bt.p=tr.dataset.p; save(); renderMain(); }); }
   if(S.tab==='ins') pane.innerHTML=`<h4><span>Process insights</span><span>for this shift feed</span></h4><div class="insgrid">${insights()}</div>`;
-  if(S.tab==='model'){ pane.innerHTML=modelTab();
+  if(S.tab==='model'){ pane.innerHTML=finderHTML()+modelTab(); bindFinder();
     pane.querySelectorAll('#limBox input').forEach(inp=>inp.onchange=()=>{ const v=inp.value.trim(); if(v==='') delete S.limits[inp.dataset.k]; else S.limits[inp.dataset.k]={max:+v}; save(); renderAll(); });
     $('dlModel').onclick=()=>{ const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([JSON.stringify(S.model,null,1)],{type:'application/json'})); a.download=`${S.plant}_model_${(S.ds.month||'').replace(/[^A-Za-z0-9]+/g,'')}_${S.model.endDay}.json`; a.click(); };
   }
@@ -2557,9 +2720,11 @@ function renderAll(){
 function usePlantLabels(){ const eb=$('plantEyebrow'); if(eb) eb.textContent=S.page==='summary'?'NOAMUNDI · KATAMATI · NRD · ALL PLANTS':S.page==='flow'?'NOAMUNDI · KATAMATI · NRD · MATERIAL FLOW':(PU.site||'Noamundi').toUpperCase()+' · NRD · '+PU.eyebrow+(S.mode==='vis'?' · ACTUALS':''); }
 
 function applyUrl(){ const q=new URLSearchParams(location.search); if(q.has('plant')&&PUI[q.get('plant')]&&q.get('plant')!==S.plant){ usePlant(q.get('plant')); S.ds=libMerged(); } if(q.has('al')){ S.input.Al2O3=+q.get('al'); ['Fe','SiO2','P'].forEach(k=>S.input[k]=q.get(k.toLowerCase())||''); if(q.has('jig')&&q.get('jig')==='0') S.input.jf=0; if(q.has('jf')) S.input.jf=Math.max(0,Math.min(40,+q.get('jf'))); if(q.has('t')) S.input.t=q.get('t'); return true; } return false; }
-if(load()&&S.ds){ applyUrl(); try{ S.model=E.train(S.ds,{basis:S.set.basis,nDays:+S.set.nDays,endDay:S.set.endDay,method:S.set.method||'band',bands:bandsSet()}); if(S.input.Al2O3==null){ const l=S.model.romStats.last; S.input.Al2O3=+l.X.Al2O3.toFixed(2);} runPredict(); }catch(err){ console.error(err); } }
+dsInit().then(()=>{
+if(load()&&S.ds){ applyUrl(); try{ S.model=E.train(S.ds,trainOpt()); if(S.input.Al2O3==null){ const l=S.model.romStats.last; S.input.Al2O3=+l.X.Al2O3.toFixed(2);} runPredict(); }catch(err){ console.error(err); } }
 else applyUrl();
 renderAll();
+});
 })();
 </script>
 </body>
