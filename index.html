@@ -291,6 +291,12 @@ input[type=range]:disabled{opacity:.35}
 .zmv{min-width:52px;text-align:center;font:600 12px var(--mono);color:var(--muted);background:var(--panel)}
 .card.fs .zmbar+.fsbtn{margin-left:8px}
 .card.fs.zoomed .flowwrap,.card.fs.zoomed .sfwrap{overflow:auto;display:block;cursor:grab}.card.fs.zoomed .panning{cursor:grabbing;user-select:none}
+.up.fsb{background:var(--panel2);color:var(--text);border:1px solid var(--line2);text-transform:none;letter-spacing:.02em;max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.up.fsb.ok{border-color:var(--mint)}.up.fsb.need{background:var(--amber);color:var(--onacc);border-color:var(--amber)}
+.fsbox{border:1px dashed var(--line2);border-radius:8px;padding:9px 10px;margin:4px 0 10px;background:var(--panel2)}.fsbox b{font:700 13px var(--cond)}
+.fsh{display:flex;justify-content:space-between;align-items:center;gap:8px}.fsh span{font:600 11px var(--mono);color:var(--muted);white-space:nowrap}
+.fsdot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px;background:var(--mint)}.fsdot.need{background:var(--amber)}.fsdot.busy{background:var(--steel);animation:fsp 1s infinite alternate}@keyframes fsp{to{opacity:.3}}
+.fsbox .lnk{background:none;border:0;color:var(--muted);font:12px var(--sans);text-decoration:underline;cursor:pointer;padding:6px 0 0}
 .fsbtn{margin-left:auto;background:var(--panel2);border:1px solid var(--line2);color:var(--text);border-radius:6px;padding:5px 10px;font:600 12px var(--cond);cursor:pointer;white-space:nowrap}.fsbtn:hover{border-color:var(--amber);color:var(--amber)}
 .card.fs{position:fixed;inset:0;z-index:950;margin:0;border-radius:0;overflow:auto;background:var(--bg);display:flex;flex-direction:column}
 .card.fs .fsbtn{background:var(--amber);color:var(--onacc,#1b1406);border-color:var(--amber)}
@@ -321,7 +327,7 @@ body.fsopen{overflow:hidden}
 <body>
 <div class="top">
   <img class="brandimg" src="icon.svg" alt="">
-  <div class="ttl"><small id="plantEyebrow">NOAMUNDI · NRD · WET PLANT</small><b>Quality Value Chain <span class="ver" id="appVer">v1.14.0</span></b></div>
+  <div class="ttl"><small id="plantEyebrow">NOAMUNDI · NRD · WET PLANT</small><b>Quality Value Chain <span class="ver" id="appVer">v1.15.0</span></b></div>
   <div class="plantseg" id="plantSeg"><button data-v="wet" class="on">Wet Plant</button><button data-v="iopp">IOPP</button><button data-v="dry" title="NDCMP and the four C&amp;S plants">NDCMP · C&amp;S</button><button data-v="summary" title="All plants: predicted product quality from the ROM Monitoring App shift report">Plant summary</button><button data-v="flow" title="Downstream material flow (under construction)">Material flow</button></div>
   <div class="plantseg modeseg" id="modeSeg" title="Switch between the predictive model and what the plants actually processed"><button data-v="predict" class="on">Predict</button><button data-v="vis">Visualise</button></div>
   <div class="sp"></div>
@@ -330,6 +336,7 @@ body.fsopen{overflow:hidden}
   <button class="themebtn" id="themeBtn" title="Change colour theme"><i></i>Theme</button>
   <button class="up ghost" id="installBtn" hidden>Install app</button>
   <button class="up" id="uploadBtn" title="Ore Processing Reports and Noa C&amp;S Plant Reports — both recognised automatically">Upload reports</button>
+  <button class="up fsb" id="fsBtn" type="button">📁 Link OneDrive folder</button>
   <input type="file" id="file" accept=".xlsx,.xlsm,.xls" multiple hidden>
 </div>
 <div class="app">
@@ -1293,8 +1300,8 @@ const PUI = {
     drift:['SO','CF','WF','W6','SL','HCC'], BSER:['SO','WF','SL','CF','HCC','JC','JR','W6'], bandDefault:['WF','SO','SL'], densP:'WF',
     modelCols:['SO','CF','JC','HCC','WF','W6','SL','JR'], limitP:['SO','WF','W6','CF','JC','HCC'], batchCols:['SO','CF','JC','HCC','WF','W6','SL'], dataCols:['SO','CF','JC','HCC','WF','W6','SL'],
     defSel:'WF', reject:'SL', noTons:['HCF','HCU','HCO'], short:{SO:'Sized Ore',WF:'Wet Fines',SL:'Slime',CF:'Class. Fines',HCC:'HC Conc',JC:'Jig Conc',JR:'Jig Reject',W6:'W-6 sample'},
-    colHeads:['FEED','CLASSIFY','SEPARATE','CONCENTRATE','PRODUCTS & WASTE'],
-    ledgerNote:'Mass split from trained Plant Production yields. Wet ROM = SO + CF + HC Conc + Slime (OPR mass balance). Wet Fines (calculated) = Classifier Fines not jigged + Jig Conc + HC Conc, tonnage-weighted — the main Wet Fines result. The W-6 belt sample is predicted separately as a check (it reads about 0.2–0.4 Al₂O₃ lower on average). Jig Reject and LRP Slime are separate waste streams.' },
+    colHeads:['FEED','CLASSIFY','SEPARATE','CONCENTRATE','PRODUCTS & BY-PRODUCTS'],
+    ledgerNote:'Mass split from trained Plant Production yields. Wet ROM = SO + CF + HC Conc + Slime (OPR mass balance). Wet Fines (calculated) = Classifier Fines not jigged + Jig Conc + HC Conc, tonnage-weighted — the main Wet Fines result. The W-6 belt sample is predicted separately as a check (it reads about 0.2–0.4 Al₂O₃ lower on average). Jig Reject and LRP Slime are separate by-product streams.' },
   iopp: { id:'iopp', label:'IOPP', eyebrow:'IOPP', rom:'IOPP ROM', jig:false, tuneP:['IF','IS'], site:'Noamundi', src:'opr', romNote:'IOPP ROM = tonnage-weighted IOPP Fines (18TC001) + IOPP Slime. Screen & Crushed Fines = IOPP Fines − HC Concentrate (13CV001), by difference.',
     flow:Y=>{ const F=Y.IF||0, sl=Y.IS||0, T=F+sl||1, fi=F/T, s2=sl/T, h=Math.min(fi,Math.max(0,Y.HCC||0)), c=Math.max(0,fi-h);
       // IOPP Fines = Screen & Crushed Fines + HC Conc ; cyclone feed = HC Conc + cyclone O/F (= slime)
@@ -1448,8 +1455,74 @@ async function handleFiles(files){
   if(ok.length) toast(`Added <b>${ok.join('</b><br><b>')}</b><br>library now ${libGet().length} month(s)`,6000);
   if(bad.length) toast('Could not read: '+esc(bad.join('; ')),7000);
 }
+// ---------- v1.15: linked OneDrive (synced) folder ----------
+const FSK='wpvc.fsseen', FSI='wpvc.fsinfo', FS_OK=('showDirectoryPicker' in window);
+let FSDIR=null, FSSTATE='none';   // none | need | ok | busy
+function fsDb(){ return new Promise(res=>{ try{ const rq=indexedDB.open('wpvc-fs',1); rq.onupgradeneeded=()=>rq.result.createObjectStore('h'); rq.onsuccess=()=>res(rq.result); rq.onerror=()=>res(null); }catch(e){ res(null); } }); }
+async function fsSave(h){ const db=await fsDb(); if(!db) return; await new Promise(r=>{ try{ const tx=db.transaction('h','readwrite'), st=tx.objectStore('h'); if(h) st.put(h,'dir'); else st.delete('dir'); tx.oncomplete=r; tx.onerror=r; }catch(e){ r(); } }); }
+async function fsLoad(){ const db=await fsDb(); if(!db) return null; return new Promise(r=>{ try{ const q=db.transaction('h').objectStore('h').get('dir'); q.onsuccess=()=>r(q.result||null); q.onerror=()=>r(null); }catch(e){ r(null); } }); }
+const fsInfo=()=>{ try{ return JSON.parse(localStorage.getItem(FSI)||'{}'); }catch(e){ return {}; } };
+function fsSetInfo(o){ try{ localStorage.setItem(FSI,JSON.stringify(Object.assign(fsInfo(),o))); }catch(e){} }
+const fsSeen=()=>{ try{ return JSON.parse(localStorage.getItem(FSK)||'{}'); }catch(e){ return {}; } };
+async function* fsWalk(dir,path,depth){
+  for await (const [name,h] of dir.entries()){
+    if(h.kind==='file'){ if(/\.(xlsx|xlsm|xls)$/i.test(name)&&!name.startsWith('~$')) yield {h,path:path+name}; }
+    else if(depth<4&&!name.startsWith('.')) yield* fsWalk(h,path+name+'/',depth+1);
+  } }
+async function fsScan(manual){
+  if(!FSDIR||FSSTATE==='busy') return; FSSTATE='busy'; fsRefreshUI();
+  try{
+    const seen=fsSeen(), next={}, fresh=[]; let n=0;
+    for await (const {h,path} of fsWalk(FSDIR,'',0)){ const f=await h.getFile(), sig=f.size+'|'+f.lastModified; n++; next[path]=sig; if(seen[path]!==sig) fresh.push(f); }
+    fresh.sort((a,b)=>a.lastModified-b.lastModified);   // older first, so a re-saved report overrides
+    FSSTATE='ok';
+    if(fresh.length){ toast(`OneDrive folder <b>${esc(FSDIR.name)}</b>: ${fresh.length} new or updated report${fresh.length>1?'s':''} — loading…`,3000); await handleFiles(fresh); }
+    else if(manual) toast(`OneDrive folder <b>${esc(FSDIR.name)}</b>: no new reports (${n} file${n===1?'':'s'} checked)`,3000);
+    try{ localStorage.setItem(FSK,JSON.stringify(next)); }catch(e){}
+    fsSetInfo({name:FSDIR.name,n,at:Date.now(),last:fresh.length});
+  }catch(e){ console.warn(e); FSSTATE='need'; if(manual) toast('Could not read the linked folder — click “Allow folder” and try again. ('+esc(e.message||e)+')',6000); }
+  fsRefreshUI();
+}
+async function fsLink(){
+  if(!FS_OK){ toast('Linking a folder needs Microsoft Edge or Google Chrome on a computer.',5000); return; }
+  try{ const h=await window.showDirectoryPicker({id:'qvc-reports',mode:'read'}); FSDIR=h; await fsSave(h); localStorage.removeItem(FSK); fsSetInfo({name:h.name,n:0,at:0,last:0}); FSSTATE='ok'; await fsScan(true); }
+  catch(e){ if(e&&e.name!=='AbortError') toast('Folder not linked: '+esc(e.message||e),5000); }
+}
+async function fsAllow(){ if(!FSDIR) return fsLink(); try{ const p=await FSDIR.requestPermission({mode:'read'}); if(p==='granted'){ FSSTATE='ok'; await fsScan(true); } else { FSSTATE='need'; fsRefreshUI(); } }catch(e){ fsLink(); } }
+async function fsUnlink(){ if(!confirm('Unlink the OneDrive folder? Reports already loaded stay in the library.')) return; FSDIR=null; await fsSave(null); localStorage.removeItem(FSK); localStorage.removeItem(FSI); FSSTATE='none'; fsRefreshUI(); }
+function fsReloadAll(){ localStorage.removeItem(FSK); fsScan(true); }
+function fsAgo(t){ if(!t) return 'not yet'; const m=Math.round((Date.now()-t)/60000); return m<1?'just now':m<60?m+' min ago':m<1440?Math.round(m/60)+' h ago':new Date(t).toLocaleDateString('en-GB',{day:'numeric',month:'short'}); }
+function fsBoxHTML(){
+  const i=fsInfo();
+  if(!FS_OK) return `<div class="fsbox"><b>Linked folder</b><div class="hint">Open the app in Microsoft Edge or Google Chrome on a computer to link a OneDrive folder.</div></div>`;
+  if(!FSDIR) return `<div class="fsbox"><b>Link a OneDrive folder</b><div class="hint">Keep every OPR and Noa C&amp;S report in one synced OneDrive folder. Link it once; the app loads new and changed reports each time it opens.</div><button class="btn" id="fsLink" style="padding:7px 8px">📁 Link OneDrive folder</button></div>`;
+  const st=FSSTATE==='busy'?'<span class="fsdot busy"></span>checking…':FSSTATE==='need'?'<span class="fsdot need"></span>access needed':'<span class="fsdot ok"></span>linked';
+  return `<div class="fsbox"><div class="fsh"><b>📁 ${esc(FSDIR.name)}</b><span>${st}</span></div>
+    <div class="hint" style="margin:2px 0 6px">${i.n||0} report file${i.n===1?'':'s'} · checked ${fsAgo(i.at)}${i.last?` · ${i.last} loaded`:''}</div>
+    ${FSSTATE==='need'?`<button class="btn" id="fsAllow" style="padding:7px 8px">Allow folder access</button>`:`<div class="duo"><button class="btn" id="fsCheck" style="padding:7px 8px" ${FSSTATE==='busy'?'disabled':''}>Check now</button><button class="btn sec" id="fsReload" style="padding:7px 8px" ${FSSTATE==='busy'?'disabled':''} title="Read every file in the folder again">Reload all</button></div>`}
+    <button class="lnk" id="fsUnlink">Unlink folder</button></div>`;
+}
+function fsBind(){
+  const b=(id,f)=>{ const e=$(id); if(e) e.onclick=f; };
+  b('fsLink',fsLink); b('fsAllow',fsAllow); b('fsCheck',()=>fsScan(true)); b('fsReload',fsReloadAll); b('fsUnlink',fsUnlink);
+}
+function fsRefreshUI(){
+  const tb=$('fsBtn');
+  if(tb){ tb.classList.toggle('need',FSSTATE==='need'); tb.classList.toggle('ok',FSSTATE==='ok');
+    tb.innerHTML=!FSDIR?'📁 Link OneDrive folder':FSSTATE==='need'?'📁 Allow OneDrive folder':FSSTATE==='busy'?'📁 Checking…':'📁 '+esc(FSDIR.name);
+    tb.title=!FSDIR?'Link the synced OneDrive folder that holds the OPRs and C&S reports':FSSTATE==='need'?'The browser needs your OK to read the linked folder again':'Linked folder — click to check for new reports'; }
+  const bx=document.querySelector('.fsbox'); if(bx){ bx.outerHTML=fsBoxHTML(); fsBind(); }
+}
+async function fsInit(){
+  if(!FS_OK){ fsRefreshUI(); return; }
+  const h=await fsLoad(); if(!h){ fsRefreshUI(); return; }
+  FSDIR=h; let p='prompt'; try{ p=await h.queryPermission({mode:'read'}); }catch(e){}
+  if(p==='granted'){ FSSTATE='ok'; fsScan(false); } else { FSSTATE='need'; fsRefreshUI(); }
+}
+document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible'&&FSDIR&&FSSTATE==='ok'&&Date.now()-(fsInfo().at||0)>120000) fsScan(false); });
 const handleFile=fl=>handleFiles([fl]);
 $('uploadBtn').onclick = () => $('file').click();
+$('fsBtn').onclick = () => { if(!FSDIR) fsLink(); else if(FSSTATE==='need') fsAllow(); else fsScan(true); };
 document.querySelectorAll('#plantSeg button').forEach(b=>b.onclick=()=>{ if(!b.disabled) switchPage(b.dataset.v); });
 document.querySelectorAll('#modeSeg button').forEach(b=>b.onclick=()=>{ if(b.disabled||S.mode===b.dataset.v) return; S.mode=b.dataset.v; save(); renderAll(); });
 // ---------- colour themes ----------
@@ -1539,13 +1612,15 @@ function libraryHTML(){
   const cnt=x=>{ if(!pl) return ''; const c=libCount(x,pl); if(c!=null) return c+' shifts'; if(PU.src==='opr') return hasOpr(x)?`<em style="color:var(--amber);font-style:normal">re-upload OPR</em>`:'<span style="color:var(--dim)">no OPR</span>'; return '<span style="color:var(--dim)">no C&amp;S data</span>'; };
   const bad=x=>{ const s=x.src||(x.name?{opr:x.name}:{}); return (s.opr?`<span class="src" title="${esc(s.opr)}">OPR</span>`:'')+(s.hist?`<span class="src" title="${esc(s.hist)}">HIST</span>`:'')+(s.cs?`<span class="src" title="${esc(s.cs)}">C&amp;S</span>`:''); };
   return `<div class="sec"><h5><span>Report library</span><span>${lib.length} month${lib.length===1?'':'s'}</span></h5>
+    ${fsBoxHTML()}
     <div class="lib">${lib.map(x=>`<div class="libit"><b>${E.MON[+x.ym.slice(5)-1]} ${x.ym.slice(0,4)}${bad(x)}</b><span>${cnt(x)}</span><button data-ym="${x.ym}" title="Remove this month (all plants)">✕</button></div>`).join('')||'<div class="modelstate">Empty — upload OPRs and/or the C&amp;S plant report.</div>'}</div>
     <div class="duo"><button class="btn" id="libAdd" style="padding:7px 8px">+ Add reports</button><button class="btn sec" id="libClear" style="padding:7px 8px" ${lib.length?'':'disabled'}>Clear all</button></div>
     <div class="hint">One upload for all: an <b>OPR</b> fills Wet Plant, IOPP and NDCMP; the <b>Noa C&amp;S Plant Report</b> fills ISS, Metso (NIM), Sandvik and Metso (KTM) for every month it holds; the multi-year <b>Wet Plant shift sheet</b> (HIST) adds Wet Plant history for months without an OPR. Stored in this browser; re-uploading a month replaces that report's plants only.</div></div>`;
 }
 function bindLibrary(){
+  fsBind();
   $('libAdd').onclick=()=>$('file').click();
-  $('libClear').onclick=()=>{ if(!confirm('Remove all stored reports and trained models from this browser?')) return; libGet().forEach(x=>libRemove(x.ym)); libPut([]); S.ds=null; retrain(true); };
+  $('libClear').onclick=()=>{ if(!confirm('Remove all stored reports and trained models from this browser?')) return; localStorage.removeItem(FSK); libGet().forEach(x=>libRemove(x.ym)); libPut([]); S.ds=null; retrain(true); };
   document.querySelectorAll('.libit button').forEach(b=>b.onclick=()=>{ const ym=b.dataset.ym; if(!confirm(`Remove ${E.MON[+ym.slice(5)-1]} ${ym.slice(0,4)} from the library?`)) return; libRemove(ym); S.ds=S.page==='flow'?null:libMerged(); S.set.endDay=null; if(S.page==='flow') renderAll(); else retrain(true); });
 }
 function renderRail(){
@@ -2971,6 +3046,7 @@ dsInit().then(()=>{
 if(load()&&S.ds){ applyUrl(); try{ S.model=E.train(S.ds,trainOpt()); if(S.input.Al2O3==null){ const l=S.model.romStats.last; S.input.Al2O3=+l.X.Al2O3.toFixed(2);} runPredict(); }catch(err){ console.error(err); } }
 else applyUrl();
 renderAll();
+fsInit();
 });
 })();
 </script>
