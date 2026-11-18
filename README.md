@@ -1,4 +1,4 @@
-# Quality Value Chain — Noamundi & Katamati · v1.11.0
+# Quality Value Chain — Noamundi & Katamati · v1.12.0
 
 Installable web app (PWA). Trains ROM → product quality (Fe, SiO2, Al2O3, P) from the monthly
 Ore Processing Report (Wet Plant, IOPP, NDCMP) and the Noa C&S Plant Report (ISS, Metso (NIM),
@@ -21,6 +21,7 @@ Installed copies pick up the update on the next launch (the version in `sw.js` c
 
 ## Version history
 - 1.9.1 — Pasting ROM quality in Plant summary (or editing it there) now also sets the ROM inputs on each plant's Predict page, marked “from Plant summary”.
+- 1.12.0 — Outlier screening in every calculation (training, band analysis, backtest, band finder, Plant summary, Visualise averages) for all plants: physically impossible assays are always dropped (Fe 30–70, SiO2 ≤35, Al2O3 ≤25, P ≤0.6 %); shifts with an extreme ROM grade and product assays with an extreme product−ROM delta (beyond 4 robust σ = median ± 4×1.48·MAD) are ignored. Model settings: Outlier filter Off / Strict 3σ / Normal 4σ (default) / Loose 6σ, with the count of ignored shifts and assays.
 - 1.11.0 — Full-screen button on every flowsheet (Wet, IOPP, NDCMP grade flow / equipment and mass flow, Plant summary); Esc or the button exits. Plant summary flowsheet: flowing-dot animation on all lines, and CLO / fines / slime-reject lines into the site and all-plant totals now run in separate lanes so fines and losses no longer merge. Default t / trip = 100 for both sites (old 35 defaults are moved to 100).
 - 1.10.0 — Plant summary shows a flowsheet (default): ROM feed → plant (equipment icon) → predicted products → Noamundi / Katamati site totals → all fines, all CLO, slime & reject. Line width = tonnes, value colour = focus element, ✓/✕ against the fines Al₂O₃ limit; click a plant to open its Predict page. Flowsheet | Cards toggle keeps the old card view.
 - 1.9.0 — Wet Fines = calculated (CF bypass + Jig Conc + HC Conc), W-6 sample shown as a check; import of the multi-year Wet Plant shift sheet (HIST); best band widths as Wet Plant defaults (Fe 1.0 · SiO2 0.1 · Al2O3 0.5 · P 0.01, from a 30-month backtest), editable per plant; band-width finder for any training window; training window as last N calendar days or a date range; report data stored in IndexedDB (room for many years).

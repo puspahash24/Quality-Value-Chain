@@ -315,7 +315,7 @@ body.fsopen{overflow:hidden}
 <body>
 <div class="top">
   <img class="brandimg" src="icon.svg" alt="">
-  <div class="ttl"><small id="plantEyebrow">NOAMUNDI · NRD · WET PLANT</small><b>Quality Value Chain <span class="ver" id="appVer">v1.11.0</span></b></div>
+  <div class="ttl"><small id="plantEyebrow">NOAMUNDI · NRD · WET PLANT</small><b>Quality Value Chain <span class="ver" id="appVer">v1.12.0</span></b></div>
   <div class="plantseg" id="plantSeg"><button data-v="wet" class="on">Wet Plant</button><button data-v="iopp">IOPP</button><button data-v="dry" title="NDCMP and the four C&amp;S plants">NDCMP · C&amp;S</button><button data-v="summary" title="All plants: predicted product quality from the ROM Monitoring App shift report">Plant summary</button><button data-v="flow" title="Downstream material flow (under construction)">Material flow</button></div>
   <div class="plantseg modeseg" id="modeSeg" title="Switch between the predictive model and what the plants actually processed"><button data-v="predict" class="on">Predict</button><button data-v="vis">Visualise</button></div>
   <div class="sp"></div>
@@ -905,17 +905,48 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   function rowW(r, p) { const k = TKEY[p]; if (p && k && r.t && r.t[k] != null) return Math.max(0, r.t[k]); return Math.max(0, romTons(r)); }
   function wMean(vals, ws) { const W = ws.reduce((a, v) => a + v, 0); return W > 0 ? vals.reduce((a, v, i) => a + ws[i] * v, 0) / W : mean(vals); }
 
-  function basisRows(ds, basis) {
-    if (basis === 'shift') return ds.shifts.filter(r => r.rom).map(r => ({ ...r, X: r.rom }));
-    if (basis === 'dayPred') return ds.days.filter(r => r.romPred && r.rom).map(r => ({ ...r, X: r.romPred }));
-    return ds.days.filter(r => r.rom).map(r => ({ ...r, X: r.rom }));
+  // ---- v1.12: outlier screening (physical limits + robust 4-sigma fence on ROM grade and on product−ROM delta) ----
+  const QC_LIM = { Fe: [30, 70], SiO2: [0.05, 35], Al2O3: [0.05, 25], P: [0.005, 0.6] };
+  const QC_FLOOR = { Fe: 0.4, SiO2: 0.15, Al2O3: 0.15, P: 0.004 }, QC_K = 4;
+  function robustFence(vals, e, K) {
+    if (!(K > 0)) return null;
+    const v = vals.filter(x => x != null && isFinite(x)).sort((a, b) => a - b); if (v.length < 8) return null;
+    const q = a => { const i = (a.length - 1) / 2; return (a[Math.floor(i)] + a[Math.ceil(i)]) / 2; };
+    const med = q(v), mad = q(v.map(x => Math.abs(x - med)).sort((a, b) => a - b)) * 1.4826;
+    const sd = Math.max(mad, QC_FLOOR[e]); return [med - K * sd, med + K * sd];
+  }
+  function qcRows(rows, xk, K) {
+    xk = xk || 'X'; K = K == null ? QC_K : +K; const st = { rom: 0, prod: 0, of: rows.length };
+    const inLim = (v, e) => v == null || v === '' || (isFinite(v) && v >= QC_LIM[e][0] && v <= QC_LIM[e][1]);
+    let R = rows.filter(r => r[xk] && r[xk].Al2O3 != null && EL.every(e => inLim(r[xk][e], e)));
+    const fR = {}; for (const e of EL) fR[e] = robustFence(R.map(r => r[xk][e]), e, K);
+    R = R.filter(r => EL.every(e => !fR[e] || r[xk][e] == null || (r[xk][e] >= fR[e][0] && r[xk][e] <= fR[e][1])));
+    st.rom = rows.length - R.length;
+    const keys = [...new Set(R.flatMap(r => r.p ? Object.keys(r.p) : []))];
+    const drop = new Map();
+    for (const k of keys) {
+      const has = R.filter(r => r.p[k] && r.p[k].Fe != null);
+      const bad = new Set(has.filter(r => !EL.every(e => inLim(r.p[k][e], e))));
+      for (const e of EL) { const ok = has.filter(r => !bad.has(r) && r.p[k][e] != null && r[xk][e] != null);
+        const f = robustFence(ok.map(r => r.p[k][e] - r[xk][e]), e, K); if (!f) continue;
+        for (const r of ok) { const d = r.p[k][e] - r[xk][e]; if (d < f[0] || d > f[1]) bad.add(r); } }
+      for (const r of bad) { if (!drop.has(r)) drop.set(r, []); drop.get(r).push(k); st.prod++; }
+    }
+    const out = R.map(r => { const ks = drop.get(r); if (!ks) return r; const p2 = Object.assign({}, r.p); ks.forEach(k => delete p2[k]); return Object.assign({}, r, { p: p2 }); });
+    out.qc = st; return out;
+  }
+  function basisRows(ds, basis, K) {
+    const raw = basis === 'shift' ? ds.shifts.filter(r => r.rom).map(r => ({ ...r, X: r.rom }))
+      : basis === 'dayPred' ? ds.days.filter(r => r.romPred && r.rom).map(r => ({ ...r, X: r.romPred }))
+      : ds.days.filter(r => r.rom).map(r => ({ ...r, X: r.rom }));
+    return qcRows(raw, 'X', K);
   }
 
   function train(ds, opt) {
     opt = Object.assign({ basis: 'shift', nDays: 10, endDay: null, method: 'band', band: 0.2 }, opt || {});
     const BW = Object.assign({}, DEF_BANDS, typeof opt.band === 'number' ? { Al2O3: opt.band } : {}, opt.bands || {});
     for (const e of EL) BW[e] = Math.min(BLIM[e][1], Math.max(BLIM[e][0], +BW[e] || DEF_BANDS[e]));
-    const all = basisRows(ds, opt.basis);
+    const all = basisRows(ds, opt.basis, opt.qcK);
     if (!all.length) throw new Error('No rows with valid Wet ROM quality for this basis.');
     let opDays = [...new Set(all.map(r => r.day))].sort((a, b) => a - b);
     const upTo = opt.endDay ? opDays.filter(d => d <= +opt.endDay) : opDays;
@@ -926,6 +957,8 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     const win = all.filter(inWin);
     const minN = opt.basis === 'shift' ? 6 : 4;
     const notes = [];
+    const qcs = all.qc || { rom: 0, prod: 0, of: all.length };
+    if (qcs.rom || qcs.prod) notes.push(`Outliers ignored: ${qcs.rom} shift${qcs.rom === 1 ? '' : 's'} with an extreme ROM grade, ${qcs.prod} extreme product assay${qcs.prod === 1 ? '' : 's'} (outside physical limits or more than ${opt.qcK == null ? QC_K : opt.qcK} robust σ from the typical value / delta).`);
 
     const cells = {};
     const groups = [];
@@ -989,7 +1022,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
 
     return { opt, basis: opt.basis, method: opt.method, band: BW.Al2O3, bands: BW, winDays, endDay, nRows: win.length, cells, romEst, notes,
       romStats: { mean: wMean(romAl, wR), min: Math.min(...romAl), max: Math.max(...romAl), last: win[win.length - 1] },
-      yields, trainedAt: new Date().toISOString(), month: ds.month, fileName: ds.fileName };
+      yields, qc: qcs, trainedAt: new Date().toISOString(), month: ds.month, fileName: ds.fileName };
   }
 
   function cellFor(model, p, jig) {
@@ -1100,7 +1133,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     return { rom: null, never: true, hi };
   }
   function backtest(model, ds) {
-    const rows = basisRows(ds, model.basis);
+    const rows = basisRows(ds, model.basis, model.opt && model.opt.qcK);
     const win = new Set(model.winDays);
     return rows.map(r => {
       const jfr = r.jig && r.t && r.t.CF > 0 ? Math.min(1, (r.t.JF || 0) / r.t.CF) : 0;
@@ -1206,7 +1239,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     return res;
   }
 
-  return { CFG, plant: CFG.id, detect, parseMonths, detectHist, parseHist, parseFlexSheet, rowW, romTons, wMean, SHRINK, DEF_BANDS, BLIM, MON, ymFromName, fmtOrd, mergeDatasets, solveLimitNum, cellDelta, bandOf, EL, PRODUCTS, PKEYS, MB_P, parseWorkbook, train, predict, solveLimit, backtest, cellFor };
+  return { CFG, plant: CFG.id, qcRows, detect, parseMonths, detectHist, parseHist, parseFlexSheet, rowW, romTons, wMean, SHRINK, DEF_BANDS, BLIM, MON, ymFromName, fmtOrd, mergeDatasets, solveLimitNum, cellDelta, bandOf, EL, PRODUCTS, PKEYS, MB_P, parseWorkbook, train, predict, solveLimit, backtest, cellFor };
   } // end makeEngine
 
   const api = makeEngine(PLANT_CFG.wet);           // default export = Wet Plant (back-compatible)
@@ -1241,7 +1274,7 @@ function bandsSet(){ return bandsFor(S.plant); }
 function winSet(){ const w=S.set.win||(S.set.win={mode:'last',n:+S.set.nDays||9999,from:'',to:''}); return w; }
 function opDaysOf(ds){ return ds?[...new Set(ds.shifts.filter(r=>r.rom).map(r=>r.day))].sort((a,b)=>a-b):[]; }
 function trainOpt(pl,ds){ pl=pl||S.plant; ds=ds||S.ds; const w=winSet(), od=opDaysOf(ds), last=od.length?od[od.length-1]:null;
-  const o={basis:pl===S.plant?S.set.basis:'shift',nDays:99999,method:S.set.method||'band',bands:bandsFor(pl)};
+  const o={basis:pl===S.plant?S.set.basis:'shift',nDays:99999,method:S.set.method||'band',bands:bandsFor(pl),qcK:S.set.qcK==null?4:+S.set.qcK};
   if(w.mode==='range'){ if(w.to) o.endDay=iso2ord(w.to); if(w.from) o.startDay=iso2ord(w.from); }
   else { const end=pl===S.plant&&S.set.endDay?+S.set.endDay:last; if(end) o.endDay=end; if(end&&+w.n>0&&+w.n<9999) o.startDay=addDays(end,-(+w.n-1)); }
   return o; }
@@ -1562,6 +1595,9 @@ ${PU.jig?`    <div class="duo">
     <button class="btn sec" id="bfGo" style="margin-top:8px;width:100%;padding:7px 8px" ${PU.tuneP&&PU.tuneP.length?'':'disabled'}>Find best band widths for this window</button>
     <div class="f" style="margin-top:8px"><label>Δ model</label></div>
     <div class="pills" id="methP"><button data-v="band" class="${(S.set.method||'band')==='band'?'on':''}" title="Each element's delta looked up in bands of ${PU.rom} grade of that element">ROM grade bands</button><button data-v="linear" class="${S.set.method==='linear'?'on':''}" title="Single delta, optionally sloped with ROM grade">Linear</button></div>
+    <div class="f" style="margin-top:8px"><label>Outlier filter · ignore extreme assays</label></div>
+    <div class="pills" id="qcP">${[[0,'Off'],[3,'Strict 3σ'],[4,'Normal 4σ'],[6,'Loose 6σ']].map(([v,l])=>`<button data-v="${v}" class="${(S.set.qcK==null?4:+S.set.qcK)===v?'on':''}" title="${v?`Ignore shifts whose ROM grade, and product assays whose product−ROM delta, lie more than ${v} robust σ (median ± ${v}×1.48·MAD) from the typical value`:'Only drop physically impossible values'}">${l}</button>`).join('')}</div>
+    <div class="hint" style="margin-top:4px">${m&&m.qc?`${m.qc.rom} shift${m.qc.rom===1?'':'s'} (extreme ROM) and ${m.qc.prod} product assay${m.qc.prod===1?'':'s'} ignored out of ${m.qc.of} shifts. Physical limits always apply (Fe 30–70, SiO₂ ≤35, Al₂O₃ ≤25, P ≤0.6 %).`:''}</div>
     <div class="bwrow ${(S.set.method||'band')==='band'?'':'off'}"><label>Band width · ${PU.rom} grade %</label>
       ${EL.map(el=>{ const c=E.cellFor(m,PU.densP,true); const B=c?c.el[el].bins:[]; const med=B.length?B.map(b=>b.n).sort((a,b)=>a-b)[Math.floor(B.length/2)]:0;
         return `<div class="bwel"><span class="bwn">${ELN[el]}</span><div class="pills">${BPRE[el].map(v=>`<button data-e="${el}" data-v="${v}" class="${Math.abs(bw(el)-v)<1e-9?'on':''}">${v}</button>`).join('')}</div>
@@ -1595,6 +1631,7 @@ ${PU.jig?`    <div class="duo">
   if($('winFrom')){ $('winFrom').onchange=rg; $('winTo').onchange=rg; }
   if($('bfGo')) $('bfGo').onclick=()=>{ S.tab='model'; renderMain(); setTimeout(()=>{ const b=$('bfRun'); if(b) b.click(); },50); };
   $('methP').querySelectorAll('button').forEach(b=>b.onclick=()=>{ S.set.method=b.dataset.v; retrain(false); });
+  if($('qcP')) $('qcP').querySelectorAll('button').forEach(b=>b.onclick=()=>{ S.set.qcK=+b.dataset.v; sumClear(); retrain(false); });
   const setBw=(el,v)=>{ v=+v; const [lo,hi]=E.BLIM[el]; const inp=document.querySelector(`.bwIn[data-e="${el}"]`);
     if(!isFinite(v)||v<lo||v>hi){ toast(`${ELN[el]} band width must be between ${lo} and ${hi}`); if(inp) inp.value=fb(bw(el),el); return; }
     S.set.bandsBy=S.set.bandsBy||{}; S.set.bandsBy[S.plant]=Object.assign({},(S.set.bandsBy[S.plant]||{}),{[el]:el==='P'?Math.round(v*10000)/10000:Math.round(v*100)/100}); S.set.method='band'; sumClear(); retrain(false);
@@ -2083,7 +2120,7 @@ function wavg(rows,gv,gw){ let W=0,s=0; for(const r of rows){ const v=gv(r), w=g
 function wsd(rows,gv,gw,m){ if(m==null) return null; let W=0,s=0,n=0; for(const r of rows){ const v=gv(r), w=gw(r); if(v==null||!isFinite(v)||!(w>0)) continue; W+=w; s+=w*(v-m)*(v-m); n++; } return n>1&&W>0?Math.sqrt(s/W):0; }
 function aggregate(pl,ds,r){
   if(!ds||!r) return null; const Ep=V.plants[pl];
-  const D=ds.days.filter(d=>d.day>=r.a&&d.day<=r.b&&d.rom&&d.rom.t>0); if(!D.length) return null;
+  const D=Ep.qcRows(ds.days.filter(d=>d.day>=r.a&&d.day<=r.b&&d.rom&&d.rom.t>0),'rom',S.set.qcK==null?4:+S.set.qcK); if(!D.length) return null;
   const romT=D.reduce((s,d)=>s+d.rom.t,0), rom={}, romSd={};
   EL.forEach(e=>{ rom[e]=wavg(D,d=>d.rom[e],d=>d.rom.t); romSd[e]=wsd(D,d=>d.rom[e],d=>d.rom.t,rom[e]); });
   const t={}; for(const k of Ep.CFG.tKeys) t[k]=D.reduce((s,d)=>s+((d.t&&d.t[k])||0),0);
