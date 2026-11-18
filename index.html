@@ -281,6 +281,10 @@ input[type=range]:disabled{opacity:.35}
 .sumt input.sumin{width:84px;background:var(--panel2);border:1px solid var(--line2);border-radius:5px;color:var(--text);font:13.5px var(--mono);padding:5px 7px;text-align:right}
 .sumt input.sumin.al{font-weight:700}.sumt tr.idle td{opacity:.55}.sumt td .sd{display:block;margin:0}
 .srcb{font:600 10px var(--mono);padding:2px 6px;border-radius:4px;background:color-mix(in srgb,var(--mint) 20%,transparent);color:var(--mint)}.srcb.ed{background:color-mix(in srgb,var(--amber) 20%,transparent);color:var(--amber)}
+.sfwrap{overflow:auto;padding:6px 10px 12px}.sfsvg text{font-family:var(--cond)}
+.sfsvg .sfnm{font:700 15px var(--cond);fill:var(--svgval)}.sfsvg .sfsb{font:11.5px var(--sans);fill:var(--svgmut)}.sfsvg .sfmono{font:12px var(--mono);fill:var(--svgtxt)}
+.sfsvg .sfbig{font:700 21px var(--cond)}.sfsvg .sflab{font:600 11px var(--mono);fill:var(--svgmut)}.sfsvg .sflane{font:700 13px var(--mono);letter-spacing:4px;fill:var(--amber)}.sfsvg .sfh{font:600 10.5px var(--mono);letter-spacing:2.5px;fill:var(--svgdim)}
+.sfsvg .sfgo{cursor:pointer}.sfsvg .sfgo:hover rect{stroke:var(--amber)}.sfsvg .sfgo:hover .sfpl{stroke-width:2.6}
 .pgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:12px;padding:14px}
 .pc{background:var(--panel2);border:1px solid var(--line2);border-radius:10px;padding:12px 13px;cursor:pointer}.pc:hover{border-color:var(--amber)}
 .pch{display:flex;align-items:center;gap:8px}.pch b{font:700 17px var(--cond)}.pch span:last-child{margin-left:auto;font:11px var(--mono);color:var(--muted)}
@@ -303,7 +307,7 @@ input[type=range]:disabled{opacity:.35}
 <body>
 <div class="top">
   <img class="brandimg" src="icon.svg" alt="">
-  <div class="ttl"><small id="plantEyebrow">NOAMUNDI · NRD · WET PLANT</small><b>Quality Value Chain <span class="ver" id="appVer">v1.9.0</span></b></div>
+  <div class="ttl"><small id="plantEyebrow">NOAMUNDI · NRD · WET PLANT</small><b>Quality Value Chain <span class="ver" id="appVer">v1.10.0</span></b></div>
   <div class="plantseg" id="plantSeg"><button data-v="wet" class="on">Wet Plant</button><button data-v="iopp">IOPP</button><button data-v="dry" title="NDCMP and the four C&amp;S plants">NDCMP · C&amp;S</button><button data-v="summary" title="All plants: predicted product quality from the ROM Monitoring App shift report">Plant summary</button><button data-v="flow" title="Downstream material flow (under construction)">Material flow</button></div>
   <div class="plantseg modeseg" id="modeSeg" title="Switch between the predictive model and what the plants actually processed"><button data-v="predict" class="on">Predict</button><button data-v="vis">Visualise</button></div>
   <div class="sp"></div>
@@ -1290,7 +1294,7 @@ let PU = PUI.wet;
 let ORDER = PU.ORDER, SHORTN = PU.SHORTN;
 
 // ---------- persistence ----------
-function save(){ S.inputs[S.plant]=S.input; S.selBy[S.plant]=S.sel; try{ localStorage.setItem(LS, JSON.stringify({set:S.set,plant:S.plant,inputs:S.inputs,selBy:S.selBy,bandSelBy:S.bandSelBy,limits:S.limits,page:S.page,mode:S.mode,dryPlant:S.dryPlant,range:S.range,vtab:S.vtab,fview:S.fview})); }catch(e){} }
+function save(){ S.inputs[S.plant]=S.input; S.selBy[S.plant]=S.sel; try{ localStorage.setItem(LS, JSON.stringify({set:S.set,plant:S.plant,inputs:S.inputs,selBy:S.selBy,bandSelBy:S.bandSelBy,limits:S.limits,page:S.page,mode:S.mode,dryPlant:S.dryPlant,range:S.range,vtab:S.vtab,fview:S.fview,sumView:S.sumView})); }catch(e){} }
 // ---------- OPR library (each month stored separately, merged for training) ----------
 const LIBK='wpvc.lib', OPRK='wpvc.opr.';
 const DSTORE=new Map(); let IDB=null;
@@ -1339,7 +1343,7 @@ function load(){
     if(o.selBy) S.selBy=o.selBy; else if(o.sel) S.selBy.wet=o.sel;
     if(o.bandSelBy) S.bandSelBy=o.bandSelBy;
     if(o.plant&&PUI[o.plant]) S.plant=o.plant;
-    ['page','mode','dryPlant','range','vtab','fview'].forEach(k=>{ if(o[k]!=null) S[k]=o[k]; });
+    ['page','mode','dryPlant','range','vtab','fview','sumView'].forEach(k=>{ if(o[k]!=null) S[k]=o[k]; });
     if(!['wet','iopp','dry','flow','summary'].includes(S.page)) S.page='wet';
     if(o.ds){ delete o.ds; try{ localStorage.setItem(LS,JSON.stringify(o)); }catch(e){} }
   }
@@ -1510,7 +1514,7 @@ function renderRail(){
   r.innerHTML=`
   <div class="sec"><h5><span>Shift feed · ROM Al₂O₃</span><span>%</span></h5>
     <div class="stepper"><button id="stMinus">−</button><input id="inAl" type="number" step="0.01" value="${i.Al2O3??''}"><button id="stPlus">+</button></div>
-    <div class="unit">from ROM Monitoring App · ±0.05 per step</div>
+    <div class="unit">${S.input._sumAl!=null&&Math.abs(+S.input.Al2O3-S.input._sumAl)<1e-9?`<b style="color:var(--mint)">● from Plant summary</b> ${esc(S.input._sumTag||'')}`:'from ROM Monitoring App'} · ±0.05 per step</div>
     <div class="trip">
       <div class="f"><label>Fe</label><input id="inFe" type="number" step="0.01" placeholder="${ph('Fe')}" value="${i.Fe??''}"></div>
       <div class="f"><label>SiO₂</label><input id="inSiO2" type="number" step="0.01" placeholder="${ph('SiO2')}" value="${i.SiO2??''}"></div>
@@ -2506,6 +2510,16 @@ function sumState(){
     S.sum=Object.assign({date:'',shift:'',rows:{},tpt:{Noamundi:35,Katamati:35},lim:4.5,jf:null,raw:''},o||{}); }
   return S.sum;
 }
+function sumPush(only){
+  const st=sumState(); let n=0;
+  for(const pl of SUM_PL){ if(only&&pl!==only) continue; const r=st.rows[pl]; if(!r||r.Al2O3==null||r.Al2O3==='') continue;
+    const nv={Al2O3:+r.Al2O3,Fe:r.Fe!=null&&r.Fe!==''?+r.Fe:'',SiO2:r.SiO2!=null&&r.SiO2!==''?+r.SiO2:'',P:r.P!=null&&r.P!==''?+r.P:'',t:sumTonnes(pl,r)||''};
+    if(pl==='wet') nv.jf=st.jf!=null?st.jf:(S.inputs.wet&&S.inputs.wet.jf!=null?S.inputs.wet.jf:33);
+    nv._sumAl=nv.Al2O3; nv._sumTag=(st.date?st.date.split('-').reverse().join('-'):'')+(st.shift?' · '+st.shift+' shift':'');
+    S.inputs[pl]=Object.assign({},S.inputs[pl]||{},nv); if(S.plant===pl&&S.input){ Object.assign(S.input,nv); S.inputs[pl]=S.input; } n++; }
+  S.sumTag=st.date?`Plant summary · ${st.date}${st.shift?' '+st.shift:''}`:'Plant summary';
+  if(S.model&&S.input&&S.input.Al2O3!=null){ try{ runPredict(); }catch(_){} }
+  save(); return n; }
 function sumSave(){ try{ localStorage.setItem('wpvc.sum',JSON.stringify(S.sum)); }catch(_){} }
 function sumModel(pl){
   if(SM[pl]!==undefined) return SM[pl];
@@ -2597,11 +2611,11 @@ function renderSumRail(){
     +libraryHTML();
   $('sumRead').onclick=()=>{ const txt=$('sumPaste').value; const p=parsePaste(txt); const n=Object.keys(p.rows).length;
     if(!n){ $('sumMsg').innerHTML=`<span class="warn">No plant rows found.</span> Paste the message with its QVC1 code, or a table with Plant and Al2O3 columns.${p.bad?' The code looks cut off or changed — copy the whole message again.':''}`; return; }
-    st.rows=p.rows; st.date=p.date||''; st.shift=p.shift||''; st.raw=txt; sumSave(); renderAll();
-    toast(`${n} plant${n>1?'s':''} read from ${p.how==='code'?'the QVC code':p.how==='table'?'the table':'the text'}${p.bad?` · ${p.bad} code(s) unreadable`:''}${p.unknown.length?' · not recognised: '+esc(p.unknown.join(', ')):''}`,5000); };
+    st.rows=p.rows; st.date=p.date||''; st.shift=p.shift||''; st.raw=txt; sumSave(); const np=sumPush(); renderAll();
+    toast(`${n} plant${n>1?'s':''} read from ${p.how==='code'?'the QVC code':p.how==='table'?'the table':'the text'}${p.bad?` · ${p.bad} code(s) unreadable`:''}${p.unknown.length?' · not recognised: '+esc(p.unknown.join(', ')):''} · ROM values also set on the ${np} plant page${np>1?'s':''} (Predict)`,6000); };
   $('sumClr').onclick=()=>{ st.rows={}; st.date=''; st.shift=''; st.raw=''; sumSave(); renderAll(); };
   const num=(id,fn)=>{ $(id).onchange=()=>{ fn($(id).value===''?null:+$(id).value); sumSave(); renderSumMain(); }; };
-  num('tptN',v=>st.tpt.Noamundi=v); num('tptK',v=>st.tpt.Katamati=v); num('sumJf',v=>st.jf=v==null?null:Math.max(0,Math.min(40,v))); num('sumLim',v=>st.lim=v||4.5);
+  num('tptN',v=>{ st.tpt.Noamundi=v; sumPush(); }); num('tptK',v=>{ st.tpt.Katamati=v; sumPush(); }); num('sumJf',v=>{ st.jf=v==null?null:Math.max(0,Math.min(40,v)); sumPush('wet'); }); num('sumLim',v=>st.lim=v||4.5);
   $('sumCopy').onclick=async()=>{ const t=sumTable('\t'); try{ await navigator.clipboard.writeText(t); $('sumMsg2').textContent='Copied — paste into Excel.'; }catch(_){ $('sumMsg2').textContent='Copy blocked by the browser — use Download CSV.'; } };
   $('sumCsv').onclick=()=>{ const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob(['﻿'+sumTable(',')],{type:'text/csv'})); a.download=`Plant_summary_${st.date||'today'}${st.shift?'_'+st.shift:''}.csv`; a.click(); };
   bindLibrary();
@@ -2623,6 +2637,96 @@ function sumCombined(R){
     {n:'CLO (sized ore)',f:'Wet Plant + Katamati C&S',kind:'clo',b:blendOf(pick([...NOA,...KAT],'clo')),col:'var(--steel)'},
     {n:'Slime & reject',f:'losses — not in any product',kind:'loss',b:blendOf(pick([...NOA,...KAT],'loss')),col:'var(--rust)'}]; }
 // ---------- main ----------
+// ================= v1.10: Plant summary flowsheet =================
+const SF_IC={wet:'scrubber',ndcmp:'jaw',iopp:'cyclone',iss:'screen',mnim:'crusher',sandvik:'crusher',mktm:'crusher'};
+const SF_SUB={wet:'scrub · jig · cyclone',ndcmp:'dry crush · screen',iopp:'scrub · hydrocyclone',iss:'ISS · crush · screen',mnim:'crush · screen',sandvik:'crush · screen',mktm:'crush · screen'};
+const SF_NM={wet:'Wet Plant',ndcmp:'NDCMP',iopp:'IOPP',iss:'Noa C&S',mnim:'Metso LT (NIM)',sandvik:'KTM Sandvik',mktm:'KTM Metso'};
+const SF_PNAME={SO:'CLO (sized ore)',WF:'Wet Fines (calc.)',SL:'LRP Slime',JR:'Jig Reject',IF:'IOPP Fines',IS:'IOPP Slime',DF:'NDCMP Fines',FN:'Combined Fines',CLO:'CLO'};
+const SF_KC={fines:'var(--mint)',clo:'var(--steel)',loss:'var(--red)'}, SF_KI={fines:'fines',clo:'clo',loss:'slime'};
+function sumFlowSVG(R,st,e,lim){
+  const NOA=['wet','ndcmp','iopp','iss','mnim'], KAT=['sandvik','mktm'];
+  const run=pl=>!!R[pl], sites=[['N','NOAMUNDI',NOA.filter(run)],['K','KATAMATI',KAT.filter(run)]].filter(s=>s[2].length);
+  if(!sites.length) return '';
+  const N=n=>Math.round(n).toLocaleString('en-IN'), es=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;');
+  const fx=(v,z)=>v==null||isNaN(v)?'—':(+v).toFixed(DP[z]), ELS={Fe:'Fe',SiO2:'Si',Al2O3:'Al',P:'P'};
+  // colour scale for the focus element across everything shown
+  const vals=[]; for(const pl in R){ const x=R[pl]; if(x.r&&x.r[e]!=null&&x.r[e]!=='') vals.push(+x.r[e]); (x.prods||[]).forEach(p=>vals.push(p.v[e])); }
+  const PAL=['#46c29d','#9ccf5a','#f2b33d','#f08a5d','#ef5b4c'];
+  const gc=v=>{ if(v==null||isNaN(v)) return 'var(--svgmut)'; let t;
+    if(e==='Al2O3') t=v<2.5?0:v<3.5?1:v<lim?2:v<6?3:4;
+    else { let lo=Math.min(...vals), hi=Math.max(...vals); if(hi-lo<1e-9) hi=lo+1; let u=(v-lo)/(hi-lo); if(e==='Fe') u=1-u; t=Math.max(0,Math.min(4,Math.floor(u*4.999))); }
+    return PAL[t]; };
+  const others=q=>EL.filter(z=>z!==e).map(z=>`${ELS[z]} ${fx(q[z],z)}`).join('  ');
+  const X={rom:40,plant:400,prod:640,pool:1120,tot:1455}, RW=250, PW=320, CHH=62, GAP=10, PH=96, pw=150;
+  const tmax=Math.max(1,...SUM_PL.map(pl=>R[pl]?R[pl].t||0:0));
+  const wf=(t,mx)=>t>0?Math.max(2,Math.min(14,2+12*Math.sqrt(t/(mx||tmax)))):2;
+  const icon=(k,x,y,w,h)=>`<svg x="${x}" y="${y}" width="${w}" height="${h}" viewBox="0 0 64 52">${EQIS[k]||''}</svg>`;
+  function edge(x0,y0,x1,y1,col,w){ const mx=(x0+x1)/2, r=Math.min(14,Math.abs(y1-y0)/2); let d;
+    if(Math.abs(y1-y0)<1) d=`M${x0},${y0} L${x1-8},${y1}`;
+    else { const s=y1>y0?1:-1; d=`M${x0},${y0} L${mx-r},${y0} Q${mx},${y0} ${mx},${y0+s*r} L${mx},${y1-s*r} Q${mx},${y1} ${mx+r},${y1} L${x1-8},${y1}`; }
+    return `<path d="${d}" fill="none" stroke="var(--panel)" stroke-width="${w+5}"/><path class="sfln" d="${d}" fill="none" stroke="${col}" stroke-width="${w}" opacity=".85"/><path d="M${x1},${y1} l-${(8+w*.6).toFixed(1)},-${(4+w*.45).toFixed(1)} l0,${(8+w*.9).toFixed(1)}z" fill="${col}"/>`; }
+  let y=70, g='', ed='', rows=[];
+  g+=`<text x="${X.rom}" y="40" class="sfh">ROM FEED · FROM ROM APP</text><text x="${X.plant-40}" y="40" class="sfh">PLANT</text><text x="${X.prod}" y="40" class="sfh">PREDICTED PRODUCTS</text><text x="${X.pool}" y="40" class="sfh">SITE TOTALS</text><text x="${X.tot}" y="40" class="sfh">ALL PLANTS</text>`;
+  sites.forEach(([sk,sn,pls],si)=>{
+    if(si) y+=26; g+=`<text x="${X.rom}" y="${y+6}" class="sflane">${sn}</text><line x1="${X.rom+130}" x2="${X.prod+PW}" y1="${y+2}" y2="${y+2}" stroke="var(--line2)" stroke-dasharray="4 4"/>`; y+=22;
+    for(const pl of pls){ const x=R[pl], r=x.r, t=x.t||0;
+      const pr=x.err?[]:(x.prods||[]).filter(p=>p.kind!=='sub');
+      const nC=Math.max(1,pr.length), ph=nC*CHH+(nC-1)*GAP, rh=Math.max(ph,112), top=y, cy=top+rh/2, ry=cy-52;
+      const rq={Fe:r.Fe!=null&&r.Fe!==''?+r.Fe:null,SiO2:r.SiO2!=null&&r.SiO2!==''?+r.SiO2:null,Al2O3:+r.Al2O3,P:r.P!=null&&r.P!==''?+r.P:null};
+      g+=`<g class="sfgo" data-pl="${pl}"><rect x="${X.rom}" y="${ry}" width="${RW}" height="104" rx="10" fill="var(--panel2)" stroke="var(--line2)" stroke-dasharray="6 4"/>
+        <rect x="${X.rom}" y="${ry+10}" width="4" height="84" rx="2" fill="var(--steel)"/><text x="${X.rom+14}" y="${ry+22}" class="sfnm">${es(SF_NM[pl])} ROM</text>
+        <text x="${X.rom+14}" y="${ry+38}" class="sflab">${r.n?r.n+' trips · ':''}${t>0?N(t)+' t':'tonnes not given'}</text>
+        <text x="${X.rom+14}" y="${ry+68}" class="sfbig" style="fill:${gc(rq[e])}">${fx(rq[e],e)}</text><text x="${X.rom+72}" y="${ry+68}" class="sfsb">% ${ELN[e]}</text>
+        <text x="${X.rom+14}" y="${ry+92}" class="sfmono">${others(rq)}</text></g>`;
+      g+=`<g class="sfgo" data-pl="${pl}"><rect class="sfpl" x="${X.plant-pw/2}" y="${cy-42}" width="${pw}" height="84" rx="12" fill="var(--panel2)" stroke="var(--amber)" stroke-width="1.6"/>
+        ${icon(SF_IC[pl],X.plant-30,cy-38,60,48)}<text x="${X.plant}" y="${cy+24}" text-anchor="middle" class="sfnm" style="font-size:14px">${es(SF_NM[pl])}</text><text x="${X.plant}" y="${cy+38}" text-anchor="middle" class="sfsb" style="font-size:10px">${SF_SUB[pl]}</text>${pl==='wet'?`<text x="${X.plant}" y="${cy+56}" text-anchor="middle" class="sflab" style="font-size:10px">jig ${x.jf>0?'ON · '+Math.round(x.jf*100)+'% of CF':'OFF'}</text>`:''}<title>Open ${es(SF_NM[pl])} (Predict)</title></g>`;
+      ed+=edge(X.rom+RW,cy,X.plant-pw/2,cy,'var(--steel)',wf(t));
+      if(x.err){ const cyp=cy-CHH/2;
+        g+=`<g><rect x="${X.prod}" y="${cyp}" width="${PW}" height="${CHH}" rx="9" fill="var(--panel2)" stroke="var(--red)" stroke-dasharray="4 3"/><text x="${X.prod+14}" y="${cyp+26}" class="sfnm" style="font-size:13px;fill:var(--red)">⚠ no prediction</text><text x="${X.prod+14}" y="${cyp+46}" class="sfsb">${es(String(x.err).slice(0,52))}</text></g>`;
+        ed+=edge(X.plant+pw/2,cy,X.prod,cy,'var(--line2)',2); }
+      pr.forEach((p,i)=>{ const cyp=top+(rh-ph)/2+i*(CHH+GAP), ym=cyp+CHH/2, k=p.kind;
+        let note=''; if(pl==='wet'&&p.k==='WF'){ const w6=(x.prods||[]).find(z=>z.k==='W6'); if(w6) note=`W-6 check ${fx(w6.v[e],e)}`; }
+        if((pl==='iss'||pl==='mnim')&&p.k==='FN'){ const cf=(x.prods||[]).find(z=>z.k==='CF'), sf=(x.prods||[]).find(z=>z.k==='SF'); note=[cf?'CF '+fx(cf.v[e],e):'',sf?'SF '+fx(sf.v[e],e):''].filter(Boolean).join(' · '); }
+        if(pl==='ndcmp') note='= ROM';
+        const lm=k==='fines'&&e!=='Al2O3'?'':'';
+        ed+=edge(X.plant+pw/2,cy,X.prod,ym,SF_KC[k],wf(p.t||0));
+        g+=`<g><rect x="${X.prod}" y="${cyp}" width="${PW}" height="${CHH}" rx="9" fill="var(--panel2)" stroke="var(--line2)"/><rect x="${X.prod}" y="${cyp+8}" width="4" height="${CHH-16}" rx="2" fill="${SF_KC[k]}"/>
+          ${icon(SF_KI[k],X.prod+10,cyp+12,38,31)}
+          <text x="${X.prod+56}" y="${cyp+20}" class="sfnm" style="font-size:13.5px">${SF_PNAME[p.k]||SUM_NAME[p.k]||p.k}</text><text x="${X.prod+PW-10}" y="${cyp+20}" text-anchor="end" class="sflab">${p.y!=null?(p.y*100).toFixed(1)+'%':''}${p.t>0?' · '+N(p.t)+' t':''}</text>
+          <text x="${X.prod+56}" y="${cyp+46}" class="sfbig" style="font-size:19px;fill:${gc(p.v[e])}">${fx(p.v[e],e)}</text>
+          <text x="${X.prod+110}" y="${cyp+46}" class="sfmono" style="font-size:11px">${others(p.v)}${p.sd&&p.sd[e]>0.004?'  ±'+fx(p.sd[e],e):''}</text>
+          ${note?`<text x="${X.prod+PW-10}" y="${cyp+58}" text-anchor="end" class="sflab" style="font-size:9.5px">${note}</text>`:''}${lm}</g>`;
+        rows.push({site:sk,k,w:p.t>0?p.t:(t>0?t:1)*(p.y||0),v:p.v,x:X.prod+PW,y:ym}); });
+      y=top+rh+18; }
+  });
+  const blend=L=>{ const W=L.reduce((a,z)=>a+z.w,0); if(!(W>0)) return null; const o={w:W}; EL.forEach(z=>o[z]=L.reduce((a,q)=>a+q.w*q.v[z],0)/W); return o; };
+  const pools=[{id:'NC',site:'N',k:'clo',nm:'Noamundi CLO',sub:'Wet Plant sized ore'},{id:'NF',site:'N',k:'fines',nm:'Noamundi Fines',sub:'Wet · NDCMP · IOPP · C&S · Metso LT'},{id:'NL',site:'N',k:'loss',nm:'Noamundi losses',sub:'slime + jig reject (by-products)'},
+    {id:'KC',site:'K',k:'clo',nm:'Katamati CLO',sub:'Sandvik + Metso'},{id:'KF',site:'K',k:'fines',nm:'Katamati Fines',sub:'Sandvik + Metso'},{id:'KL',site:'K',k:'loss',nm:'Katamati losses',sub:'slime / reject'}];
+  const P=[]; for(const po of pools){ const L=rows.filter(r=>r.site===po.site&&r.k===po.k&&r.w>0); if(!L.length) continue; po.L=L; po.b=blend(L); if(!po.b) continue;
+    const ys=L.map(r=>r.y); po.cy=(Math.min(...ys)+Math.max(...ys))/2; P.push(po); }
+  let last=-1e9; for(const po of P){ if(po.cy-PH/2<last+14) po.cy=last+14+PH/2; last=po.cy+PH/2; }
+  const limTag=b=>e==='Al2O3'||true?`<tspan style="fill:${b.Al2O3<=lim?'var(--mint)':'var(--red)'}">${b.Al2O3<=lim?'✓ Al ≤ '+lim:'✕ Al > '+lim}</tspan>`:'';
+  for(const po of P){ const b=po.b, py=po.cy-PH/2;
+    for(const r of po.L) ed+=edge(r.x,r.y,X.pool,po.cy,SF_KC[po.k],Math.max(2,Math.min(10,2+10*Math.sqrt(r.w/tmax))));
+    g+=`<g><rect x="${X.pool}" y="${py}" width="270" height="${PH}" rx="10" fill="var(--panel2)" stroke="${SF_KC[po.k]}" stroke-width="1.4"/>${icon(SF_KI[po.k],X.pool+10,py+10,40,33)}
+      <text x="${X.pool+58}" y="${py+22}" class="sfnm">${po.nm}</text><text x="${X.pool+58}" y="${py+37}" class="sfsb" style="font-size:10px">${es(po.sub)}</text>
+      <text x="${X.pool+14}" y="${py+70}" class="sfbig" style="fill:${gc(b[e])}">${fx(b[e],e)}</text><text x="${X.pool+72}" y="${py+70}" class="sfsb">% ${ELN[e]}</text><text x="${X.pool+260}" y="${py+70}" text-anchor="end" class="sflab">${N(b.w)} t</text>
+      <text x="${X.pool+14}" y="${py+88}" class="sfmono" style="font-size:11px">${others(b)}</text>
+      ${po.k==='fines'?`<text x="${X.pool+260}" y="${py+88}" text-anchor="end" class="sflab">${limTag(b)}</text>`:''}</g>`; }
+  const TT=[{k:'clo',nm:'All CLO',sub:'sized ore · both sites'},{k:'fines',nm:'All fines',sub:'Noamundi + Katamati'},{k:'loss',nm:'Slime & reject',sub:'by-products · not in any product'}];
+  const TH=120; const tl=[];
+  for(const tt of TT){ const src=P.filter(p=>p.k===tt.k); if(!src.length) continue; const b=blend(src.map(p=>({w:p.b.w,v:p.b}))); if(!b) continue;
+    tl.push({tt,src,b,cy:src.reduce((a,p)=>a+p.cy,0)/src.length}); }
+  tl.sort((a,b)=>a.cy-b.cy); last=-1e9; for(const o of tl){ if(o.cy-TH/2<last+24) o.cy=last+24+TH/2; last=o.cy+TH/2; }
+  for(const {tt,src,b,cy} of tl){ const py=cy-TH/2;
+    for(const s2 of src) ed+=edge(X.pool+270,s2.cy,X.tot,cy,SF_KC[tt.k],Math.max(2,Math.min(14,2+12*Math.sqrt(s2.b.w/(tmax*1.6)))));
+    g+=`<g><rect x="${X.tot}" y="${py}" width="320" height="${TH}" rx="12" fill="var(--panel2)" stroke="${SF_KC[tt.k]}" stroke-width="2.2"/>${icon(SF_KI[tt.k],X.tot+12,py+12,46,38)}
+      <text x="${X.tot+68}" y="${py+28}" class="sfnm" style="font-size:17px">${tt.nm}</text><text x="${X.tot+68}" y="${py+45}" class="sfsb">${tt.sub}</text>
+      <text x="${X.tot+16}" y="${py+86}" class="sfbig" style="font-size:28px;fill:${gc(b[e])}">${fx(b[e],e)}</text><text x="${X.tot+88}" y="${py+86}" class="sfsb">% ${ELN[e]}</text><text x="${X.tot+308}" y="${py+86}" text-anchor="end" class="sflab" style="font-size:12px">${N(b.w)} t</text>
+      <text x="${X.tot+16}" y="${py+108}" class="sfmono">${others(b)}</text>${tt.k==='fines'?`<text x="${X.tot+308}" y="${py+108}" text-anchor="end" class="sflab">${limTag(b)}</text>`:''}</g>`; }
+  const H=Math.max(y, last+20)+10;
+  return `<div class="sfwrap"><svg class="eqsvg sfsvg" viewBox="0 0 1790 ${H}" style="min-width:1100px;width:100%;height:auto">${ed}${g}</svg></div>`;
+}
 function renderSumMain(){
   const st=sumState(), mn=$('main'), R=sumPredict(), e=S.set.focus, lim=+st.lim||4.5;
   const cell=(pl,k,dp)=>{ const r=st.rows[pl]||{}; const v=r[k]; return `<td class="num"><input class="sumin${k==='Al2O3'?' al':''}" data-pl="${pl}" data-k="${k}" type="number" step="any" value="${v==null?'':(+v).toFixed(dp)}" ${k==='Al2O3'&&v!=null&&v!==''?`style="color:${gradeCol('Al2O3',+v)}"`:''}></td>`; };
@@ -2652,17 +2756,19 @@ function renderSumMain(){
       ${EL.map(z=>`<td class="num ${z===e?'fc':''}" ${b&&z==='Al2O3'?`style="color:${gradeCol('Al2O3',b[z])}"`:''}>${b?f(b[z],z):'—'}</td>`).join('')}
       <td>${b&&c.kind==='fines'?(b.Al2O3<=lim?`<span class="lm ok">✓ Al ≤ ${lim}</span>`:`<span class="lm bad">✕ Al &gt; ${lim}</span>`):'—'}</td></tr>`; }
   cT+=`<tr><td class="muted"><b>Total ROM processed</b></td><td></td><td class="num">${TR>0?Math.round(TR).toLocaleString('en-IN'):'—'}</td><td class="num">100%</td><td colspan="5"></td></tr>`;
+  const sv=S.sumView==='cards'?'cards':'flow';
   const when=st.date?`${esc(st.date)}${st.shift?' · '+esc(st.shift)+' shift':''}`:'no shift loaded';
   const any=Object.keys(R).length;
   mn.innerHTML=`<div class="card"><div class="cardh"><h2>ROM feed by plant</h2><span class="sub">${when} · values are editable · leave a plant blank if it is not running</span></div>
       <div class="pane" style="overflow:auto"><table class="t sumt">${inT}</table></div></div>
-    <div class="card"><div class="cardh"><h2>Predicted product quality · plant-wise</h2><span class="sub">${when} · colour &amp; Δ = ${ELN[e]} (change with Focus on the plant pages) · ± = model spread · click a card to open the plant</span></div>
-      ${any?`<div class="pgrid">${cards}</div>`:`<div class="pane"><p class="muted">Paste the plant quality message from the ROM Monitoring App on the left, or type ROM grades into the table above.</p></div>`}</div>
+    <div class="card"><div class="cardh"><h2>Predicted product quality · plant-wise</h2><div class="fvseg" id="sumSeg"><button data-v="flow" class="${sv==='flow'?'on':''}">Flowsheet</button><button data-v="cards" class="${sv==='cards'?'on':''}">Cards</button></div><span class="sub">${when} · ${sv==='flow'?`ROM → plant → predicted products → site totals · line width = tonnes · colour = ${ELN[e]} · click a plant to open it`:`colour &amp; Δ = ${ELN[e]} (change with Focus on the plant pages) · ± = model spread · click a card to open the plant`}</span></div>
+      ${any?(sv==='flow'?sumFlowSVG(R,st,e,lim):`<div class="pgrid">${cards}</div>`):`<div class="pane"><p class="muted">Paste the plant quality message from the ROM Monitoring App on the left, or type ROM grades into the table above.</p></div>`}</div>
     <div class="card"><div class="cardh"><h2>Combined products</h2><span class="sub">tonnage-weighted blend of the predicted products · what goes downstream</span></div>
       <div class="pane" style="overflow:auto"><table class="t">${cT}</table><p class="small muted" style="margin-top:8px">Weights are predicted product tonnes (ROM tonnes × predicted yield). If no tonnes or trips are given, a plant's ROM counts as 1 t, so blends are only meaningful once trips or tonnes are entered.</p></div></div>`;
   mn.querySelectorAll('.sumin').forEach(inp=>inp.onchange=()=>{ const pl=inp.dataset.pl, k=inp.dataset.k; const r=st.rows[pl]||(st.rows[pl]={n:0,src:'edit'});
-    r[k]=inp.value===''?null:+inp.value; r.src='edit'; if(k==='Al2O3'&&r.Al2O3==null&&!r.Fe&&!r.n) delete st.rows[pl]; sumSave(); renderSumMain(); });
-  mn.querySelectorAll('.pc[data-pl]').forEach(c=>c.onclick=()=>{ const pl=c.dataset.pl, r=st.rows[pl]; if(!r) return;
+    r[k]=inp.value===''?null:+inp.value; r.src='edit'; sumPush(pl); if(k==='Al2O3'&&r.Al2O3==null&&!r.Fe&&!r.n) delete st.rows[pl]; sumSave(); renderSumMain(); });
+  mn.querySelectorAll('#sumSeg button').forEach(b=>b.onclick=()=>{ S.sumView=b.dataset.v; save(); renderSumMain(); });
+  mn.querySelectorAll('.pc[data-pl],.sfgo[data-pl]').forEach(c=>c.onclick=()=>{ const pl=c.dataset.pl, r=st.rows[pl]; if(!r) return;
     const nv=Object.assign({Al2O3:+r.Al2O3,Fe:r.Fe!=null?r.Fe:'',SiO2:r.SiO2!=null?r.SiO2:'',P:r.P!=null?r.P:'',t:sumTonnes(pl,r)||''}, pl==='wet'?{jf:st.jf!=null?st.jf:(S.inputs.wet&&S.inputs.wet.jf!=null?S.inputs.wet.jf:33)}:{});
     S.inputs[pl]=Object.assign({},S.inputs[pl]||{},nv); if(S.plant===pl&&S.input) Object.assign(S.input,nv);
     S.mode='predict'; if(DRY.includes(pl)){ S.dryPlant=pl; switchPage('dry'); } else switchPage(pl); if(S.model){ runPredict(); save(); renderAll(); } });
