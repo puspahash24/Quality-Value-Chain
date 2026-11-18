@@ -285,6 +285,14 @@ input[type=range]:disabled{opacity:.35}
 .sfsvg .sfnm{font:700 15px var(--cond);fill:var(--svgval)}.sfsvg .sfsb{font:11.5px var(--sans);fill:var(--svgmut)}.sfsvg .sfmono{font:12px var(--mono);fill:var(--svgtxt)}
 .sfsvg .sfbig{font:700 21px var(--cond)}.sfsvg .sflab{font:600 11px var(--mono);fill:var(--svgmut)}.sfsvg .sflane{font:700 13px var(--mono);letter-spacing:4px;fill:var(--amber)}.sfsvg .sfh{font:600 10.5px var(--mono);letter-spacing:2.5px;fill:var(--svgdim)}
 .sfsvg .sfgo{cursor:pointer}.sfsvg .sfgo:hover rect{stroke:var(--amber)}.sfsvg .sfgo:hover .sfpl{stroke-width:2.6}
+.fsbtn{margin-left:auto;background:var(--panel2);border:1px solid var(--line2);color:var(--text);border-radius:6px;padding:5px 10px;font:600 12px var(--cond);cursor:pointer;white-space:nowrap}.fsbtn:hover{border-color:var(--amber);color:var(--amber)}
+.card.fs{position:fixed;inset:0;z-index:950;margin:0;border-radius:0;overflow:auto;background:var(--bg);display:flex;flex-direction:column}
+.card.fs .fsbtn{background:var(--amber);color:var(--onacc,#1b1406);border-color:var(--amber)}
+.card.fs .flowwrap,.card.fs .sfwrap{flex:1 1 0;min-height:0;display:flex;flex-direction:column}
+.card.fs .flowwrap,.card.fs .sfwrap{overflow:hidden}.card.fs>:not(.cardh):not(.flowwrap):not(.sfwrap){flex:0 0 auto}
+.card.fs .flowwrap>svg,.card.fs .sfwrap>svg{width:100%!important;max-width:100%;height:100%!important;min-width:0!important}
+@media (max-width:900px) and (orientation:portrait){.card.fs .flowwrap,.card.fs .sfwrap{overflow:auto}.card.fs .flowwrap>svg,.card.fs .sfwrap>svg{width:1100px!important;max-width:none;height:auto!important;flex:0 0 auto}}
+body.fsopen{overflow:hidden}
 .pgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:12px;padding:14px}
 .pc{background:var(--panel2);border:1px solid var(--line2);border-radius:10px;padding:12px 13px;cursor:pointer}.pc:hover{border-color:var(--amber)}
 .pch{display:flex;align-items:center;gap:8px}.pch b{font:700 17px var(--cond)}.pch span:last-child{margin-left:auto;font:11px var(--mono);color:var(--muted)}
@@ -307,7 +315,7 @@ input[type=range]:disabled{opacity:.35}
 <body>
 <div class="top">
   <img class="brandimg" src="icon.svg" alt="">
-  <div class="ttl"><small id="plantEyebrow">NOAMUNDI · NRD · WET PLANT</small><b>Quality Value Chain <span class="ver" id="appVer">v1.10.0</span></b></div>
+  <div class="ttl"><small id="plantEyebrow">NOAMUNDI · NRD · WET PLANT</small><b>Quality Value Chain <span class="ver" id="appVer">v1.11.0</span></b></div>
   <div class="plantseg" id="plantSeg"><button data-v="wet" class="on">Wet Plant</button><button data-v="iopp">IOPP</button><button data-v="dry" title="NDCMP and the four C&amp;S plants">NDCMP · C&amp;S</button><button data-v="summary" title="All plants: predicted product quality from the ROM Monitoring App shift report">Plant summary</button><button data-v="flow" title="Downstream material flow (under construction)">Material flow</button></div>
   <div class="plantseg modeseg" id="modeSeg" title="Switch between the predictive model and what the plants actually processed"><button data-v="predict" class="on">Predict</button><button data-v="vis">Visualise</button></div>
   <div class="sp"></div>
@@ -2496,7 +2504,7 @@ function flowView(){
   return note+((S.fview!=='sankey'&&FVIEW_PL.includes(S.plant))?renderEquip():renderFlow()); }
 function fviewSeg(){ if(!FVIEW_PL.includes(S.plant)) return ''; const v=S.fview==='sankey'?'sankey':'equip';
   return `<div class="fvseg" id="fvSeg"><button data-v="equip" class="${v==='equip'?'on':''}">Equipment</button><button data-v="sankey" class="${v==='sankey'?'on':''}">Mass flow</button></div>`; }
-function bindFview(){ document.querySelectorAll('#fvSeg button').forEach(b=>b.onclick=()=>{ S.fview=b.dataset.v; save(); if(S.mode==='vis') renderVisMain(); else renderMain(); }); }
+function bindFview(){ addFsBtns(); document.querySelectorAll('#fvSeg button').forEach(b=>b.onclick=()=>{ S.fview=b.dataset.v; save(); if(S.mode==='vis') renderVisMain(); else renderMain(); }); }
 // ================= v1.8: Plant summary — plant-wise predicted quality from the ROM Monitoring App =================
 const SUM_PL=['wet','iopp','ndcmp','iss','mnim','sandvik','mktm'];
 const QVC_CODE={WET:'wet',IOPP:'iopp',NDCMP:'ndcmp',ISS:'iss',MNIM:'mnim',SAND:'sandvik',MKTM:'mktm'};
@@ -2507,7 +2515,8 @@ const SUM_NAME={SO:'Sized Ore (CLO)',W6:'W-6 sample (check)',WF:'Wet Fines (calc
 const SM={}; // trained model per plant (cleared when the library changes)
 function sumState(){
   if(!S.sum){ let o=null; try{ o=JSON.parse(localStorage.getItem('wpvc.sum')||'null'); }catch(_){}
-    S.sum=Object.assign({date:'',shift:'',rows:{},tpt:{Noamundi:35,Katamati:35},lim:4.5,jf:null,raw:''},o||{}); }
+    S.sum=Object.assign({date:'',shift:'',rows:{},tpt:{Noamundi:100,Katamati:100},lim:4.5,jf:null,raw:''},o||{});
+    if(!S.sum.tptV){ ['Noamundi','Katamati'].forEach(k=>{ if(S.sum.tpt[k]==35) S.sum.tpt[k]=100; }); S.sum.tptV=2; try{ localStorage.setItem('wpvc.sum',JSON.stringify(S.sum)); }catch(_){} } }
   return S.sum;
 }
 function sumPush(only){
@@ -2657,14 +2666,14 @@ function sumFlowSVG(R,st,e,lim){
     else { let lo=Math.min(...vals), hi=Math.max(...vals); if(hi-lo<1e-9) hi=lo+1; let u=(v-lo)/(hi-lo); if(e==='Fe') u=1-u; t=Math.max(0,Math.min(4,Math.floor(u*4.999))); }
     return PAL[t]; };
   const others=q=>EL.filter(z=>z!==e).map(z=>`${ELS[z]} ${fx(q[z],z)}`).join('  ');
-  const X={rom:40,plant:400,prod:640,pool:1120,tot:1455}, RW=250, PW=320, CHH=62, GAP=10, PH=96, pw=150;
+  const X={rom:40,plant:400,prod:640,pool:1120,tot:1520}, RW=250, PW=320, CHH=62, GAP=10, PH=96, pw=150;
   const tmax=Math.max(1,...SUM_PL.map(pl=>R[pl]?R[pl].t||0:0));
   const wf=(t,mx)=>t>0?Math.max(2,Math.min(14,2+12*Math.sqrt(t/(mx||tmax)))):2;
   const icon=(k,x,y,w,h)=>`<svg x="${x}" y="${y}" width="${w}" height="${h}" viewBox="0 0 64 52">${EQIS[k]||''}</svg>`;
-  function edge(x0,y0,x1,y1,col,w){ const mx=(x0+x1)/2, r=Math.min(14,Math.abs(y1-y0)/2); let d;
+  function edge(x0,y0,x1,y1,col,w,lx){ const mx=lx!=null?lx:(x0+x1)/2, r=Math.min(14,Math.abs(y1-y0)/2); let d;
     if(Math.abs(y1-y0)<1) d=`M${x0},${y0} L${x1-8},${y1}`;
     else { const s=y1>y0?1:-1; d=`M${x0},${y0} L${mx-r},${y0} Q${mx},${y0} ${mx},${y0+s*r} L${mx},${y1-s*r} Q${mx},${y1} ${mx+r},${y1} L${x1-8},${y1}`; }
-    return `<path d="${d}" fill="none" stroke="var(--panel)" stroke-width="${w+5}"/><path class="sfln" d="${d}" fill="none" stroke="${col}" stroke-width="${w}" opacity=".85"/><path d="M${x1},${y1} l-${(8+w*.6).toFixed(1)},-${(4+w*.45).toFixed(1)} l0,${(8+w*.9).toFixed(1)}z" fill="${col}"/>`; }
+    return `<path d="${d}" fill="none" stroke="var(--panel)" stroke-width="${w+5}"/><path class="sfln" d="${d}" fill="none" stroke="${col}" stroke-width="${w}" opacity=".85"/><path d="${d}" fill="none" class="eqanim" style="stroke:var(--panel)" stroke-width="${Math.max(1.2,w*0.32).toFixed(1)}" stroke-dasharray="2 22" stroke-linecap="round"/><path d="M${x1},${y1} l-${(8+w*.6).toFixed(1)},-${(4+w*.45).toFixed(1)} l0,${(8+w*.9).toFixed(1)}z" fill="${col}"/>`; }
   let y=70, g='', ed='', rows=[];
   g+=`<text x="${X.rom}" y="40" class="sfh">ROM FEED · FROM ROM APP</text><text x="${X.plant-40}" y="40" class="sfh">PLANT</text><text x="${X.prod}" y="40" class="sfh">PREDICTED PRODUCTS</text><text x="${X.pool}" y="40" class="sfh">SITE TOTALS</text><text x="${X.tot}" y="40" class="sfh">ALL PLANTS</text>`;
   sites.forEach(([sk,sn,pls],si)=>{
@@ -2707,7 +2716,8 @@ function sumFlowSVG(R,st,e,lim){
   let last=-1e9; for(const po of P){ if(po.cy-PH/2<last+14) po.cy=last+14+PH/2; last=po.cy+PH/2; }
   const limTag=b=>e==='Al2O3'||true?`<tspan style="fill:${b.Al2O3<=lim?'var(--mint)':'var(--red)'}">${b.Al2O3<=lim?'✓ Al ≤ '+lim:'✕ Al > '+lim}</tspan>`:'';
   for(const po of P){ const b=po.b, py=po.cy-PH/2;
-    for(const r of po.L) ed+=edge(r.x,r.y,X.pool,po.cy,SF_KC[po.k],Math.max(2,Math.min(10,2+10*Math.sqrt(r.w/tmax))));
+    const lx=X.prod+PW+({clo:34,fines:78,loss:122}[po.k]);
+    for(const r of po.L) ed+=edge(r.x,r.y,X.pool,po.cy,SF_KC[po.k],Math.max(2,Math.min(10,2+10*Math.sqrt(r.w/tmax))),lx);
     g+=`<g><rect x="${X.pool}" y="${py}" width="270" height="${PH}" rx="10" fill="var(--panel2)" stroke="${SF_KC[po.k]}" stroke-width="1.4"/>${icon(SF_KI[po.k],X.pool+10,py+10,40,33)}
       <text x="${X.pool+58}" y="${py+22}" class="sfnm">${po.nm}</text><text x="${X.pool+58}" y="${py+37}" class="sfsb" style="font-size:10px">${es(po.sub)}</text>
       <text x="${X.pool+14}" y="${py+70}" class="sfbig" style="fill:${gc(b[e])}">${fx(b[e],e)}</text><text x="${X.pool+72}" y="${py+70}" class="sfsb">% ${ELN[e]}</text><text x="${X.pool+260}" y="${py+70}" text-anchor="end" class="sflab">${N(b.w)} t</text>
@@ -2719,14 +2729,29 @@ function sumFlowSVG(R,st,e,lim){
     tl.push({tt,src,b,cy:src.reduce((a,p)=>a+p.cy,0)/src.length}); }
   tl.sort((a,b)=>a.cy-b.cy); last=-1e9; for(const o of tl){ if(o.cy-TH/2<last+24) o.cy=last+24+TH/2; last=o.cy+TH/2; }
   for(const {tt,src,b,cy} of tl){ const py=cy-TH/2;
-    for(const s2 of src) ed+=edge(X.pool+270,s2.cy,X.tot,cy,SF_KC[tt.k],Math.max(2,Math.min(14,2+12*Math.sqrt(s2.b.w/(tmax*1.6)))));
+    const lx=X.pool+270+({clo:30,fines:64,loss:98}[tt.k]);
+    for(const s2 of src) ed+=edge(X.pool+270,s2.cy,X.tot,cy,SF_KC[tt.k],Math.max(2,Math.min(14,2+12*Math.sqrt(s2.b.w/(tmax*1.6)))),lx);
     g+=`<g><rect x="${X.tot}" y="${py}" width="320" height="${TH}" rx="12" fill="var(--panel2)" stroke="${SF_KC[tt.k]}" stroke-width="2.2"/>${icon(SF_KI[tt.k],X.tot+12,py+12,46,38)}
       <text x="${X.tot+68}" y="${py+28}" class="sfnm" style="font-size:17px">${tt.nm}</text><text x="${X.tot+68}" y="${py+45}" class="sfsb">${tt.sub}</text>
       <text x="${X.tot+16}" y="${py+86}" class="sfbig" style="font-size:28px;fill:${gc(b[e])}">${fx(b[e],e)}</text><text x="${X.tot+88}" y="${py+86}" class="sfsb">% ${ELN[e]}</text><text x="${X.tot+308}" y="${py+86}" text-anchor="end" class="sflab" style="font-size:12px">${N(b.w)} t</text>
       <text x="${X.tot+16}" y="${py+108}" class="sfmono">${others(b)}</text>${tt.k==='fines'?`<text x="${X.tot+308}" y="${py+108}" text-anchor="end" class="sflab">${limTag(b)}</text>`:''}</g>`; }
   const H=Math.max(y, last+20)+10;
-  return `<div class="sfwrap"><svg class="eqsvg sfsvg" viewBox="0 0 1790 ${H}" style="min-width:1100px;width:100%;height:auto">${ed}${g}</svg></div>`;
+  return `<div class="sfwrap"><svg class="eqsvg sfsvg" viewBox="0 0 1855 ${H}" style="min-width:1100px;width:100%;height:auto">${ed}${g}</svg></div>`;
 }
+
+// ---------- v1.11: full-screen view for flowsheet cards ----------
+function addFsBtns(){
+  document.querySelectorAll('#main .card').forEach(c=>{ if(!c.querySelector('.flowwrap,.sfwrap')) return; const h=c.querySelector('.cardh'); if(!h||h.querySelector('.fsbtn')) return;
+    const b=document.createElement('button'); b.className='fsbtn'; b.type='button'; h.appendChild(b);
+    const key=c.querySelector('.sfwrap')?'sum':'flow'; c.dataset.fs=key;
+    const set=on=>{ b.innerHTML=on?'✕ Exit full screen':'⛶ Full screen'; b.title=on?'Exit full screen (Esc)':'Show this flowsheet full screen'; c.classList.toggle('fs',on); document.body.classList.toggle('fsopen',on); };
+    set(S._fs===key);
+    b.onclick=()=>{ const on=S._fs!==key; S._fs=on?key:null; set(on);
+      try{ if(on&&!document.fullscreenElement&&document.documentElement.requestFullscreen) document.documentElement.requestFullscreen().catch(()=>{});
+        else if(!on&&document.fullscreenElement) document.exitFullscreen().catch(()=>{}); }catch(_){} }; }); }
+function fsClose(){ if(!S._fs) return; S._fs=null; document.querySelectorAll('#main .card.fs').forEach(c=>{ c.classList.remove('fs'); const b=c.querySelector('.fsbtn'); if(b) b.innerHTML='⛶ Full screen'; }); document.body.classList.remove('fsopen'); }
+document.addEventListener('keydown',ev=>{ if(ev.key==='Escape') fsClose(); });
+document.addEventListener('fullscreenchange',()=>{ if(!document.fullscreenElement) fsClose(); });
 function renderSumMain(){
   const st=sumState(), mn=$('main'), R=sumPredict(), e=S.set.focus, lim=+st.lim||4.5;
   const cell=(pl,k,dp)=>{ const r=st.rows[pl]||{}; const v=r[k]; return `<td class="num"><input class="sumin${k==='Al2O3'?' al':''}" data-pl="${pl}" data-k="${k}" type="number" step="any" value="${v==null?'':(+v).toFixed(dp)}" ${k==='Al2O3'&&v!=null&&v!==''?`style="color:${gradeCol('Al2O3',+v)}"`:''}></td>`; };
@@ -2767,6 +2792,7 @@ function renderSumMain(){
       <div class="pane" style="overflow:auto"><table class="t">${cT}</table><p class="small muted" style="margin-top:8px">Weights are predicted product tonnes (ROM tonnes × predicted yield). If no tonnes or trips are given, a plant's ROM counts as 1 t, so blends are only meaningful once trips or tonnes are entered.</p></div></div>`;
   mn.querySelectorAll('.sumin').forEach(inp=>inp.onchange=()=>{ const pl=inp.dataset.pl, k=inp.dataset.k; const r=st.rows[pl]||(st.rows[pl]={n:0,src:'edit'});
     r[k]=inp.value===''?null:+inp.value; r.src='edit'; sumPush(pl); if(k==='Al2O3'&&r.Al2O3==null&&!r.Fe&&!r.n) delete st.rows[pl]; sumSave(); renderSumMain(); });
+  addFsBtns();
   mn.querySelectorAll('#sumSeg button').forEach(b=>b.onclick=()=>{ S.sumView=b.dataset.v; save(); renderSumMain(); });
   mn.querySelectorAll('.pc[data-pl],.sfgo[data-pl]').forEach(c=>c.onclick=()=>{ const pl=c.dataset.pl, r=st.rows[pl]; if(!r) return;
     const nv=Object.assign({Al2O3:+r.Al2O3,Fe:r.Fe!=null?r.Fe:'',SiO2:r.SiO2!=null?r.SiO2:'',P:r.P!=null?r.P:'',t:sumTonnes(pl,r)||''}, pl==='wet'?{jf:st.jf!=null?st.jf:(S.inputs.wet&&S.inputs.wet.jf!=null?S.inputs.wet.jf:33)}:{});
