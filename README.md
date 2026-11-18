@@ -1,4 +1,4 @@
-# Quality Value Chain — Noamundi & Katamati · v1.13.0
+# Quality Value Chain — Noamundi & Katamati · v1.14.0
 
 Installable web app (PWA). Trains ROM → product quality (Fe, SiO2, Al2O3, P) from the monthly
 Ore Processing Report (Wet Plant, IOPP, NDCMP) and the Noa C&S Plant Report (ISS, Metso (NIM),
@@ -21,6 +21,7 @@ Installed copies pick up the update on the next launch (the version in `sw.js` c
 
 ## Version history
 - 1.9.1 — Pasting ROM quality in Plant summary (or editing it there) now also sets the ROM inputs on each plant's Predict page, marked “from Plant summary”.
+- 1.14.0 — Zoom in full screen: − / + / Fit buttons (also + − 0 keys and Ctrl + mouse wheel), drag to pan when zoomed, 125 % to 400 %. All quantities shown in kt (kilotonnes) — flowsheets, KPIs, product cards, tables, band analysis, backtest and Plant summary; typed inputs (ROM tonnes, t / trip) stay in tonnes.
 - 1.13.0 — Plant summary gets Predict | Visualise: Visualise shows the actual ROM processed and products made by every plant over the chosen period (Last day / 7 / 30 days / Month / All / dates), as the same flowsheet plus plant-wise and combined tables; click a plant to open its Visualise page. Focus selector (Fe · SiO2 · Al2O3 · P · Tonnes) in every plant page rail, in each flowsheet header (Predict and Visualise) and on the Plant summary. Tonnes focus shows tonnes as the main value on the equipment flowsheets, mass-flow view and summary flowsheet; tables and charts keep the last chosen element.
 - 1.12.0 — Outlier screening in every calculation (training, band analysis, backtest, band finder, Plant summary, Visualise averages) for all plants: physically impossible assays are always dropped (Fe 30–70, SiO2 ≤35, Al2O3 ≤25, P ≤0.6 %); shifts with an extreme ROM grade and product assays with an extreme product−ROM delta (beyond 4 robust σ = median ± 4×1.48·MAD) are ignored. Model settings: Outlier filter Off / Strict 3σ / Normal 4σ (default) / Loose 6σ, with the count of ignored shifts and assays.
 - 1.11.0 — Full-screen button on every flowsheet (Wet, IOPP, NDCMP grade flow / equipment and mass flow, Plant summary); Esc or the button exits. Plant summary flowsheet: flowing-dot animation on all lines, and CLO / fines / slime-reject lines into the site and all-plant totals now run in separate lanes so fines and losses no longer merge. Default t / trip = 100 for both sites (old 35 defaults are moved to 100).

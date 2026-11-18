@@ -286,6 +286,11 @@ input[type=range]:disabled{opacity:.35}
 .sfsvg .sfbig{font:700 21px var(--cond)}.sfsvg .sflab{font:600 11px var(--mono);fill:var(--svgmut)}.sfsvg .sflane{font:700 13px var(--mono);letter-spacing:4px;fill:var(--amber)}.sfsvg .sfh{font:600 10.5px var(--mono);letter-spacing:2.5px;fill:var(--svgdim)}
 .sfsvg .sfgo{cursor:pointer}.sfsvg .sfgo:hover rect{stroke:var(--amber)}.sfsvg .sfgo:hover .sfpl{stroke-width:2.6}
 .focseg{margin-left:6px}.focseg button{padding:5px 9px}
+.zmbar{display:none;align-items:center;margin-left:auto;border:1px solid var(--line2);border-radius:6px;overflow:hidden}.card.fs .zmbar{display:inline-flex}
+.zmbar button{background:var(--panel2);border:0;color:var(--text);font:700 16px var(--cond);padding:4px 12px;cursor:pointer}.zmbar button[data-z="0"]{font-size:12px;border-left:1px solid var(--line2)}.zmbar button:hover{color:var(--amber)}
+.zmv{min-width:52px;text-align:center;font:600 12px var(--mono);color:var(--muted);background:var(--panel)}
+.card.fs .zmbar+.fsbtn{margin-left:8px}
+.card.fs.zoomed .flowwrap,.card.fs.zoomed .sfwrap{overflow:auto;display:block;cursor:grab}.card.fs.zoomed .panning{cursor:grabbing;user-select:none}
 .fsbtn{margin-left:auto;background:var(--panel2);border:1px solid var(--line2);color:var(--text);border-radius:6px;padding:5px 10px;font:600 12px var(--cond);cursor:pointer;white-space:nowrap}.fsbtn:hover{border-color:var(--amber);color:var(--amber)}
 .card.fs{position:fixed;inset:0;z-index:950;margin:0;border-radius:0;overflow:auto;background:var(--bg);display:flex;flex-direction:column}
 .card.fs .fsbtn{background:var(--amber);color:var(--onacc,#1b1406);border-color:var(--amber)}
@@ -316,7 +321,7 @@ body.fsopen{overflow:hidden}
 <body>
 <div class="top">
   <img class="brandimg" src="icon.svg" alt="">
-  <div class="ttl"><small id="plantEyebrow">NOAMUNDI · NRD · WET PLANT</small><b>Quality Value Chain <span class="ver" id="appVer">v1.13.0</span></b></div>
+  <div class="ttl"><small id="plantEyebrow">NOAMUNDI · NRD · WET PLANT</small><b>Quality Value Chain <span class="ver" id="appVer">v1.14.0</span></b></div>
   <div class="plantseg" id="plantSeg"><button data-v="wet" class="on">Wet Plant</button><button data-v="iopp">IOPP</button><button data-v="dry" title="NDCMP and the four C&amp;S plants">NDCMP · C&amp;S</button><button data-v="summary" title="All plants: predicted product quality from the ROM Monitoring App shift report">Plant summary</button><button data-v="flow" title="Downstream material flow (under construction)">Material flow</button></div>
   <div class="plantseg modeseg" id="modeSeg" title="Switch between the predictive model and what the plants actually processed"><button data-v="predict" class="on">Predict</button><button data-v="vis">Visualise</button></div>
   <div class="sp"></div>
@@ -1698,11 +1703,11 @@ function renderFlow(){
     const lx=n.x+NW+8, cy=n.y+n.h/2;
     const ms = p==='ROM'?'100% mass': (g.mass[p]>0?(g.mass[p]*100).toFixed(1)+'% mass':'idle');
     const C=CUR(), romT=S.mode==='vis'?C.romT:+S.input.t;
-    const tn = p!=='ROM'&&C.t&&C.t[p]!=null&&!PU.noTons.includes(p) ? ' · '+Math.round(C.t[p]).toLocaleString('en-IN')+' t' : (p==='ROM'&&romT?' · '+Math.round(romT).toLocaleString('en-IN')+' t':'');
+    const tn = p!=='ROM'&&C.t&&C.t[p]!=null&&!PU.noTons.includes(p) ? ' · '+fmtKt(C.t[p])+' kt' : (p==='ROM'&&romT?' · '+fmtKt(romT)+' kt':'');
     const dl = p!=='ROM'&&v!=null ? v-C.rom[e] : null;
     const bad = e==='Fe' ? dl<0 : dl>0;
     nodes+=`<text class="nl" x="${lx}" y="${cy-12}" font-family="Barlow Semi Condensed,Bahnschrift,Arial Narrow,sans-serif" font-size="12.5" font-weight="600" style="fill:${sel?'var(--amber)':'var(--svgtxt)'}" letter-spacing=".6">${SHORTN[p].toUpperCase()}</text>`;
-    if(FT()){ const tq=p==='ROM'?romT:(C.t&&C.t[p]!=null&&!PU.noTons.includes(p)?C.t[p]:null), big=tq>0?Math.round(tq).toLocaleString('en-IN'):(g.mass[p]>0?(g.mass[p]*100).toFixed(1):'—'), un=tq>0?' t':'%';
+    if(FT()){ const tq=p==='ROM'?romT:(C.t&&C.t[p]!=null&&!PU.noTons.includes(p)?C.t[p]:null), big=tq>0?fmtKt(tq):(g.mass[p]>0?(g.mass[p]*100).toFixed(1):'—'), un=tq>0?' kt':'%';
       nodes+=`<text class="nl" x="${lx}" y="${cy+9}" font-family="Barlow Semi Condensed,Bahnschrift,Arial Narrow,sans-serif" font-size="21" font-weight="600" style="fill:var(--amber)">${big}<tspan font-size="11" style="fill:var(--muted)">${un}</tspan><tspan dx="8" font-size="11" font-family="JetBrains Mono,Consolas,monospace" style="fill:var(--muted)">${ELN[e]} ${idle?'—':f(v,e)}</tspan></text>`; }
     else nodes+=`<text class="nl" x="${lx}" y="${cy+9}" font-family="Barlow Semi Condensed,Bahnschrift,Arial Narrow,sans-serif" font-size="21" font-weight="600" style="fill:${idle?'var(--svgdim)':'var(--svgval)'}">${idle?'—':f(v,e)}<tspan font-size="11" style="fill:var(--muted)">%</tspan>${dl!=null?`<tspan dx="7" font-size="12" font-family="JetBrains Mono,Consolas,monospace" style="fill:${Math.abs(dl)<0.005?'var(--muted)':(bad?'var(--rust)':'var(--mint)')}">${dl>0?'+':''}${f(dl,e)}</tspan>`:''}</text>`;
     nodes+=`<text class="nl" x="${lx}" y="${cy+24}" font-family="JetBrains Mono,Consolas,monospace" font-size="10" style="fill:var(--svgmut)">${ms}${tn}</text></g>`;
@@ -1740,7 +1745,7 @@ function bindFlow(){
 // ---------- ledger ----------
 function ledger(){
   const pr=S.pred, e=S.set.focus, g=flowGraph();
-  let h=`<h4><span>Assay ledger · predicted grades</span><span>±1σ · bar = trained range of ${ELN[e]}</span></h4><div style="overflow:auto"><table class="t"><tr><th>Stream</th><th>Mass</th>${S.pred.t?'<th>Tonnes</th>':''}${EL.map(x=>`<th style="${x===e?'color:var(--amber)':''}">${ELN[x]}</th>`).join('')}<th>Δ${ELN[e]}</th><th>${ELN[e]} range</th><th>Model</th></tr>`;
+  let h=`<h4><span>Assay ledger · predicted grades</span><span>±1σ · bar = trained range of ${ELN[e]}</span></h4><div style="overflow:auto"><table class="t"><tr><th>Stream</th><th>Mass</th>${S.pred.t?'<th>kt</th>':''}${EL.map(x=>`<th style="${x===e?'color:var(--amber)':''}">${ELN[x]}</th>`).join('')}<th>Δ${ELN[e]}</th><th>${ELN[e]} range</th><th>Model</th></tr>`;
   for(const p of ORDER){
     const x=p==='ROM'?null:pr.p[p], idle=p!=='ROM'&&!x;
     const v=el=>p==='ROM'?pr.rom[el]:(x?x.v[el]:null);
@@ -1751,7 +1756,7 @@ function ledger(){
     const dl=x?x.dl[e]:null, bad=e==='Fe'?dl<0:dl>0;
     h+=`<tr class="click ${S.sel===p?'sel':''}" data-p="${p}" style="${idle?'opacity:.4':''}"><td><span class="dot" style="background:${gradeCol(e,v(e))}"></span>${SHORTN[p]}</td>
       <td class="num">${p==='ROM'?'100.0':(g.mass[p]>0?(g.mass[p]*100).toFixed(1):'—')}<span class="sd">%</span></td>
-      ${S.pred.t?`<td class="num">${p==='ROM'?Math.round(+S.input.t).toLocaleString('en-IN'):(S.pred.t[p]!=null?Math.round(S.pred.t[p]).toLocaleString('en-IN'):'—')}</td>`:''}
+      ${S.pred.t?`<td class="num">${p==='ROM'?fmtKt(+S.input.t):(S.pred.t[p]!=null?fmtKt(S.pred.t[p]):'—')}</td>`:''}
       ${EL.map(el=>{ const q=v(el); const st=x?statusCls(p,el,q,x.sd[el]):''; return `<td class="num ${el===e?'fc':''}" style="${st==='bad'?'color:var(--red)':''}">${f(q,el)}${x?`<span class="sd">±${f(x.sd[el],el)}</span>`:''}</td>`; }).join('')}
       <td class="num" style="color:${dl==null||Math.abs(dl)<0.005?'var(--muted)':(bad?'var(--rust)':'var(--mint)')}">${dl==null?'':fs(dl,e)}</td>
       <td>${mini}</td><td class="small muted">${p==='ROM'?'input':(cell?bandTxt(x,e,cell):(x&&x.blend?'blend':'idle'))}</td></tr>`;
@@ -1883,7 +1888,7 @@ function bandChart(el){
     g+=`<polyline fill="none" stroke="${c}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" points="${z.pts.map(q=>`${X(q.x)},${Y(q.y)}`).join(' ')}"/>`;
     for(const q of z.pts){ const r=Math.max(4,Math.min(8,2.5+Math.sqrt(q.n)));
       g+=`<circle cx="${X(q.x)}" cy="${Y(q.y)}" r="${r}" fill="${c}" style="stroke:var(--panel)" stroke-width="2"/>`;
-      g+=`<circle class="bhit" cx="${X(q.x)}" cy="${Y(q.y)}" r="12" fill="transparent" data-t="${esc(`<b>${SHORT[z.p]}</b> · ${PU.rom} ${ELN[el]} ${fb(q.lo,el)}–${fb(q.lo+w,el)}%<br>Δ used by model <b>${fs(q.y,el)}</b><br>tonnage-weighted band mean ${fs(q.mean,el)}${q.sd!=null?` ± ${f(q.sd,el)} (1 sd)`:''}<br>${q.n} shift${q.n===1?'':'s'} · ${Math.round(q.t).toLocaleString('en-IN')} t${q.n<4?' · thin band, pulled to trend':''}`)}"/>`; }
+      g+=`<circle class="bhit" cx="${X(q.x)}" cy="${Y(q.y)}" r="12" fill="transparent" data-t="${esc(`<b>${SHORT[z.p]}</b> · ${PU.rom} ${ELN[el]} ${fb(q.lo,el)}–${fb(q.lo+w,el)}%<br>Δ used by model <b>${fs(q.y,el)}</b><br>tonnage-weighted band mean ${fs(q.mean,el)}${q.sd!=null?` ± ${f(q.sd,el)} (1 sd)`:''}<br>${q.n} shift${q.n===1?'':'s'} · ${fmtKt(q.t)} kt${q.n<4?' · thin band, pulled to trend':''}`)}"/>`; }
     const lp=z.pts[z.pts.length-1]; ends.push({y:Y(lp.y),x:X(lp.x),p:z.p,c});
   }
   // direct end labels, de-collided
@@ -2021,9 +2026,9 @@ function btTab(){
   let lastDay=null; R.forEach((r,i)=>{ const dom=r.day%100, mo=Math.floor(r.day/100)%100; if(r.day!==lastDay && (span? dom===1||i===0 : dom%5===0)){ svg+=`<text x="${X(i)}" y="${H-8}" font-size="9" text-anchor="middle" style="fill:var(--muted)">${span?E.MON[mo-1]:dom+' '+E.MON[mo-1]}</text>`; } lastDay=r.day; });
   svg+='</svg>';
   h+=svg+`<div class="small" style="margin:6px 0 10px"><span>━ actual</span> &nbsp; <span style="color:var(--amber)">╌ predicted (from the shift's ${PU.rom} assay)</span> &nbsp; <span class="muted">shade ±1σ</span></div>
-  <table class="t"><tr><th>Set</th><th>n</th><th>Tonnes</th><th>MAE (t-wtd)</th><th>Bias (act−pred, t-wtd)</th></tr>
-  ${a?`<tr><td>In window ${(m.method||'band')==='band'?'(leave-one-out)':'(fit)'}</td><td>${a.n}</td><td>${Math.round(a.t).toLocaleString('en-IN')}</td><td>${f(a.mae,e)}</td><td>${fs(a.bias,e)}</td></tr>`:''}
-  ${b?`<tr><td><b>Outside window (true test)</b></td><td>${b.n}</td><td>${Math.round(b.t).toLocaleString('en-IN')}</td><td><b>${f(b.mae,e)}</b></td><td>${fs(b.bias,e)}</td></tr>`:''}</table>
+  <table class="t"><tr><th>Set</th><th>n</th><th>kt</th><th>MAE (t-wtd)</th><th>Bias (act−pred, t-wtd)</th></tr>
+  ${a?`<tr><td>In window ${(m.method||'band')==='band'?'(leave-one-out)':'(fit)'}</td><td>${a.n}</td><td>${fmtKt(a.t)}</td><td>${f(a.mae,e)}</td><td>${fs(a.bias,e)}</td></tr>`:''}
+  ${b?`<tr><td><b>Outside window (true test)</b></td><td>${b.n}</td><td>${fmtKt(b.t)}</td><td><b>${f(b.mae,e)}</b></td><td>${fs(b.bias,e)}</td></tr>`:''}</table>
   <p class="small muted">Out-of-window rows were not used for training, so their error is an honest estimate of shift-ahead accuracy. Hover points for details.</p>`;
   return h;
 }
@@ -2087,9 +2092,9 @@ function dataTab(){
   if(ds.excluded.length) h+=`<div class="ins warn"><p class="small">Excluded shifts: ${ds.excluded.map(x=>`${x.key.replace('|','-')} (${esc(x.reason)})`).join('; ')}</p></div>`;
   const rows = S.set.basis==='shift' ? ds.shifts : ds.days;
   const e=S.set.focus;
-  h+=`<h4 style="margin-top:12px">${S.set.basis==='shift'?'Shift':'Daily'} data · ${ELN[e]} %</h4><div style="overflow:auto;max-height:520px"><table class="t"><tr><th>Row</th>${PU.jig?'<th>J</th>':''}<th>ROM t</th><th>ROM</th>${S.set.basis==='dayPred'?'<th>Pred</th>':''}${PU.dataCols.map(p=>`<th>${SHORT[p]}</th>`).join('')}</tr>`;
+  h+=`<h4 style="margin-top:12px">${S.set.basis==='shift'?'Shift':'Daily'} data · ${ELN[e]} %</h4><div style="overflow:auto;max-height:520px"><table class="t"><tr><th>Row</th>${PU.jig?'<th>J</th>':''}<th>ROM kt</th><th>ROM</th>${S.set.basis==='dayPred'?'<th>Pred</th>':''}${PU.dataCols.map(p=>`<th>${SHORT[p]}</th>`).join('')}</tr>`;
   for(const r of rows){ const rom=r.rom; if(!rom) continue;
-    h+=`<tr class="${W.has(r.day)?'win':''}"><td>${r.label}${rom.imputed?'<span class="sd" title="a stream had tonnage but no shift assay — day average used for ROM">*</span>':''}</td>${PU.jig?`<td>${r.jig?'●':''}</td>`:''}<td>${Math.round(rom.t||0).toLocaleString('en-IN')}</td><td><b>${f(rom[e],e)}</b></td>${S.set.basis==='dayPred'?`<td>${r.romPred?f(r.romPred[e],e):'—'}</td>`:''}${PU.dataCols.map(p=>`<td>${r.p[p]?f(r.p[p][e],e):'<span class="muted">—</span>'}</td>`).join('')}</tr>`; }
+    h+=`<tr class="${W.has(r.day)?'win':''}"><td>${r.label}${rom.imputed?'<span class="sd" title="a stream had tonnage but no shift assay — day average used for ROM">*</span>':''}</td>${PU.jig?`<td>${r.jig?'●':''}</td>`:''}<td>${fmtKt(rom.t||0)}</td><td><b>${f(rom[e],e)}</b></td>${S.set.basis==='dayPred'?`<td>${r.romPred?f(r.romPred[e],e):'—'}</td>`:''}${PU.dataCols.map(p=>`<td>${r.p[p]?f(r.p[p][e],e):'<span class="muted">—</span>'}</td>`).join('')}</tr>`; }
   h+=`</table></div><p class="small muted">Shaded = training window. ${esc(PU.dataNote||'')}</p>
   <div style="margin-top:10px"><button class="btn sec" id="clearBtn">Clear stored settings</button></div>`;
   return h;
@@ -2159,6 +2164,8 @@ function bindRange(){
   if($('rFrom')) $('rFrom').onchange=cust; if($('rTo')) $('rTo').onchange=cust;
 }
 
+// ---------- v1.14: quantities in kilotonnes ----------
+function fmtKt(t){ t=+t; if(!isFinite(t)) return '—'; const v=t/1000, a=Math.abs(v), d=a<10?2:a<100?1:0; return v.toLocaleString('en-IN',{minimumFractionDigits:d,maximumFractionDigits:d}); }
 // ---------- v1.13: focus element incl. tonnage ----------
 const FT=()=>S.set.focusT===true;
 function focusPills(cls){ const T=FT(); return `<div class="${cls||'pills'} focp">${EL.map(x=>`<button data-v="${x}" class="${!T&&x===S.set.focus?'on':''}">${ELN[x]}</button>`).join('')}<button data-v="t" class="${T?'on':''}" title="Show tonnes (and mass %) as the main value">Tonnes</button></div>`; }
@@ -2169,7 +2176,7 @@ function bindFocus(){ bindFocusPills(); }
 function renderVisRail(){
   const r=$('rail'), A=S.act;
   let heads='';
-  if(A){ heads=PU.heads.map(([k,l])=>{ const x=A.p[k]; const e=S.set.focus; return x?`<div class="hd"><div><small>${l} ${ELN[e]}</small><br><b>${f(x.v[e],e)}<i>%</i></b></div><div class="s">${A.t[k]!=null?Math.round(A.t[k]).toLocaleString('en-IN')+' t':''}<br>Δ ${fs(x.dl[e],e)}</div></div>`:`<div class="hd"><div><small>${l}</small><br><b>—</b></div><div class="s">no assay</div></div>`; }).join(''); }
+  if(A){ heads=PU.heads.map(([k,l])=>{ const x=A.p[k]; const e=S.set.focus; return x?`<div class="hd"><div><small>${l} ${ELN[e]}</small><br><b>${f(x.v[e],e)}<i>%</i></b></div><div class="s">${A.t[k]!=null?fmtKt(A.t[k])+' kt':''}<br>Δ ${fs(x.dl[e],e)}</div></div>`:`<div class="hd"><div><small>${l}</small><br><b>—</b></div><div class="s">no assay</div></div>`; }).join(''); }
   r.innerHTML=rangeRail(S.ds)+focusRail()+(A?`<div class="sec"><h5>Actual products · ${A.r.a===A.r.b?'day':'period'}</h5><div class="heads">${heads}</div></div>`:'')+libraryHTML();
   bindRange(); bindFocus(); bindLibrary();
 }
@@ -2183,13 +2190,13 @@ function drySubnav(){
 function bindSubnav(){ document.querySelectorAll('.subnav button').forEach(b=>b.onclick=()=>{ S.dryPlant=b.dataset.pl; switchPlant(b.dataset.pl,true); }); }
 function dryOverview(){
   const rows=DRY.map(pl=>({pl,A:aggFor(pl)}));
-  const fx=(x,e)=>x&&x[e]!=null?f(x[e],e):'—', tt=v=>v>0?Math.round(v).toLocaleString('en-IN'):'—';
+  const fx=(x,e)=>x&&x[e]!=null?f(x[e],e):'—', tt=v=>v>0?fmtKt(v):'—';
   const line=(lab,site,period,rom,fin,clo,pl)=>`<tr class="${pl?'click':''} ${pl===S.plant?'sel':''}" ${pl?`data-pl="${pl}"`:''}><td>${lab}</td><td class="muted small">${site}</td><td class="small">${period}</td>
     <td class="num">${tt(rom&&rom.t)}</td>${EL.map(e=>`<td class="num ${e===S.set.focus?'fc':''}">${fx(rom,e)}</td>`).join('')}
     <td class="num">${tt(fin&&fin.t)}</td>${EL.map(e=>`<td class="num ${e===S.set.focus?'fc':''}">${fx(fin,e)}</td>`).join('')}
     <td class="num">${clo&&clo.t>0?tt(clo.t)+`<span class="sd">${f(clo[S.set.focus],S.set.focus)}</span>`:'—'}</td></tr>`;
   let h=`<div class="card"><div class="cardh"><h2>Dry plants · overview</h2><span class="sub">what each crushing &amp; screening plant processed and produced · tonnage-weighted · click a row to open the plant</span></div><div class="pane" style="overflow:auto"><table class="t">
-    <tr><th>Plant</th><th>Site</th><th>Period</th><th>ROM t</th>${EL.map(e=>`<th>ROM ${ELN[e]}</th>`).join('')}<th>Fines t</th>${EL.map(e=>`<th>Fines ${ELN[e]}</th>`).join('')}<th>CLO t · ${ELN[S.set.focus]}</th></tr>`;
+    <tr><th>Plant</th><th>Site</th><th>Period</th><th>ROM kt</th>${EL.map(e=>`<th>ROM ${ELN[e]}</th>`).join('')}<th>Fines kt</th>${EL.map(e=>`<th>Fines ${ELN[e]}</th>`).join('')}<th>CLO kt · ${ELN[S.set.focus]}</th></tr>`;
   for(const {pl,A} of rows){ const k=MAINP[pl];
     h+=line(`<span class="dot" style="background:${PAL_D[DRY.indexOf(pl)]}"></span><b>${PUI[pl].label}</b>`,PUI[pl].site,A?rangeLabel(A.r):'<span class="muted">no data</span>',A&&Object.assign({t:A.romT},A.rom),A&&A.p[k]&&Object.assign({t:A.t[k]},A.p[k].v),A&&A.p.CLO&&Object.assign({t:A.t.CLO},A.p.CLO.v),pl); }
   for(const [site,pls] of [['Noamundi',['ndcmp','iss','mnim']],['Katamati',['sandvik','mktm']]]){
@@ -2217,9 +2224,9 @@ function renderVisMain(){
   const lo=e==='Fe'?'high Fe':'low '+ELN[e], hi=e==='Fe'?'low Fe':'high '+ELN[e];
   mn.innerHTML=pre+`<div class="card"><div class="cardh"><h2>Processed &amp; output</h2>${fviewSeg()}${focusSeg()}<span class="sub">${rangeLabel(A.r)} · ${A.nDays} operating day${A.nDays===1?'':'s'} · ${A.shifts.length} shift${A.shifts.length===1?'':'s'} · actual, tonnage-weighted · band width = share of ROM mass</span>
       <div class="scale" ${FT()?`style="display:none"`:""}><span>${lo}</span><span class="bar" style="background:linear-gradient(90deg,#46c29d,#f2b33d,#ef5b4c)"></span><span>${hi}</span></div></div>
-    <div class="kpis">${kpi(PU.rom+' processed',Math.round(A.romT).toLocaleString('en-IN')+'<i> t</i>',A.nDays>1?Math.round(A.romT/A.nDays).toLocaleString('en-IN')+' t/day':'')}
+    <div class="kpis">${kpi(PU.rom+' processed',fmtKt(A.romT)+'<i> kt</i>',A.nDays>1?fmtKt(A.romT/A.nDays)+' kt/day':'')}
       ${EL.map(x=>kpi(PU.rom+' '+ELN[x],f(A.rom[x],x)+'<i>%</i>',A.romSd[x]?'day spread ±'+f(A.romSd[x],x):'')).join('')}
-      ${mp?kpi(P[main].name+' '+ELN[e],f(mp.v[e],e)+'<i>%</i>',`${Math.round(A.t[main]||0).toLocaleString('en-IN')} t · Δ ${fs(mp.dl[e],e)}`):''}</div>
+      ${mp?kpi(P[main].name+' '+ELN[e],f(mp.v[e],e)+'<i>%</i>',`${fmtKt(A.t[main]||0)} kt · Δ ${fs(mp.dl[e],e)}`):''}</div>
     <div class="flowwrap">${flowView()}</div></div>
     <div class="card"><div class="tabbar" id="tabbar">${VTABS.map(([k,l])=>`<button data-t="${k}" class="${S.vtab===k?'on':''}">${l}</button>`).join('')}</div><div class="pane" id="pane"></div></div>`;
   bindSubnav(); bindOverview(); bindFlow(); bindFview();
@@ -2232,12 +2239,12 @@ function renderVisPane(){
   if(!VTABS.some(t=>t[0]===S.vtab)) S.vtab='sum';
   if(S.vtab==='sum'){
     const g=flowGraph(flowCtx());
-    let h=`<h4><span>Assay ledger · actual</span><span>± = day-to-day spread (tonnage-weighted sd)</span></h4><div style="overflow:auto"><table class="t"><tr><th>Stream</th><th>Mass</th><th>Tonnes</th>${EL.map(x=>`<th style="${x===e?'color:var(--amber)':''}">${ELN[x]}</th>`).join('')}<th>Δ${ELN[e]} vs ROM</th><th>Days assayed</th></tr>`;
+    let h=`<h4><span>Assay ledger · actual</span><span>± = day-to-day spread (tonnage-weighted sd)</span></h4><div style="overflow:auto"><table class="t"><tr><th>Stream</th><th>Mass</th><th>kt</th>${EL.map(x=>`<th style="${x===e?'color:var(--amber)':''}">${ELN[x]}</th>`).join('')}<th>Δ${ELN[e]} vs ROM</th><th>Days assayed</th></tr>`;
     for(const p of ORDER){ const x=p==='ROM'?null:A.p[p]; const v=el=>p==='ROM'?A.rom[el]:(x?x.v[el]:null), s=el=>p==='ROM'?A.romSd[el]:(x?x.sd[el]:null);
       const tn=p==='ROM'?A.romT:(A.t[p]!=null&&!PU.noTons.includes(p)?A.t[p]:null), ms=p==='ROM'?1:(g.mass[p]!=null?g.mass[p]:null);
       const dl=x?x.dl[e]:null, bad=e==='Fe'?dl<0:dl>0;
       h+=`<tr class="click ${S.sel===p?'sel':''}" data-p="${p}" style="${p!=='ROM'&&!x?'opacity:.45':''}"><td><span class="dot" style="background:${gradeCol(e,v(e))}"></span>${SHORTN[p]}</td>
-        <td class="num">${ms!=null&&ms>0?(ms*100).toFixed(1)+'<span class="sd">%</span>':'—'}</td><td class="num">${tn!=null?Math.round(tn).toLocaleString('en-IN'):'—'}</td>
+        <td class="num">${ms!=null&&ms>0?(ms*100).toFixed(1)+'<span class="sd">%</span>':'—'}</td><td class="num">${tn!=null?fmtKt(tn):'—'}</td>
         ${EL.map(el=>`<td class="num ${el===e?'fc':''}">${f(v(el),el)}${s(el)?`<span class="sd">±${f(s(el),el)}</span>`:''}</td>`).join('')}
         <td class="num" style="color:${dl==null||Math.abs(dl)<0.005?'var(--muted)':(bad?'var(--rust)':'var(--mint)')}">${dl==null?'':fs(dl,e)}</td><td class="small muted">${p==='ROM'?A.nDays:(x?x.n:'no assay')}</td></tr>`; }
     h+=`</table></div><p class="small muted" style="margin-top:10px">Grades are tonnage-weighted over the period from the report's daily rows (each day weighted by that stream's tonnes; streams without tonnage are weighted by ROM tonnes). ${esc(PU.romNote||'')}</p>
@@ -2260,7 +2267,7 @@ function trendTab(){
   const raw=(y1-y0)/5, mag=Math.pow(10,Math.floor(Math.log10(raw))), st=[1,2,2.5,5,10].map(z=>z*mag).find(z=>z>=raw)||raw, dec=Math.max(0,-Math.floor(Math.log10(st))+(st/mag===2.5?1:0));
   for(let v=Math.ceil(y0/st)*st; v<=y1+1e-12; v+=st) g+=`<line x1="${pl}" x2="${W-pr}" y1="${Yv(v)}" y2="${Yv(v)}" style="stroke:var(--line)"/><text x="${pl-6}" y="${Yv(v)+3.5}" text-anchor="end" font-size="10" style="fill:var(--muted)" font-family="JetBrains Mono,Consolas,monospace">${v.toFixed(dec)}</text>`;
   const tmax=Math.max(1,...pts.map(q=>q.r.rom?q.r.rom.t:0)), bw_=Math.max(2,Math.min(26,(W-pl-pr)/Math.max(1,n)-3));
-  g+=`<text x="${pl-6}" y="${sy+sh/2+3}" text-anchor="end" font-size="9" style="fill:var(--dim)" font-family="JetBrains Mono,Consolas,monospace">ROM t</text>`;
+  g+=`<text x="${pl-6}" y="${sy+sh/2+3}" text-anchor="end" font-size="9" style="fill:var(--dim)" font-family="JetBrains Mono,Consolas,monospace">ROM kt</text>`;
   pts.forEach((q,i)=>{ const hh=Math.max(1.5,(q.r.rom?q.r.rom.t:0)/tmax*sh); g+=`<rect x="${X(i)-bw_/2}" y="${sy+sh-hh}" width="${bw_}" height="${hh}" rx="2" style="fill:var(--trackr)"/>`; });
   const step=Math.max(1,Math.ceil(n/12)); pts.forEach((q,i)=>{ if(i%step===0||i===n-1) g+=`<text x="${X(i)}" y="${sy+sh+14}" text-anchor="middle" font-size="9.5" style="fill:var(--muted)" font-family="JetBrains Mono,Consolas,monospace">${esc(q.lab)}</text>`; });
   const ends=[];
@@ -2271,7 +2278,7 @@ function trendTab(){
   ends.sort((a,b)=>a.y-b.y); for(let i=1;i<ends.length;i++) if(ends[i].y-ends[i-1].y<12) ends[i].y=ends[i-1].y+12;
   for(const z of ends) g+=`<text x="${W-pr+8}" y="${z.y+3.5}" font-size="10.5" font-weight="600" style="fill:var(--svgtxt)" font-family="Barlow Semi Condensed,Bahnschrift,Arial Narrow,sans-serif">${esc(z.name)}</text>`;
   pts.forEach((q,i)=>{ const x0=n===1?pl:(i===0?X(0):(X(i-1)+X(i))/2), x1=n===1?W-pr:(i===n-1?X(i):(X(i)+X(i+1))/2);
-    const tip=`<b>${esc(q.lab)}</b> · ROM ${Math.round(q.r.rom?q.r.rom.t:0).toLocaleString('en-IN')} t<br>`+ser.map(s=>{ const v=s.get(q.r); return `<span style="color:${s.c}">●</span> ${esc(s.name)} ${v==null?'—':f(v,e)}`; }).join('<br>');
+    const tip=`<b>${esc(q.lab)}</b> · ROM ${fmtKt(q.r.rom?q.r.rom.t:0)} kt<br>`+ser.map(s=>{ const v=s.get(q.r); return `<span style="color:${s.c}">●</span> ${esc(s.name)} ${v==null?'—':f(v,e)}`; }).join('<br>');
     g+=`<rect class="bhit" x="${x0}" y="${pt}" width="${Math.max(2,x1-x0)}" height="${sy+sh-pt}" fill="transparent" data-t="${esc(tip)}"/>`; });
   const legend=ser.map(s=>`<span class="lg"><i style="background:${s.c}"></i>${esc(s.name)}${s.k==='ROM'?' (dashed)':''}</span>`).join('');
   return `<h4><span>${ELN[e]} trend · ${byShift?'shift-wise':'daily'} · ${rangeLabel(A.r)}</span><span>change element with FOCUS</span></h4><div class="legend">${legend}</div>
@@ -2280,10 +2287,10 @@ function trendTab(){
 }
 function rowsTab(kind){
   const A=S.act, e=S.set.focus, rows=kind==='daily'?A.days:A.shifts, cols=PU.dataCols;
-  let h=`<h4><span>${kind==='daily'?'Daily':'Shift-wise'} · ${rangeLabel(A.r)}</span><span>${ELN[e]} % for products · all elements for ROM</span></h4><div style="overflow:auto;max-height:520px"><table class="t"><tr><th>${kind==='daily'?'Day':'Shift'}</th><th>ROM t</th>${EL.map(x=>`<th>ROM ${ELN[x]}</th>`).join('')}${cols.map(p=>`<th>${SHORT[p]} ${ELN[e]}</th>`).join('')}</tr>`;
+  let h=`<h4><span>${kind==='daily'?'Daily':'Shift-wise'} · ${rangeLabel(A.r)}</span><span>${ELN[e]} % for products · all elements for ROM</span></h4><div style="overflow:auto;max-height:520px"><table class="t"><tr><th>${kind==='daily'?'Day':'Shift'}</th><th>ROM kt</th>${EL.map(x=>`<th>ROM ${ELN[x]}</th>`).join('')}${cols.map(p=>`<th>${SHORT[p]} ${ELN[e]}</th>`).join('')}</tr>`;
   for(const r of rows){ if(!r.rom) continue;
-    h+=`<tr><td>${kind==='daily'?E.fmtOrd(r.day,true):esc(r.label)}${r.rom.imputed?'<span class="sd">*</span>':''}</td><td class="num">${Math.round(r.rom.t||0).toLocaleString('en-IN')}</td>${EL.map(x=>`<td class="num ${x===e?'fc':''}">${f(r.rom[x],x)}</td>`).join('')}
-      ${cols.map(p=>{ const q=r.p&&r.p[p]&&r.p[p].Fe>1?r.p[p]:null, tn=r.t&&r.t[p]; return `<td class="num">${q?f(q[e],e):'<span class="muted">—</span>'}${tn>0?`<span class="sd">${Math.round(tn).toLocaleString('en-IN')}t</span>`:''}</td>`; }).join('')}</tr>`; }
+    h+=`<tr><td>${kind==='daily'?E.fmtOrd(r.day,true):esc(r.label)}${r.rom.imputed?'<span class="sd">*</span>':''}</td><td class="num">${fmtKt(r.rom.t||0)}</td>${EL.map(x=>`<td class="num ${x===e?'fc':''}">${f(r.rom[x],x)}</td>`).join('')}
+      ${cols.map(p=>{ const q=r.p&&r.p[p]&&r.p[p].Fe>1?r.p[p]:null, tn=r.t&&r.t[p]; return `<td class="num">${q?f(q[e],e):'<span class="muted">—</span>'}${tn>0?`<span class="sd">${fmtKt(tn)} kt</span>`:''}</td>`; }).join('')}</tr>`; }
   return h+`</table></div><p class="small muted">* = a stream had tonnage but no shift assay; the day's average was used for ROM. — = no assay.</p><div style="margin-top:10px"><button class="btn sec" id="csvRange">Download CSV</button></div>`;
 }
 function downloadRange(kind){
@@ -2367,7 +2374,7 @@ function renderFlowPage(){
     nd+=`<g ${click}><rect x="${n.x}" y="${n.y}" width="${n.w}" height="${n.h}" rx="7" style="fill:var(--panel2);stroke:var(--line2)"/><rect x="${n.x}" y="${n.y}" width="5" height="${n.h}" rx="2" style="fill:${stripe}"/>`;
     let y=n.y+19; nd+=T(n.x+14,y,esc(n.title),'class="mft"'); y+=15; nd+=T(n.x+14,y,esc(n.sub),'class="mfs"');
     if(n.q||n.qp){ y+=15; nd+=T(n.x+14,y,`chart ${n.q?'ROM '+q2(n.q):''}${n.q&&n.qp?' → ':''}${n.qp?(n.c===1?'fines ':'')+q2(n.qp):''}`,'class="mfc"'); }
-    if(n.live){ y+=15; const L=n.live; nd+=T(n.x+14,y,`live ROM ${lq(L.rom)} → ${lq(L.prod)} · ${Math.round((L.prod&&L.prod.t)||L.rom.t).toLocaleString('en-IN')} t`,'class="mfl"'); }
+    if(n.live){ y+=15; const L=n.live; nd+=T(n.x+14,y,`live ROM ${lq(L.rom)} → ${lq(L.prod)} · ${fmtKt((L.prod&&L.prod.t)||L.rom.t)} kt`,'class="mfl"'); }
     if(n.page) nd+=`<title>Open ${esc(n.title)}</title>`; nd+='</g>';
   }
   const heads=['ROM SOURCES','PLANTS','CONVEYING & STOCKPILES','DISPATCH'].map((h,i)=>T(CX[i],12,h,'class="mfh"')).join('');
@@ -2377,12 +2384,12 @@ function renderFlowPage(){
   const legend=Object.entries(MF_ROUTE).map(([k,v])=>`<span class="lg"><svg width="30" height="10"><line x1="1" y1="5" x2="29" y2="5" style="stroke:${mfCol(k)}" stroke-width="2.4" stroke-dasharray="${v.dash}"/></svg>${esc(v.n)}</span>`).join('');
   // live table
   const plRows=MF_NODES.filter(n=>n.live).map(n=>{ const L=nodes[n.id].live;
-    return `<tr class="click" data-page="${n.page}"><td><b>${esc(n.title)}</b></td><td class="small">${L?rangeLabel(L.r):'<span class="muted">no data</span>'}</td><td class="num">${L?Math.round(L.rom.t).toLocaleString('en-IN'):'—'}</td><td class="num">${L?lq(L.rom):'—'}</td><td class="num">${L&&L.prod?Math.round(L.prod.t).toLocaleString('en-IN'):'—'}</td><td class="num">${L?lq(L.prod):'—'}</td><td class="num muted">${n.q?q2(n.q):'—'}</td><td class="num muted">${n.qp?q2(n.qp):'—'}</td></tr>`; }).join('');
+    return `<tr class="click" data-page="${n.page}"><td><b>${esc(n.title)}</b></td><td class="small">${L?rangeLabel(L.r):'<span class="muted">no data</span>'}</td><td class="num">${L?fmtKt(L.rom.t):'—'}</td><td class="num">${L?lq(L.rom):'—'}</td><td class="num">${L&&L.prod?fmtKt(L.prod.t):'—'}</td><td class="num">${L?lq(L.prod):'—'}</td><td class="num muted">${n.q?q2(n.q):'—'}</td><td class="num muted">${n.qp?q2(n.qp):'—'}</td></tr>`; }).join('');
   mn.innerHTML=`<div class="uc"><b>🚧 Page under construction</b><span>This material flow is a first draft from the simplified flow chart. It is <b>not yet part of the Quality Value Chain</b> — routes, splits and grades shown here do not feed any prediction. Further development is required before it can be used for decisions.</span></div><div class="card"><div class="cardh"><h2>Material flow · Noamundi – Katamati</h2><span class="sub">ROM → plants → conveying &amp; stockpiles → dispatch · values SiO₂ / Al₂O₃ %</span><span class="draft">Interpretation of the simplified flow chart — to be corrected</span></div>
       <div class="legend" style="padding:10px 16px 0">${legend}<span class="lg"><b style="color:var(--muted)">chart</b>&nbsp;= value on the flow chart</span><span class="lg"><b style="color:var(--amber)">live</b>&nbsp;= uploaded reports, ${S.range&&S.range.kind!=='last'?'selected period':'latest day'}</span></div>
       <div class="flowwrap"><svg viewBox="0 0 1210 ${Hh}" class="mfsvg" style="min-width:1000px"><defs>${defs}</defs>${heads}${edges}${nd}</svg></div></div>
     <div class="card"><div class="cardh"><h2>Plant quality · live vs chart</h2><span class="sub">tonnage-weighted ROM processed and product · SiO₂ / Al₂O₃ % · click a plant to open it</span></div><div class="pane" style="overflow:auto"><table class="t">
-      <tr><th>Plant</th><th>Period</th><th>ROM t</th><th>ROM SiO₂ / Al₂O₃</th><th>Product t</th><th>Product SiO₂ / Al₂O₃</th><th>Chart ROM</th><th>Chart product</th></tr>${plRows}</table>
+      <tr><th>Plant</th><th>Period</th><th>ROM kt</th><th>ROM SiO₂ / Al₂O₃</th><th>Product kt</th><th>Product SiO₂ / Al₂O₃</th><th>Chart ROM</th><th>Chart product</th></tr>${plRows}</table>
       <p class="small muted" style="margin-top:8px">Product = Wet Fines (Wet Plant), IOPP Fines, NDCMP Fines, Combined Fines (C&amp;S). C&amp;S KTM combines Sandvik and Metso (KTM). Plant-to-pile and pile-to-rake splits are taken from the chart only — they are not in the OPR or C&amp;S report.</p></div></div>
     <div class="card"><div class="cardh"><h2>Operating constraints (from the chart notes)</h2></div><div class="pane"><ol class="mfnotes">${MF_NOTES.map(x=>`<li>${esc(x)}</li>`).join('')}</ol>
       <p class="small muted">Plant mapping used here: C&amp;S Plant NIM = ISS · Metso LT Plant = Metso (NIM) · C&amp;S Plant KTM = Sandvik + Metso (KTM) · Dry Plant = NDCMP. Tell me what to correct and I'll update the routes, splits and grades.</p></div></div>`;
@@ -2490,7 +2497,7 @@ function renderEquip(){
   const N={}; // ports
   for(const q of L.eq) N[q.id]={l:[q.x-EW/2,q.y],r:[q.x+EW/2,q.y],t:[q.x,q.y-EH/2],b:[q.x,q.y+EH/2+40]};
   for(const c of L.cards){ const h=c.sm?110:CH; N[c.k]={l:[c.x,c.y+h/2],r:[c.x+CW,c.y+h/2],t:[c.x+CW/2,c.y],b:[c.x+CW/2,c.y+h]}; }
-  const tn=k=>{ const t=k==='ROM'?romT:(C.t&&C.t[k]); return t>0?Math.round(t).toLocaleString('en-IN')+' t':''; };
+  const tn=k=>{ const t=k==='ROM'?romT:(C.t&&C.t[k]); return t>0?fmtKt(t)+' kt':''; };
   const f2=(v,el)=>v==null?'—':f(v,el);
   let edges='', heads='', marks='';
   for(const [a,pa,b,pb,col,mf,o={}] of L.ed){
@@ -2705,7 +2712,7 @@ function sumFlowSVG(R,st,e,lim,vis){
   const NOA=['wet','ndcmp','iopp','iss','mnim'], KAT=['sandvik','mktm'];
   const run=pl=>!!R[pl], sites=[['N','NOAMUNDI',NOA.filter(run)],['K','KATAMATI',KAT.filter(run)]].filter(s=>s[2].length);
   if(!sites.length) return '';
-  const N=n=>Math.round(n).toLocaleString('en-IN'), es=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;');
+  const N=n=>fmtKt(n), es=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;');
   const fx=(v,z)=>v==null||isNaN(v)?'—':(+v).toFixed(DP[z]), ELS={Fe:'Fe',SiO2:'Si',Al2O3:'Al',P:'P'};
   // colour scale for the focus element across everything shown
   const vals=[]; for(const pl in R){ const x=R[pl]; if(x.r&&x.r[e]!=null&&x.r[e]!=='') vals.push(+x.r[e]); (x.prods||[]).forEach(p=>vals.push(p.v[e])); }
@@ -2714,7 +2721,7 @@ function sumFlowSVG(R,st,e,lim,vis){
     if(e==='Al2O3') t=v<2.5?0:v<3.5?1:v<lim?2:v<6?3:4;
     else { let lo=Math.min(...vals), hi=Math.max(...vals); if(hi-lo<1e-9) hi=lo+1; let u=(v-lo)/(hi-lo); if(e==='Fe') u=1-u; t=Math.max(0,Math.min(4,Math.floor(u*4.999))); }
     return PAL[t]; };
-  const BC=q=>T?'var(--amber)':gc(q[e]), BV=(q,t)=>T?(t>0?Math.round(t).toLocaleString('en-IN')+'<tspan font-size="12" style="fill:var(--svgmut)"> t</tspan>':'—'):fx(q[e],e), BU=()=>T?'':'% '+ELN[e];
+  const BC=q=>T?'var(--amber)':gc(q[e]), BV=(q,t)=>T?(t>0?fmtKt(t)+'<tspan font-size="12" style="fill:var(--svgmut)"> kt</tspan>':'—'):fx(q[e],e), BU=()=>T?'':'% '+ELN[e];
   const others=q=>T?`Fe ${q.Fe==null?'—':(+q.Fe).toFixed(1)} Si ${fx(q.SiO2,'SiO2')} Al ${fx(q.Al2O3,'Al2O3')} P ${q.P==null?'—':(+q.P).toFixed(3).replace(/^0/,'')}`:EL.filter(z=>z!==e).map(z=>`${ELS[z]} ${fx(q[z],z)}`).join('  ');
   const X={rom:40,plant:400,prod:640,pool:1120,tot:1520}, RW=250, PW=320, CHH=62, GAP=10, PH=96, pw=150;
   const tmax=Math.max(1,...SUM_PL.map(pl=>R[pl]?R[pl].t||0:0));
@@ -2734,7 +2741,7 @@ function sumFlowSVG(R,st,e,lim,vis){
       const rq={Fe:r.Fe!=null&&r.Fe!==''?+r.Fe:null,SiO2:r.SiO2!=null&&r.SiO2!==''?+r.SiO2:null,Al2O3:+r.Al2O3,P:r.P!=null&&r.P!==''?+r.P:null};
       g+=`<g class="sfgo" data-pl="${pl}"><rect x="${X.rom}" y="${ry}" width="${RW}" height="104" rx="10" fill="var(--panel2)" stroke="var(--line2)" stroke-dasharray="6 4"/>
         <rect x="${X.rom}" y="${ry+10}" width="4" height="84" rx="2" fill="var(--steel)"/><text x="${X.rom+14}" y="${ry+22}" class="sfnm">${es(SF_NM[pl])} ROM</text>
-        <text x="${X.rom+14}" y="${ry+38}" class="sflab">${vis?(x.period||''):(r.n?r.n+' trips · ':'')+(t>0?N(t)+' t':'tonnes not given')}</text>
+        <text x="${X.rom+14}" y="${ry+38}" class="sflab">${vis?(x.period||''):(r.n?r.n+' trips · ':'')+(t>0?N(t)+' kt':'tonnes not given')}</text>
         <text x="${X.rom+14}" y="${ry+68}" class="sfbig" style="fill:${BC(rq)}">${BV(rq,t)}</text><text x="${X.rom+72}" y="${ry+68}" class="sfsb">${BU()}</text>
         <text x="${X.rom+14}" y="${ry+92}" class="sfmono">${others(rq)}</text></g>`;
       g+=`<g class="sfgo" data-pl="${pl}"><rect class="sfpl" x="${X.plant-pw/2}" y="${cy-42}" width="${pw}" height="84" rx="12" fill="var(--panel2)" stroke="var(--amber)" stroke-width="1.6"/>
@@ -2751,7 +2758,7 @@ function sumFlowSVG(R,st,e,lim,vis){
         ed+=edge(X.plant+pw/2,cy,X.prod,ym,SF_KC[k],wf(p.t||0));
         g+=`<g><rect x="${X.prod}" y="${cyp}" width="${PW}" height="${CHH}" rx="9" fill="var(--panel2)" stroke="var(--line2)"/><rect x="${X.prod}" y="${cyp+8}" width="4" height="${CHH-16}" rx="2" fill="${SF_KC[k]}"/>
           ${icon(SF_KI[k],X.prod+10,cyp+12,38,31)}
-          <text x="${X.prod+56}" y="${cyp+20}" class="sfnm" style="font-size:13.5px">${SF_PNAME[p.k]||SUM_NAME[p.k]||p.k}</text><text x="${X.prod+PW-10}" y="${cyp+20}" text-anchor="end" class="sflab">${p.y!=null?(p.y*100).toFixed(1)+'%':''}${p.t>0?' · '+N(p.t)+' t':''}</text>
+          <text x="${X.prod+56}" y="${cyp+20}" class="sfnm" style="font-size:13.5px">${SF_PNAME[p.k]||SUM_NAME[p.k]||p.k}</text><text x="${X.prod+PW-10}" y="${cyp+20}" text-anchor="end" class="sflab">${p.y!=null?(p.y*100).toFixed(1)+'%':''}${p.t>0?' · '+N(p.t)+' kt':''}</text>
           <text x="${X.prod+56}" y="${cyp+46}" class="sfbig" style="font-size:${T?17:19}px;fill:${BC(p.v)}">${BV(p.v,p.t)}</text>
           <text x="${X.prod+(T?142:110)}" y="${cyp+46}" class="sfmono" style="font-size:${T?10:11}px">${others(p.v)}${p.sd&&p.sd[e]>0.004?'  ±'+fx(p.sd[e],e):''}</text>
           ${note?`<text x="${X.prod+PW-10}" y="${cyp+58}" text-anchor="end" class="sflab" style="font-size:9.5px">${note}</text>`:''}${lm}</g>`;
@@ -2770,7 +2777,7 @@ function sumFlowSVG(R,st,e,lim,vis){
     for(const r of po.L) ed+=edge(r.x,r.y,X.pool,po.cy,SF_KC[po.k],Math.max(2,Math.min(10,2+10*Math.sqrt(r.w/tmax))),lx);
     g+=`<g><rect x="${X.pool}" y="${py}" width="270" height="${PH}" rx="10" fill="var(--panel2)" stroke="${SF_KC[po.k]}" stroke-width="1.4"/>${icon(SF_KI[po.k],X.pool+10,py+10,40,33)}
       <text x="${X.pool+58}" y="${py+22}" class="sfnm">${po.nm}</text><text x="${X.pool+58}" y="${py+37}" class="sfsb" style="font-size:10px">${es(po.sub)}</text>
-      <text x="${X.pool+14}" y="${py+70}" class="sfbig" style="fill:${BC(b)}">${BV(b,b.w)}</text><text x="${X.pool+72}" y="${py+70}" class="sfsb">${BU()}</text><text x="${X.pool+260}" y="${py+70}" text-anchor="end" class="sflab">${T?(po.k==='fines'?limTag(b):''):N(b.w)+' t'}</text>
+      <text x="${X.pool+14}" y="${py+70}" class="sfbig" style="fill:${BC(b)}">${BV(b,b.w)}</text><text x="${X.pool+72}" y="${py+70}" class="sfsb">${BU()}</text><text x="${X.pool+260}" y="${py+70}" text-anchor="end" class="sflab">${T?(po.k==='fines'?limTag(b):''):N(b.w)+' kt'}</text>
       <text x="${X.pool+14}" y="${py+88}" class="sfmono" style="font-size:11px">${others(b)}</text>
       ${po.k==='fines'&&!T?`<text x="${X.pool+260}" y="${py+88}" text-anchor="end" class="sflab">${limTag(b)}</text>`:''}</g>`; }
   const TT=[{k:'clo',nm:'All CLO',sub:'sized ore · both sites'},{k:'fines',nm:'All fines',sub:'Noamundi + Katamati'},{k:'loss',nm:'Slime & reject',sub:'by-products · not in any product'}];
@@ -2783,7 +2790,7 @@ function sumFlowSVG(R,st,e,lim,vis){
     for(const s2 of src) ed+=edge(X.pool+270,s2.cy,X.tot,cy,SF_KC[tt.k],Math.max(2,Math.min(14,2+12*Math.sqrt(s2.b.w/(tmax*1.6)))),lx);
     g+=`<g><rect x="${X.tot}" y="${py}" width="320" height="${TH}" rx="12" fill="var(--panel2)" stroke="${SF_KC[tt.k]}" stroke-width="2.2"/>${icon(SF_KI[tt.k],X.tot+12,py+12,46,38)}
       <text x="${X.tot+68}" y="${py+28}" class="sfnm" style="font-size:17px">${tt.nm}</text><text x="${X.tot+68}" y="${py+45}" class="sfsb">${tt.sub}</text>
-      <text x="${X.tot+16}" y="${py+86}" class="sfbig" style="font-size:28px;fill:${BC(b)}">${BV(b,b.w)}</text><text x="${X.tot+88}" y="${py+86}" class="sfsb">${BU()}</text><text x="${X.tot+308}" y="${py+86}" text-anchor="end" class="sflab" style="font-size:12px">${T?(tt.k==='fines'?limTag(b):''):N(b.w)+' t'}</text>
+      <text x="${X.tot+16}" y="${py+86}" class="sfbig" style="font-size:28px;fill:${BC(b)}">${BV(b,b.w)}</text><text x="${X.tot+88}" y="${py+86}" class="sfsb">${BU()}</text><text x="${X.tot+308}" y="${py+86}" text-anchor="end" class="sflab" style="font-size:12px">${T?(tt.k==='fines'?limTag(b):''):N(b.w)+' kt'}</text>
       <text x="${X.tot+16}" y="${py+108}" class="sfmono">${others(b)}</text>${tt.k==='fines'&&!T?`<text x="${X.tot+308}" y="${py+108}" text-anchor="end" class="sflab">${limTag(b)}</text>`:''}</g>`; }
   const H=Math.max(y, last+20)+10;
   return `<div class="sfwrap"><svg class="eqsvg sfsvg" viewBox="0 0 1855 ${H}" style="min-width:1100px;width:100%;height:auto">${ed}${g}</svg></div>`;
@@ -2804,12 +2811,12 @@ function renderSumVisRail(){
   bindRange(); bindFocusPills(); bindLibrary(); }
 function renderSumVisMain(){
   const mn=$('main'), R=sumActual(), st=sumState(), e=S.set.focus, lim=+st.lim||4.5, any=Object.keys(R).length;
-  const C=sumCombined(R), TR=SUM_PL.reduce((a,pl)=>a+(R[pl]?R[pl].t||0:0),0), fx=(v,z)=>v==null?'—':f(v,z), tt=v=>v>0?Math.round(v).toLocaleString('en-IN'):'—';
-  let pT=`<tr><th>Plant</th><th>Period</th><th>ROM t</th>${EL.map(z=>`<th>ROM ${ELN[z]}</th>`).join('')}<th>Products · t · ${ELN[e]} %</th></tr>`;
+  const C=sumCombined(R), TR=SUM_PL.reduce((a,pl)=>a+(R[pl]?R[pl].t||0:0),0), fx=(v,z)=>v==null?'—':f(v,z), tt=v=>v>0?fmtKt(v):'—';
+  let pT=`<tr><th>Plant</th><th>Period</th><th>ROM kt</th>${EL.map(z=>`<th>ROM ${ELN[z]}</th>`).join('')}<th>Products · kt · ${ELN[e]} %</th></tr>`;
   for(const pl of SUM_PL){ const x=R[pl]; if(!x){ pT+=`<tr class="idle"><td><b>${PUI[pl].label}</b></td><td colspan="${3+EL.length}" class="muted small">no data in the library</td></tr>`; continue; }
     pT+=`<tr class="click" data-pl="${pl}" style="cursor:pointer"><td><b>${PUI[pl].label}</b><span class="sd">${PUI[pl].site}</span></td><td class="small">${esc(x.period)}</td><td class="num">${tt(x.t)}</td>${EL.map(z=>`<td class="num ${z===e?'fc':''}">${fx(x.r[z],z)}</td>`).join('')}
       <td class="small">${x.prods.filter(q=>q.kind!=='sub').map(q=>`${SF_PNAME[q.k]||SUM_NAME[q.k]||q.k} <b>${tt(q.t)}</b> t · <b>${fx(q.v[e],e)}</b>`).join('<br>')}</td></tr>`; }
-  let cT=`<tr><th>Product stream</th><th>Made from</th><th>Tonnes</th><th>Share of ROM</th>${EL.map(z=>`<th>${ELN[z]} %</th>`).join('')}<th>vs limit</th></tr>`;
+  let cT=`<tr><th>Product stream</th><th>Made from</th><th>kt</th><th>Share of ROM</th>${EL.map(z=>`<th>${ELN[z]} %</th>`).join('')}<th>vs limit</th></tr>`;
   for(const c of C){ const b=c.b; cT+=`<tr><td><span class="dot" style="background:${c.col}"></span><b>${c.n}</b></td><td class="small muted">${esc(c.f)}</td><td class="num">${b?tt(b.w):'—'}</td><td class="num">${b&&TR>0?(b.w/TR*100).toFixed(1)+'%':'—'}</td>
       ${EL.map(z=>`<td class="num ${z===e?'fc':''}">${b?f(b[z],z):'—'}</td>`).join('')}<td>${b&&c.kind==='fines'?(b.Al2O3<=lim?`<span class="lm ok">✓ Al ≤ ${lim}</span>`:`<span class="lm bad">✕ Al &gt; ${lim}</span>`):'—'}</td></tr>`; }
   cT+=`<tr><td class="muted"><b>Total ROM processed</b></td><td></td><td class="num">${tt(TR)}</td><td class="num">100%</td><td colspan="5"></td></tr>`;
@@ -2822,16 +2829,42 @@ function renderSumVisMain(){
 }
 function visEmptyAll(){ return `<div class="pane"><p class="muted">No reports in the library yet — upload OPRs and the Noa C&amp;S Plant Report (Upload reports).</p></div>`; }
 // ---------- v1.11: full-screen view for flowsheet cards ----------
+const ZSTEPS=[1,1.25,1.5,1.75,2,2.5,3,4];
+function fsSvg(c){ return c.querySelector('.flowwrap>svg,.sfwrap>svg'); }
+function fsWrap(c){ return c.querySelector('.flowwrap,.sfwrap'); }
+function applyZoom(c,keep){
+  const sv=fsSvg(c), w=fsWrap(c), lab=c.querySelector('.zmv'); if(!sv||!w) return;
+  const z=c.classList.contains('fs')?(S._zoom||1):1;
+  let cx=0.5, cy=0.5; if(keep&&w.scrollWidth>w.clientWidth) { cx=(w.scrollLeft+w.clientWidth/2)/w.scrollWidth; cy=(w.scrollTop+w.clientHeight/2)/w.scrollHeight; }
+  if(z<=1.001){ ['width','height','max-width','min-width','flex'].forEach(k=>sv.style.removeProperty(k)); c.classList.remove('zoomed'); }
+  else { c.classList.add('zoomed'); sv.style.setProperty('width',Math.round(w.clientWidth*z)+'px','important'); sv.style.setProperty('height','auto','important'); sv.style.setProperty('max-width','none','important'); sv.style.setProperty('min-width','0','important'); sv.style.setProperty('flex','0 0 auto');
+    w.scrollLeft=cx*w.scrollWidth-w.clientWidth/2; w.scrollTop=cy*w.scrollHeight-w.clientHeight/2; }
+  if(lab) lab.textContent=z<=1.001?'Fit':Math.round(z*100)+'%'; }
+function zoomBy(c,dir){ const z=S._zoom||1; let i=ZSTEPS.findIndex(v=>v>=z-1e-6); if(i<0) i=ZSTEPS.length-1;
+  if(dir>0) i=Math.min(ZSTEPS.length-1,(ZSTEPS[i]>z+1e-6?i:i+1)); else if(dir<0) i=Math.max(0,(ZSTEPS[i]<z-1e-6?i:i-1)); else i=0;
+  S._zoom=ZSTEPS[i]; applyZoom(c,true); }
 function addFsBtns(){
   document.querySelectorAll('#main .card').forEach(c=>{ if(!c.querySelector('.flowwrap,.sfwrap')) return; const h=c.querySelector('.cardh'); if(!h||h.querySelector('.fsbtn')) return;
+    const zb=document.createElement('div'); zb.className='zmbar'; zb.innerHTML=`<button type="button" data-z="-1" title="Zoom out (−)">−</button><span class="zmv">Fit</span><button type="button" data-z="1" title="Zoom in (+)">+</button><button type="button" data-z="0" title="Fit to screen (0)">Fit</button>`; h.appendChild(zb);
     const b=document.createElement('button'); b.className='fsbtn'; b.type='button'; h.appendChild(b);
     const key=c.querySelector('.sfwrap')?'sum':'flow'; c.dataset.fs=key;
-    const set=on=>{ b.innerHTML=on?'✕ Exit full screen':'⛶ Full screen'; b.title=on?'Exit full screen (Esc)':'Show this flowsheet full screen'; c.classList.toggle('fs',on); document.body.classList.toggle('fsopen',on); };
+    const set=on=>{ b.innerHTML=on?'✕ Exit full screen':'⛶ Full screen'; b.title=on?'Exit full screen (Esc)':'Show this flowsheet full screen'; c.classList.toggle('fs',on); document.body.classList.toggle('fsopen',on); if(!on) S._zoom=1; requestAnimationFrame(()=>applyZoom(c)); };
     set(S._fs===key);
+    zb.querySelectorAll('button').forEach(x=>x.onclick=()=>zoomBy(c,+x.dataset.z));
+    const w=fsWrap(c);
+    w.addEventListener('wheel',ev=>{ if(!c.classList.contains('fs')||!(ev.ctrlKey||ev.metaKey)) return; ev.preventDefault(); zoomBy(c,ev.deltaY<0?1:-1); },{passive:false});
+    let drag=null;
+    w.addEventListener('pointerdown',ev=>{ if(!c.classList.contains('zoomed')||ev.pointerType==='touch') return; drag={x:ev.clientX,y:ev.clientY,l:w.scrollLeft,t:w.scrollTop,m:false}; });
+    w.addEventListener('pointermove',ev=>{ if(!drag) return; const dx=ev.clientX-drag.x, dy=ev.clientY-drag.y; if(!drag.m&&Math.hypot(dx,dy)<5) return; drag.m=true; w.classList.add('panning'); w.scrollLeft=drag.l-dx; w.scrollTop=drag.t-dy; });
+    const end=ev=>{ if(drag&&drag.m){ const stop=e2=>{ e2.stopPropagation(); e2.preventDefault(); }; w.addEventListener('click',stop,{capture:true,once:true}); setTimeout(()=>w.removeEventListener('click',stop,{capture:true}),50); } drag=null; w.classList.remove('panning'); };
+    w.addEventListener('pointerup',end); w.addEventListener('pointerleave',()=>{ drag=null; w.classList.remove('panning'); });
     b.onclick=()=>{ const on=S._fs!==key; S._fs=on?key:null; set(on);
       try{ if(on&&!document.fullscreenElement&&document.documentElement.requestFullscreen) document.documentElement.requestFullscreen().catch(()=>{});
         else if(!on&&document.fullscreenElement) document.exitFullscreen().catch(()=>{}); }catch(_){} }; }); }
-function fsClose(){ if(!S._fs) return; S._fs=null; document.querySelectorAll('#main .card.fs').forEach(c=>{ c.classList.remove('fs'); const b=c.querySelector('.fsbtn'); if(b) b.innerHTML='⛶ Full screen'; }); document.body.classList.remove('fsopen'); }
+function fsClose(){ if(!S._fs) return; S._fs=null; S._zoom=1; document.querySelectorAll('#main .card.fs').forEach(c=>{ c.classList.remove('fs'); const b=c.querySelector('.fsbtn'); if(b) b.innerHTML='⛶ Full screen'; applyZoom(c); }); document.body.classList.remove('fsopen'); }
+document.addEventListener('keydown',ev=>{ const c=document.querySelector('#main .card.fs'); if(!c||/INPUT|TEXTAREA|SELECT/.test((ev.target||{}).tagName||'')) return;
+  if(ev.key==='+'||ev.key==='='){ ev.preventDefault(); zoomBy(c,1); } else if(ev.key==='-'||ev.key==='_'){ ev.preventDefault(); zoomBy(c,-1); } else if(ev.key==='0'){ zoomBy(c,0); } });
+window.addEventListener('resize',()=>{ const c=document.querySelector('#main .card.fs'); if(c) applyZoom(c); });
 document.addEventListener('keydown',ev=>{ if(ev.key==='Escape') fsClose(); });
 document.addEventListener('fullscreenchange',()=>{ if(!document.fullscreenElement) fsClose(); });
 function renderSumMain(){
@@ -2846,10 +2879,10 @@ function renderSumMain(){
   let cards='';
   for(const pl of SUM_PL){ const x=R[pl]; if(!x) continue; const r=x.r;
     cards+=`<div class="pc" data-pl="${pl}"><div class="pch"><span class="dot" style="background:${gradeCol('Al2O3',+r.Al2O3)}"></span><b>${PUI[pl].label}</b><span>${PUI[pl].site}</span></div>
-      <div class="pcr">ROM ${x.t?Math.round(x.t).toLocaleString('en-IN')+' t · ':''}${r.n?r.n+' trips · ':''}Al ${f(+r.Al2O3,'Al2O3')}${r.SiO2!=null&&r.SiO2!==''?' · SiO₂ '+f(+r.SiO2,'SiO2'):''}</div>`;
+      <div class="pcr">ROM ${x.t?fmtKt(x.t)+' kt · ':''}${r.n?r.n+' trips · ':''}Al ${f(+r.Al2O3,'Al2O3')}${r.SiO2!=null&&r.SiO2!==''?' · SiO₂ '+f(+r.SiO2,'SiO2'):''}</div>`;
     if(x.err){ cards+=`<div class="pcr warn">⚠ ${esc(x.err)}</div></div>`; continue; }
     for(const p of x.prods.filter(p=>p.kind!=='sub')){ const d=p.dl[e], bad=e==='Fe'?d<0:d>0, fin=p.kind==='fines';
-      cards+=`<div class="prow"><div class="pn">${SUM_NAME[p.k]||p.k}<small>${p.y!=null?(p.y*100).toFixed(p.y<0.01?2:1)+'%':''}${p.t!=null&&p.t>0?' · '+Math.round(p.t).toLocaleString('en-IN')+' t':''}</small></div>
+      cards+=`<div class="prow"><div class="pn">${SUM_NAME[p.k]||p.k}<small>${p.y!=null?(p.y*100).toFixed(p.y<0.01?2:1)+'%':''}${p.t!=null&&p.t>0?' · '+fmtKt(p.t)+' kt':''}</small></div>
         <div class="pa"><b style="color:${gradeCol(e,p.v[e])}">${f(p.v[e],e)}</b><i>% ${ELN[e]}</i>${d==null||Math.abs(d)<0.005?'<span class="dd eq">= ROM</span>':`<span class="dd ${bad?'up':'dn'}">${d>0?'▲':'▼'}${Math.abs(d).toFixed(DP[e])}</span>`}
           ${fin?(p.v.Al2O3<=lim?`<span class="lm ok">✓ Al ≤ ${lim}</span>`:`<span class="lm bad">✕ Al &gt; ${lim}</span>`):''}</div>
         <div class="pq">${EL.filter(z=>z!==e).map(z=>`${ELN[z]} ${f(p.v[z],z)}`).join(' · ')}${p.sd&&p.sd[e]!=null?` · ±${f(p.sd[e],e)}`:''}</div></div>`; }
@@ -2857,12 +2890,12 @@ function renderSumMain(){
     if(pl==='wet') cards+=`<div class="pcr" style="margin-top:6px">Jig ${x.jf>0?'ON · '+Math.round(x.jf*100)+'% of CF':'OFF'}</div>`;
     cards+='</div>'; }
   const C=sumCombined(R), TR=SUM_PL.reduce((a,pl)=>a+(R[pl]?R[pl].t||0:0),0);
-  let cT=`<tr><th>Product stream</th><th>Made from</th><th>Tonnes</th><th>Share of ROM</th>${EL.map(z=>`<th>${ELN[z]} %</th>`).join('')}<th>vs limit</th></tr>`;
+  let cT=`<tr><th>Product stream</th><th>Made from</th><th>kt</th><th>Share of ROM</th>${EL.map(z=>`<th>${ELN[z]} %</th>`).join('')}<th>vs limit</th></tr>`;
   for(const c of C){ const b=c.b; cT+=`<tr><td><span class="dot" style="background:${c.col}"></span><b>${c.n}</b></td><td class="small muted">${esc(c.f)}</td>
-      <td class="num">${b&&b.w>0?Math.round(b.w).toLocaleString('en-IN'):'—'}</td><td class="num">${b&&TR>0?(b.w/TR*100).toFixed(1)+'%':'—'}</td>
+      <td class="num">${b&&b.w>0?fmtKt(b.w):'—'}</td><td class="num">${b&&TR>0?(b.w/TR*100).toFixed(1)+'%':'—'}</td>
       ${EL.map(z=>`<td class="num ${z===e?'fc':''}" ${b&&z==='Al2O3'?`style="color:${gradeCol('Al2O3',b[z])}"`:''}>${b?f(b[z],z):'—'}</td>`).join('')}
       <td>${b&&c.kind==='fines'?(b.Al2O3<=lim?`<span class="lm ok">✓ Al ≤ ${lim}</span>`:`<span class="lm bad">✕ Al &gt; ${lim}</span>`):'—'}</td></tr>`; }
-  cT+=`<tr><td class="muted"><b>Total ROM processed</b></td><td></td><td class="num">${TR>0?Math.round(TR).toLocaleString('en-IN'):'—'}</td><td class="num">100%</td><td colspan="5"></td></tr>`;
+  cT+=`<tr><td class="muted"><b>Total ROM processed</b></td><td></td><td class="num">${TR>0?fmtKt(TR):'—'}</td><td class="num">100%</td><td colspan="5"></td></tr>`;
   const sv=S.sumView==='cards'?'cards':'flow';
   const when=st.date?`${esc(st.date)}${st.shift?' · '+esc(st.shift)+' shift':''}`:'no shift loaded';
   const any=Object.keys(R).length;
