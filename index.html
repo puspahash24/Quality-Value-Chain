@@ -286,6 +286,12 @@ input[type=range]:disabled{opacity:.35}
 .sfsvg .sfbig{font:700 21px var(--cond)}.sfsvg .sflab{font:600 11px var(--mono);fill:var(--svgmut)}.sfsvg .sflane{font:700 13px var(--mono);letter-spacing:4px;fill:var(--amber)}.sfsvg .sfh{font:600 10.5px var(--mono);letter-spacing:2.5px;fill:var(--svgdim)}
 .sfsvg .sfgo{cursor:pointer}.sfsvg .sfgo:hover rect{stroke:var(--amber)}.sfsvg .sfgo:hover .sfpl{stroke-width:2.6}
 .focseg{margin-left:6px}.focseg button{padding:5px 9px}
+.rgbar{display:none;flex-wrap:wrap;align-items:center;gap:8px 12px;padding:8px 16px;border-bottom:1px solid var(--line);background:var(--panel)}.card.fs .rgbar{display:flex}
+.rgbar .rglab{font:600 11px var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.rgbar label{font:600 12px var(--cond);color:var(--muted);display:flex;align-items:center;gap:6px}
+.rgbar input[type=date]{background:var(--panel2);border:1px solid var(--line2);color:var(--text);border-radius:6px;padding:4px 6px;font:13px var(--mono);color-scheme:dark}
+:root[data-theme=white] .rgbar input[type=date],:root[data-theme=lavender] .rgbar input[type=date]{color-scheme:light}
+.rgbar .rgnow{font:600 12px var(--mono);color:var(--amber);margin-left:auto}
 .zmbar{display:none;align-items:center;margin-left:auto;border:1px solid var(--line2);border-radius:6px;overflow:hidden}.card.fs .zmbar{display:inline-flex}
 .zmbar button{background:var(--panel2);border:0;color:var(--text);font:700 16px var(--cond);padding:4px 12px;cursor:pointer}.zmbar button[data-z="0"]{font-size:12px;border-left:1px solid var(--line2)}.zmbar button:hover{color:var(--amber)}
 .zmv{min-width:52px;text-align:center;font:600 12px var(--mono);color:var(--muted);background:var(--panel)}
@@ -327,7 +333,7 @@ body.fsopen{overflow:hidden}
 <body>
 <div class="top">
   <img class="brandimg" src="icon.svg" alt="">
-  <div class="ttl"><small id="plantEyebrow">NOAMUNDI · NRD · WET PLANT</small><b>Quality Value Chain <span class="ver" id="appVer">v1.15.0</span></b></div>
+  <div class="ttl"><small id="plantEyebrow">NOAMUNDI · NRD · WET PLANT</small><b>Quality Value Chain <span class="ver" id="appVer">v1.16.0</span></b></div>
   <div class="plantseg" id="plantSeg"><button data-v="wet" class="on">Wet Plant</button><button data-v="iopp">IOPP</button><button data-v="dry" title="NDCMP and the four C&amp;S plants">NDCMP · C&amp;S</button><button data-v="summary" title="All plants: predicted product quality from the ROM Monitoring App shift report">Plant summary</button><button data-v="flow" title="Downstream material flow (under construction)">Material flow</button></div>
   <div class="plantseg modeseg" id="modeSeg" title="Switch between the predictive model and what the plants actually processed"><button data-v="predict" class="on">Predict</button><button data-v="vis">Visualise</button></div>
   <div class="sp"></div>
@@ -2904,6 +2910,24 @@ function renderSumVisMain(){
 }
 function visEmptyAll(){ return `<div class="pane"><p class="muted">No reports in the library yet — upload OPRs and the Noa C&amp;S Plant Report (Upload reports).</p></div>`; }
 // ---------- v1.11: full-screen view for flowsheet cards ----------
+
+// ---------- v1.16: period bar inside full-screen flowsheets (Visualise) ----------
+function rangeBarHTML(ds){
+  const R=S.range||{kind:'last'}, r=rangeFor(ds);
+  return `<div class="rgbar"><span class="rglab">Period</span><div class="fvseg">${RANGES.map(([k,l])=>`<button type="button" data-rk="${k}" class="${R.kind===k?'on':''}">${l}</button>`).join('')}</div>
+    <label>From <input type="date" class="rgfrom" value="${r?ord2iso(r.a):''}" ${r?`min="${ord2iso(r.first)}" max="${ord2iso(r.last)}"`:''}></label>
+    <label>To <input type="date" class="rgto" value="${r?ord2iso(r.b):''}" ${r?`min="${ord2iso(r.first)}" max="${ord2iso(r.last)}"`:''}></label>
+    <span class="rgnow">${r?esc(rangeLabel(r)):'no data'}${S.page==='summary'&&R.kind!=='custom'&&R.kind!=='all'?' · each plant to its own latest day':''}</span></div>`;
+}
+function addRangeBars(){
+  if(S.mode!=='vis') return;
+  const ds=S.page==='summary'?sumLatestDs():S.ds; if(!ds) return;
+  document.querySelectorAll('#main .card').forEach(c=>{ if(!c.querySelector('.flowwrap,.sfwrap')||c.querySelector('.rgbar')) return; const h=c.querySelector('.cardh'); if(!h) return;
+    h.insertAdjacentHTML('afterend',rangeBarHTML(ds)); const b=c.querySelector('.rgbar');
+    b.querySelectorAll('[data-rk]').forEach(x=>x.onclick=()=>{ S.range={kind:x.dataset.rk}; save(); renderAll(); });
+    const cust=()=>{ S.range={kind:'custom',from:b.querySelector('.rgfrom').value,to:b.querySelector('.rgto').value}; save(); renderAll(); };
+    b.querySelector('.rgfrom').onchange=cust; b.querySelector('.rgto').onchange=cust; });
+}
 const ZSTEPS=[1,1.25,1.5,1.75,2,2.5,3,4];
 function fsSvg(c){ return c.querySelector('.flowwrap>svg,.sfwrap>svg'); }
 function fsWrap(c){ return c.querySelector('.flowwrap,.sfwrap'); }
@@ -2919,6 +2943,7 @@ function zoomBy(c,dir){ const z=S._zoom||1; let i=ZSTEPS.findIndex(v=>v>=z-1e-6)
   if(dir>0) i=Math.min(ZSTEPS.length-1,(ZSTEPS[i]>z+1e-6?i:i+1)); else if(dir<0) i=Math.max(0,(ZSTEPS[i]<z-1e-6?i:i-1)); else i=0;
   S._zoom=ZSTEPS[i]; applyZoom(c,true); }
 function addFsBtns(){
+  addRangeBars();
   document.querySelectorAll('#main .card').forEach(c=>{ if(!c.querySelector('.flowwrap,.sfwrap')) return; const h=c.querySelector('.cardh'); if(!h||h.querySelector('.fsbtn')) return;
     const zb=document.createElement('div'); zb.className='zmbar'; zb.innerHTML=`<button type="button" data-z="-1" title="Zoom out (−)">−</button><span class="zmv">Fit</span><button type="button" data-z="1" title="Zoom in (+)">+</button><button type="button" data-z="0" title="Fit to screen (0)">Fit</button>`; h.appendChild(zb);
     const b=document.createElement('button'); b.className='fsbtn'; b.type='button'; h.appendChild(b);
