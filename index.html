@@ -333,7 +333,7 @@ body.fsopen{overflow:hidden}
 <body>
 <div class="top">
   <img class="brandimg" src="icon.svg" alt="">
-  <div class="ttl"><small id="plantEyebrow">NOAMUNDI · NRD · WET PLANT</small><b>Quality Value Chain <span class="ver" id="appVer">v1.16.0</span></b></div>
+  <div class="ttl"><small id="plantEyebrow">NOAMUNDI · NRD · WET PLANT</small><b>Quality Value Chain <span class="ver" id="appVer">v1.17.0</span></b></div>
   <div class="plantseg" id="plantSeg"><button data-v="wet" class="on">Wet Plant</button><button data-v="iopp">IOPP</button><button data-v="dry" title="NDCMP and the four C&amp;S plants">NDCMP · C&amp;S</button><button data-v="summary" title="All plants: predicted product quality from the ROM Monitoring App shift report">Plant summary</button><button data-v="flow" title="Downstream material flow (under construction)">Material flow</button></div>
   <div class="plantseg modeseg" id="modeSeg" title="Switch between the predictive model and what the plants actually processed"><button data-v="predict" class="on">Predict</button><button data-v="vis">Visualise</button></div>
   <div class="sp"></div>
@@ -342,7 +342,7 @@ body.fsopen{overflow:hidden}
   <button class="themebtn" id="themeBtn" title="Change colour theme"><i></i>Theme</button>
   <button class="up ghost" id="installBtn" hidden>Install app</button>
   <button class="up" id="uploadBtn" title="Ore Processing Reports and Noa C&amp;S Plant Reports — both recognised automatically">Upload reports</button>
-  <button class="up fsb" id="fsBtn" type="button">📁 Link OneDrive folder</button>
+  <button class="up fsb" id="fsBtn" type="button">📁 Link folder</button>
   <input type="file" id="file" accept=".xlsx,.xlsm,.xls" multiple hidden>
 </div>
 <div class="app">
@@ -1486,7 +1486,7 @@ async function fsScan(manual){
     else if(manual) toast(`OneDrive folder <b>${esc(FSDIR.name)}</b>: no new reports (${n} file${n===1?'':'s'} checked)`,3000);
     try{ localStorage.setItem(FSK,JSON.stringify(next)); }catch(e){}
     fsSetInfo({name:FSDIR.name,n,at:Date.now(),last:fresh.length});
-  }catch(e){ console.warn(e); FSSTATE='need'; if(manual) toast('Could not read the linked folder — click “Allow folder” and try again. ('+esc(e.message||e)+')',6000); }
+  }catch(e){ console.warn(e); FSSTATE='need'; if(manual) toast('Could not read the linked folder — click “Link folder” and try again. ('+esc(e.message||e)+')',6000); }
   fsRefreshUI();
 }
 async function fsLink(){
@@ -1501,11 +1501,11 @@ function fsAgo(t){ if(!t) return 'not yet'; const m=Math.round((Date.now()-t)/60
 function fsBoxHTML(){
   const i=fsInfo();
   if(!FS_OK) return `<div class="fsbox"><b>Linked folder</b><div class="hint">Open the app in Microsoft Edge or Google Chrome on a computer to link a OneDrive folder.</div></div>`;
-  if(!FSDIR) return `<div class="fsbox"><b>Link a OneDrive folder</b><div class="hint">Keep every OPR and Noa C&amp;S report in one synced OneDrive folder. Link it once; the app loads new and changed reports each time it opens.</div><button class="btn" id="fsLink" style="padding:7px 8px">📁 Link OneDrive folder</button></div>`;
+  if(!FSDIR) return `<div class="fsbox"><b>Link a OneDrive folder</b><div class="hint">Keep every OPR and Noa C&amp;S report in one synced OneDrive folder. Link it once; the app loads new and changed reports each time it opens.</div><button class="btn" id="fsLink" style="padding:7px 8px">📁 Link folder</button></div>`;
   const st=FSSTATE==='busy'?'<span class="fsdot busy"></span>checking…':FSSTATE==='need'?'<span class="fsdot need"></span>access needed':'<span class="fsdot ok"></span>linked';
   return `<div class="fsbox"><div class="fsh"><b>📁 ${esc(FSDIR.name)}</b><span>${st}</span></div>
     <div class="hint" style="margin:2px 0 6px">${i.n||0} report file${i.n===1?'':'s'} · checked ${fsAgo(i.at)}${i.last?` · ${i.last} loaded`:''}</div>
-    ${FSSTATE==='need'?`<button class="btn" id="fsAllow" style="padding:7px 8px">Allow folder access</button>`:`<div class="duo"><button class="btn" id="fsCheck" style="padding:7px 8px" ${FSSTATE==='busy'?'disabled':''}>Check now</button><button class="btn sec" id="fsReload" style="padding:7px 8px" ${FSSTATE==='busy'?'disabled':''} title="Read every file in the folder again">Reload all</button></div>`}
+    ${FSSTATE==='need'?`<button class="btn" id="fsAllow" style="padding:7px 8px">Link folder</button>`:`<div class="duo"><button class="btn" id="fsCheck" style="padding:7px 8px" ${FSSTATE==='busy'?'disabled':''}>Check now</button><button class="btn sec" id="fsReload" style="padding:7px 8px" ${FSSTATE==='busy'?'disabled':''} title="Read every file in the folder again">Reload all</button></div>`}
     <button class="lnk" id="fsUnlink">Unlink folder</button></div>`;
 }
 function fsBind(){
@@ -1515,7 +1515,7 @@ function fsBind(){
 function fsRefreshUI(){
   const tb=$('fsBtn');
   if(tb){ tb.classList.toggle('need',FSSTATE==='need'); tb.classList.toggle('ok',FSSTATE==='ok');
-    tb.innerHTML=!FSDIR?'📁 Link OneDrive folder':FSSTATE==='need'?'📁 Allow OneDrive folder':FSSTATE==='busy'?'📁 Checking…':'📁 '+esc(FSDIR.name);
+    tb.innerHTML=!FSDIR?'📁 Link folder':FSSTATE==='need'?'📁 Link folder':FSSTATE==='busy'?'📁 Checking…':'📁 '+esc(FSDIR.name);
     tb.title=!FSDIR?'Link the synced OneDrive folder that holds the OPRs and C&S reports':FSSTATE==='need'?'The browser needs your OK to read the linked folder again':'Linked folder — click to check for new reports'; }
   const bx=document.querySelector('.fsbox'); if(bx){ bx.outerHTML=fsBoxHTML(); fsBind(); }
 }
@@ -3031,7 +3031,7 @@ function renderMain(){
   }
   const e=S.set.focus;
   const lo=e==='Fe'?'low Fe':'low '+ELN[e], hi=e==='Fe'?'high Fe':'high '+ELN[e];
-  mn.innerHTML=`<div class="card"><div class="cardh"><h2>Grade flow</h2><span class="sub">${FVIEW_PL.includes(S.plant)&&S.fview!=='sankey'?'equipment flowsheet · line width = share of ROM mass · tags = OPR sample points':'band width = share of ROM mass'} · ${FT()?'focus = tonnes':'colour = predicted '+ELN[e]}</span>${fviewSeg()}${focusSeg()}
+  mn.innerHTML=`<div class="card"><div class="cardh"><h2>Predicted flowsheet</h2><span class="sub">${FVIEW_PL.includes(S.plant)&&S.fview!=='sankey'?'equipment flowsheet · line width = share of ROM mass · tags = OPR sample points':'band width = share of ROM mass'} · ${FT()?'focus = tonnes':'colour = predicted '+ELN[e]}</span>${fviewSeg()}${focusSeg()}
       <div class="scale" ${FT()?`style="display:none"`:""}><span>${e==='Fe'?hi:lo}</span><span class="bar" style="background:linear-gradient(90deg,#46c29d,#f2b33d,#ef5b4c)"></span><span>${e==='Fe'?lo:hi}</span></div></div>
     <div class="flowwrap">${flowView()}</div>${inspector()}</div>
     <div class="card"><div class="tabbar" id="tabbar">${TABS.map(([k,l])=>`<button data-t="${k}" class="${S.tab===k?'on':''}">${l}</button>`).join('')}</div><div class="pane" id="pane"></div></div>`;

@@ -1,4 +1,4 @@
-# Quality Value Chain — Noamundi & Katamati · v1.16.0
+# Quality Value Chain — Noamundi & Katamati · v1.17.0
 
 Installable web app (PWA). Trains ROM → product quality (Fe, SiO2, Al2O3, P) from the monthly
 Ore Processing Report (Wet Plant, IOPP, NDCMP) and the Noa C&S Plant Report (ISS, Metso (NIM),
@@ -21,6 +21,7 @@ Installed copies pick up the update on the next launch (the version in `sw.js` c
 
 ## Version history
 - 1.9.1 — Pasting ROM quality in Plant summary (or editing it there) now also sets the ROM inputs on each plant's Predict page, marked “from Plant summary”.
+- 1.17.0 — Wet / IOPP / NDCMP Predict card renamed “Predicted flowsheet” (was “Grade flow”); folder button reads “📁 Link folder” (also when the browser needs access again).
 - 1.16.0 — Full-screen flowsheets in Visualise mode (Wet, IOPP, NDCMP, C&S plants and Plant summary) get a Period bar: Last day / 7 days / 30 days / Month / All and From–To dates, without leaving full screen.
 - 1.15.0 — Link a OneDrive folder (Edge / Chrome on a computer): keep every OPR and Noa C&S report in one synced OneDrive folder (sub-folders included), link it once with “📁 Link OneDrive folder”, and the app loads new or changed reports each time it opens or comes back to the screen; Check now / Reload all / Unlink in the Report library. “Waste” wording replaced by “by-products”.
 - 1.14.0 — Zoom in full screen: − / + / Fit buttons (also + − 0 keys and Ctrl + mouse wheel), drag to pan when zoomed, 125 % to 400 %. All quantities shown in kt (kilotonnes) — flowsheets, KPIs, product cards, tables, band analysis, backtest and Plant summary; typed inputs (ROM tonnes, t / trip) stay in tonnes.
