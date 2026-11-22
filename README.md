@@ -1,4 +1,4 @@
-# Quality Value Chain — Noamundi & Katamati · v1.19.0
+# Quality Value Chain — Noamundi & Katamati · v1.19.1
 
 Installable web app (PWA). Trains ROM → product quality (Fe, SiO2, Al2O3, P) from the monthly
 Ore Processing Report (Wet Plant, IOPP, NDCMP) and the Noa C&S Plant Report (ISS, Metso (NIM),
@@ -21,6 +21,7 @@ Installed copies pick up the update on the next launch (the version in `sw.js` c
 
 ## Version history
 - 1.9.1 — Pasting ROM quality in Plant summary (or editing it there) now also sets the ROM inputs on each plant's Predict page, marked “from Plant summary”.
+- 1.19.1 — Fix: OPRs from April–September 2026 were mistaken for the multi-year Wet Plant sheet (they carry a similar shift-wise tonnage sheet) and skipped with “no new months”. A file with OPR / C&S plant sheets is now always read as a monthly report.
 - 1.19.0 — Light blue is the default theme, with 8 light themes (Blue, Navy, Sky, Teal, Green, Orange, Rose, Lavender) and 7 dark ones. ⚙ Settings: product specification limits (min / max for Fe, SiO2, Al2O3, P) for every plant product, plus Plant summary fines limit and t / trip; out-of-spec values turn red on flowsheets, the assay ledger, Plant summary and insights. Plant summary Visualise gets Summary / Trend / Daily / Shifts tabs; trends on every page pick one or many streams and switch Daily ↔ Shift-wise. Equipment flowsheets for the C&S plants (hopper, scalping screen, jaw and cone crushers, product screen). Full screen opens filling the screen width (Fit shows the whole sheet). Longer ROM feed arrows. “online” label removed.
 - 1.18.0 — Linked folder: a file that cannot be opened (OneDrive “online-only” file not yet downloaded) no longer stops the whole folder check. Every readable report still loads; the unreadable ones are listed in the Report library and retried automatically at the next check. Permission problems and file problems are now reported separately.
 - 1.17.0 — Wet / IOPP / NDCMP Predict card renamed “Predicted flowsheet” (was “Grade flow”); folder button reads “📁 Link folder” (also when the browser needs access again).

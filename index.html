@@ -371,7 +371,7 @@ body.fsopen{overflow:hidden}
 <body>
 <div class="top">
   <img class="brandimg" src="icon.svg" alt="">
-  <div class="ttl"><small id="plantEyebrow">NOAMUNDI · NRD · WET PLANT</small><b>Quality Value Chain <span class="ver" id="appVer">v1.19.0</span></b></div>
+  <div class="ttl"><small id="plantEyebrow">NOAMUNDI · NRD · WET PLANT</small><b>Quality Value Chain <span class="ver" id="appVer">v1.19.1</span></b></div>
   <div class="plantseg" id="plantSeg"><button data-v="wet" class="on">Wet Plant</button><button data-v="iopp">IOPP</button><button data-v="dry" title="NDCMP and the four C&amp;S plants">NDCMP · C&amp;S</button><button data-v="summary" title="All plants: predicted product quality from the ROM Monitoring App shift report">Plant summary</button><button data-v="flow" title="Downstream material flow (under construction)">Material flow</button></div>
   <div class="plantseg modeseg" id="modeSeg" title="Switch between the predictive model and what the plants actually processed"><button data-v="predict" class="on">Predict</button><button data-v="vis">Visualise</button></div>
   <div class="sp"></div>
@@ -1479,7 +1479,8 @@ async function handleFiles(files){
       const wb = XLSX.read(buf,{type:'array',cellDates:true});
       let asked; const ask=()=>{ if(asked!==undefined) return asked; const ans=prompt(`Which month is "${file.name}"? Enter as YYYY-MM (e.g. 2026-04)`,''); asked=ans&&/^\d{4}-\d{2}$/.test(ans.trim())?ans.trim():null; return asked; };
       const byYm={}, kinds=new Set();
-      if(V.plants.wet.detectHist(wb)){ const hr=V.plants.wet.parseHist(wb,file.name); const lib0=libGet(); let added=0, skipped=[];
+      const isRep=Object.keys(PUI).some(pl=>{ try{ return V.plants[pl].detect(wb); }catch(_){ return false; } });   // a monthly OPR / C&S report wins over the history-sheet layout
+      if(!isRep&&V.plants.wet.detectHist(wb)){ const hr=V.plants.wet.parseHist(wb,file.name); const lib0=libGet(); let added=0, skipped=[];
         for(const r of hr){ const ex=lib0.find(x=>x.ym===r.ym); if(ex&&hasOpr(ex)&&libCount(ex,'wet')!=null){ skipped.push(r.ym); continue; } if(libAdd(r.ym,file.name,{wet:r.ds},'hist')) added++; else break; }
         if(added) ok.push(`Wet Plant shift history · ${added} month${added>1?'s':''} (${hr[0].ym} → ${hr[hr.length-1].ym})${skipped.length?` · ${skipped.length} month(s) kept from OPR`:''}`);
         else bad.push(file.name+' (no new months — all already loaded from OPRs)');
