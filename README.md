@@ -1,4 +1,4 @@
-# Quality Value Chain — Noamundi & Katamati · v1.20.0
+# Quality Value Chain — Noamundi & Katamati · v1.21.0
 
 Installable web app (PWA). Trains ROM → product quality (Fe, SiO2, Al2O3, P) from the monthly
 Ore Processing Report (Wet Plant, IOPP, NDCMP) and the Noa C&S Plant Report (ISS, Metso (NIM),
@@ -21,6 +21,7 @@ Installed copies pick up the update on the next launch (the version in `sw.js` c
 
 ## Version history
 - 1.9.1 — Pasting ROM quality in Plant summary (or editing it there) now also sets the ROM inputs on each plant's Predict page, marked “from Plant summary”.
+- 1.21.0 — Plant summary (QVC code paste): Wet Plant and IOPP now train on the last 4 months of shifts (editable; 0 = use the plant settings), run the band-width finder on that window and predict with the best band widths; outlier filter fixed at 4σ. The window and chosen widths are shown under Models.
 - 1.20.0 — Retractable side panel: the ▢ button at the top left hides or shows the left panel (period, focus, inputs, report library); the choice is remembered.
 - 1.19.1 — Fix: OPRs from April–September 2026 were mistaken for the multi-year Wet Plant sheet (they carry a similar shift-wise tonnage sheet) and skipped with “no new months”. A file with OPR / C&S plant sheets is now always read as a monthly report.
 - 1.19.0 — Light blue is the default theme, with 8 light themes (Blue, Navy, Sky, Teal, Green, Orange, Rose, Lavender) and 7 dark ones. ⚙ Settings: product specification limits (min / max for Fe, SiO2, Al2O3, P) for every plant product, plus Plant summary fines limit and t / trip; out-of-spec values turn red on flowsheets, the assay ledger, Plant summary and insights. Plant summary Visualise gets Summary / Trend / Daily / Shifts tabs; trends on every page pick one or many streams and switch Daily ↔ Shift-wise. Equipment flowsheets for the C&S plants (hopper, scalping screen, jaw and cone crushers, product screen). Full screen opens filling the screen width (Fit shows the whole sheet). Longer ROM feed arrows. “online” label removed.

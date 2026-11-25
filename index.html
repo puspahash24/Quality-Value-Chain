@@ -312,6 +312,7 @@ input[type=range]:disabled{opacity:.35}
 .sfsvg .sfgo{cursor:pointer}.sfsvg .sfgo:hover rect{stroke:var(--amber)}.sfsvg .sfgo:hover .sfpl{stroke-width:2.6}
 .focseg{margin-left:6px}.focseg button{padding:5px 9px}
 .sumblk{margin-bottom:18px}
+.mstate .mauto{grid-column:1/-1;font:11px var(--mono);color:var(--muted);margin:-2px 0 4px}
 .trctl{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin:0 0 10px}.trchips{display:flex;flex-wrap:wrap;gap:6px}
 .trc{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line2);background:var(--panel2);color:var(--muted);border-radius:14px;padding:4px 10px;font:600 12px var(--cond);cursor:pointer;opacity:.6}
 .trc i{width:14px;height:3px;border-radius:2px;display:inline-block}.trc.on{opacity:1;color:var(--text);border-color:var(--amber)}
@@ -375,7 +376,7 @@ body.fsopen{overflow:hidden}
 <div class="top">
   <button class="railtog" id="railTog" type="button" aria-label="Hide side panel" title="Hide side panel"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16"/><path class="rtarr" d="M15.5 9.5 13 12l2.5 2.5"/></svg></button>
   <img class="brandimg" src="icon.svg" alt="">
-  <div class="ttl"><small id="plantEyebrow">NOAMUNDI · NRD · WET PLANT</small><b>Quality Value Chain <span class="ver" id="appVer">v1.20.0</span></b></div>
+  <div class="ttl"><small id="plantEyebrow">NOAMUNDI · NRD · WET PLANT</small><b>Quality Value Chain <span class="ver" id="appVer">v1.21.0</span></b></div>
   <div class="plantseg" id="plantSeg"><button data-v="wet" class="on">Wet Plant</button><button data-v="iopp">IOPP</button><button data-v="dry" title="NDCMP and the four C&amp;S plants">NDCMP · C&amp;S</button><button data-v="summary" title="All plants: predicted product quality from the ROM Monitoring App shift report">Plant summary</button><button data-v="flow" title="Downstream material flow (under construction)">Material flow</button></div>
   <div class="plantseg modeseg" id="modeSeg" title="Switch between the predictive model and what the plants actually processed"><button data-v="predict" class="on">Predict</button><button data-v="vis">Visualise</button></div>
   <div class="sp"></div>
@@ -2821,11 +2822,36 @@ function sumPush(only){
   if(S.model&&S.input&&S.input.Al2O3!=null){ try{ runPredict(); }catch(_){} }
   save(); return n; }
 function sumSave(){ try{ localStorage.setItem('wpvc.sum',JSON.stringify(S.sum)); }catch(_){} }
+// v1.21: Wet & IOPP in the Plant summary — train on the last N months (default 4), pick the best band widths for that window, outlier filter 4σ
+const SUM_AUTO=['wet','iopp'];
+function sumAutoMonths(){ const st=sumState(); return st.autoM==null||st.autoM===''?4:Math.max(0,+st.autoM); }
+function monthsBack(end,n){ const d=ord2date(addDays(end,1)); d.setUTCMonth(d.getUTCMonth()-n); return date2ord(d); }   // 30 Sep, 4 → 1 Jun
+function findBestBandsFor(pl,ds,o){
+  const Ep=V.plants[pl], tp=(PUI[pl].tuneP||[]).filter(k=>Ep.PRODUCTS[k]);
+  const src=Ep.qcRows(ds.shifts.filter(r=>r.rom&&r.day>=o.startDay&&r.day<=o.endDay),'rom',o.qcK);
+  if(src.length<15||!tp.length) return {best:null,n:src.length};
+  const days=[...new Set(src.map(r=>r.day))].sort((a,b)=>a-b), K=Math.min(5,days.length), fi=new Map(days.map((d,i)=>[d,Math.min(K-1,Math.floor(i*K/days.length))]));
+  const se={}; for(const e of EL) se[e]=BCAND[e].map(()=>({}));
+  for(let i=0;i<BCAND.Fe.length;i++){ const bands={}; for(const e of EL) bands[e]=BCAND[e][i];
+    for(let k=0;k<K;k++){ const tr=src.filter(r=>fi.get(r.day)!==k), te=src.filter(r=>fi.get(r.day)===k); if(tr.length<6||!te.length) continue;
+      let mk; try{ mk=Ep.train({shifts:tr,days:[]},{basis:'shift',nDays:99999,method:'band',bands,qcK:0}); }catch(_){ continue; }
+      for(const r of te){ const x=r.rom, jf=r.jig&&r.t&&r.t.CF>0?(r.t.JF||0)/r.t.CF:0; let pr; try{ pr=Ep.predict(mk,{Al2O3:x.Al2O3,Fe:x.Fe,SiO2:x.SiO2,P:x.P,jf}); }catch(_){ continue; }
+        for(const p of tp){ const a=r.p[p], q=pr.p[p]; if(!a||!q||!(a.Fe>1)) continue; const w=Ep.rowW(r,p)||1;
+          for(const e of EL){ const z=(se[e][i][p]=se[e][i][p]||{w:0,s:0}); const d=q.v[e]-a[e]; z.w+=w; z.s+=w*d*d; } } } } }
+  const best={}, cur=bandsFor(pl);
+  for(const e of EL){ const sc=se[e].map(o2=>{ const ps=tp.filter(p=>o2[p]&&o2[p].w>0); return ps.length?Math.sqrt(ps.reduce((a,p)=>a+o2[p].s/o2[p].w,0)/ps.length):NaN; });
+    const v=sc.filter(isFinite); best[e]=v.length?BCAND[e][sc.indexOf(Math.min(...v))]:cur[e]; }
+  return {best,n:src.length};
+}
 function sumModel(pl){
   if(SM[pl]!==undefined) return SM[pl];
   const ds=libMerged(pl); if(!ds) return (SM[pl]={err:'no data — upload '+(PUI[pl].src==='cs'?'the C&S plant report':'OPRs')});
-  const Ep=V.plants[pl], o=trainOpt(pl,ds); o.basis='shift';
-  try{ const m=Ep.train(ds,o); m._ds=ds; return (SM[pl]=m); }catch(err){ return (SM[pl]={err:'not enough data to train ('+err.message+')'}); }
+  const Ep=V.plants[pl]; let o=trainOpt(pl,ds); o.basis='shift'; let auto=null;
+  const nm=sumAutoMonths();
+  if(SUM_AUTO.includes(pl)&&nm>0){ const od=opDaysOf(ds), end=od.length?od[od.length-1]:null;
+    if(end){ o={basis:'shift',nDays:99999,method:'band',bands:bandsFor(pl),qcK:4,endDay:end,startDay:monthsBack(end,nm)};
+      try{ const fb=findBestBandsFor(pl,ds,o); if(fb.best) o.bands=fb.best; auto={months:nm,from:o.startDay,to:end,bands:Object.assign({},o.bands),found:!!fb.best,n:fb.n}; }catch(err){ console.warn('band finder',err); } } }
+  try{ const m=Ep.train(ds,o); m._ds=ds; m._auto=auto; return (SM[pl]=m); }catch(err){ return (SM[pl]={err:'not enough data to train ('+err.message+')'}); }
 }
 function sumClear(){ for(const k in SM) delete SM[k]; }
 // ---------- parsing what the sampler sends ----------
@@ -2896,7 +2922,7 @@ function blendOf(list){ const L=list.filter(x=>x.w>0&&x.v); if(!L.length) return
 // ---------- rail ----------
 function renderSumRail(){
   const st=sumState(), r=$('rail');
-  const ms=SUM_PL.map(pl=>{ const m=sumModel(pl); return `<span>${PUI[pl].label}</span><i class="${m.err?'warn':'ok'}">${m.err?esc(m.err.split(' (')[0]):(pl==='ndcmp'?'ROM = fines':m.nRows+' shifts')}</i>`; }).join('');
+  const ms=SUM_PL.map(pl=>{ const m=sumModel(pl), a=m._auto; return `<span>${PUI[pl].label}</span><i class="${m.err?'warn':'ok'}">${m.err?esc(m.err.split(' (')[0]):(pl==='ndcmp'?'ROM = fines':m.nRows+' shifts')}</i>${a?`<span class="mauto">${E.fmtOrd(a.from)} – ${E.fmtOrd(a.to)} · ${a.found?'best':'default'} bands ${EL.map(e=>({Fe:'Fe',SiO2:'Si',Al2O3:'Al',P:'P'})[e]+' '+fb(a.bands[e],e)).join(' · ')}</span>`:''}`; }).join('');
   r.innerHTML=`<div class="sec"><h5><span>1 · Paste from ROM Monitoring App</span><span>Ctrl+V</span></h5>
       <textarea id="sumPaste" class="sumta" wrap="off" placeholder="Paste the “Plant quality” message (with its QVC1 code), or a table copied from Excel with columns Plant, Trips (or ROM t), Fe, SiO2, Al2O3, P">${esc(st.raw||'')}</textarea>
       <div class="duo"><button class="btn" id="sumRead">Read pasted text</button><button class="btn sec" id="sumClr">Clear all</button></div>
@@ -2907,7 +2933,8 @@ function renderSumRail(){
       <div class="hint">Trips are turned into tonnes with t/trip; type ROM t in the table to override. Jig 0 = jig off.</div></div>
     <div class="sec"><h5>Colour &amp; focus</h5>${focusPills()}</div>
     <div class="sec"><h5><span>3 · Models</span><span>trained on library</span></h5><div class="mstate">${ms}</div>
-      <div class="hint">Each plant uses its own band model, trained on every shift in the report library (band widths from the Model settings).</div></div>
+      <div class="f" style="margin-top:8px"><label>Wet &amp; IOPP training window · last months (0 = use plant settings)</label><input type="number" id="sumAutoM" min="0" max="48" step="1" value="${sumAutoMonths()}"></div>
+      <div class="hint">Wet Plant and IOPP train on the last ${sumAutoMonths()||'—'} month${sumAutoMonths()===1?'':'s'} of shifts, with the band widths the band-width finder scores best on that window, and the 4σ outlier filter. Other plants use their Model settings. Plant pages keep their own settings.</div></div>
     <div class="sec"><h5><span>4 · Export</span></h5><div class="duo" style="margin-top:0"><button class="btn sec" id="sumCopy">Copy results (Excel)</button><button class="btn sec" id="sumCsv">Download CSV</button></div><div class="hint" id="sumMsg2"></div></div>`
     +libraryHTML();
   bindFocusPills();
@@ -2917,6 +2944,7 @@ function renderSumRail(){
     toast(`${n} plant${n>1?'s':''} read from ${p.how==='code'?'the QVC code':p.how==='table'?'the table':'the text'}${p.bad?` · ${p.bad} code(s) unreadable`:''}${p.unknown.length?' · not recognised: '+esc(p.unknown.join(', ')):''} · ROM values also set on the ${np} plant page${np>1?'s':''} (Predict)`,6000); };
   $('sumClr').onclick=()=>{ st.rows={}; st.date=''; st.shift=''; st.raw=''; sumSave(); renderAll(); };
   const num=(id,fn)=>{ $(id).onchange=()=>{ fn($(id).value===''?null:+$(id).value); sumSave(); renderSumMain(); }; };
+  $('sumAutoM').onchange=()=>{ const v=$('sumAutoM').value; st.autoM=v===''?4:Math.max(0,Math.min(48,Math.round(+v))); sumSave(); sumClear(); toast('Retraining Wet Plant and IOPP…',1500); setTimeout(renderAll,30); };
   num('tptN',v=>{ st.tpt.Noamundi=v; sumPush(); }); num('tptK',v=>{ st.tpt.Katamati=v; sumPush(); }); num('sumJf',v=>{ st.jf=v==null?null:Math.max(0,Math.min(40,v)); sumPush('wet'); }); num('sumLim',v=>st.lim=v||4.5);
   $('sumCopy').onclick=async()=>{ const t=sumTable('\t'); try{ await navigator.clipboard.writeText(t); $('sumMsg2').textContent='Copied — paste into Excel.'; }catch(_){ $('sumMsg2').textContent='Copy blocked by the browser — use Download CSV.'; } };
   $('sumCsv').onclick=()=>{ const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob(['﻿'+sumTable(',')],{type:'text/csv'})); a.download=`Plant_summary_${st.date||'today'}${st.shift?'_'+st.shift:''}.csv`; a.click(); };
